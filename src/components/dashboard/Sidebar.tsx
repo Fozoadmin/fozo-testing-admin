@@ -4,7 +4,7 @@ import {
   ShoppingBag,
   Bike,
   Users,
-  // IndianRupee,
+  IndianRupee,
   Cog,
 } from "lucide-react";
 
@@ -21,7 +21,7 @@ export function Sidebar({ active, setActive }: SidebarProps) {
     { key: "riders", label: "Delivery Partners", icon: Bike },
     { key: "bags", label: "Surprise Bags", icon: ShoppingBag },
     { key: "customers", label: "Customers", icon: Users },
-    // { key: "finance", label: "Finance", icon: IndianRupee },
+    { key: "finance", label: "Finance", icon: IndianRupee },
     { key: "settings", label: "Settings", icon: Cog },
   ];
   

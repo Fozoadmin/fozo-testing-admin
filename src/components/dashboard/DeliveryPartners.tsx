@@ -18,8 +18,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Bike, Trash2, Edit, CheckCircle2, XCircle, Ban, Loader2, Copy, User2, IndianRupee, Eye } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, isTenDigitPhone, normalizePhoneDigits, apiRequestWithStatus } from "@/lib/utils";
 import { ORDER_STATUS } from "@/constants/orderStatus";
+import { toast } from "react-toastify";
 
 export function DeliveryPartners() {
   const [deliveryPartners, setDeliveryPartners] = useState<any[]>([]);
@@ -123,6 +124,12 @@ export function DeliveryPartners() {
         alert("Phone number is required for delivery partners (used for OTP login)");
         return;
       }
+
+      if (!isTenDigitPhone(formD.phoneNumber)) {
+        alert("Mobile number must be exactly 10 digits");
+        return;
+      }
+      const phoneDigits = normalizePhoneDigits(formD.phoneNumber);
       
       // Build bank details object if any field is provided
       const bankAccountDetails = (bankDetails.accountNumber || bankDetails.ifscCode) ? {
@@ -132,26 +139,46 @@ export function DeliveryPartners() {
         bankName: bankDetails.bankName
       } : undefined;
       
-      // Single API call to onboard delivery partner with all details
-      await adminApi.onboardDeliveryPartner({
-        phoneNumber: `+91${formD.phoneNumber}`,
-        email: formD.email || undefined,
-        password: formD.password || undefined,
-        fullName: formD.fullName,
-        userType: 'delivery_partner',
-        vehicleType: formD.vehicleType,
-        licenseNumber: formD.licenseNumber || undefined,
-        bankAccountDetails
+      // Single API call to onboard delivery partner with all details - using helper to get status
+      const result = await apiRequestWithStatus('/admin/delivery-partners', {
+        method: 'POST',
+        body: JSON.stringify({
+          phoneNumber: `+91${phoneDigits}`,
+          email: formD.email || undefined,
+          password: formD.password || undefined,
+          fullName: formD.fullName,
+          userType: 'delivery_partner',
+          vehicleType: formD.vehicleType,
+          licenseNumber: formD.licenseNumber || undefined,
+          bankAccountDetails
+        })
       });
       
-      // Refresh the list
-      setDeliveryPartners(await adminApi.getAllDeliveryPartners());
-      setOpenAdd(false);
-      resetForm();
-      alert("Delivery Partner onboarded successfully!");
-    } catch (err) {
+      // Show toast based on status
+      if (result.status < 300) {
+        toast.success(result.message, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        // Refresh the list
+        setDeliveryPartners(await adminApi.getAllDeliveryPartners());
+        setOpenAdd(false);
+        resetForm();
+      } else {
+        // Show red toast for any error status (status >= 400)
+        toast.error(result.message, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+    } catch (err: any) {
       console.error('Create delivery partner failed', err);
-      alert(`Failed to create delivery partner: ${err}`);
+      // Show error toast for unexpected errors
+      const errorMessage = err?.message || "Failed to create delivery partner";
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 3000,
+      });
     } finally {
       setCreating(false);
     }
@@ -248,10 +275,21 @@ export function DeliveryPartners() {
       setDeliveryPartners(updatedDPs);
       setDeleteConfirm(false);
       setSelectedDP(null);
-      alert("Delivery Partner deleted successfully!");
+      toast.success("Delivery Partner deleted successfully!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
     } catch (error: any) {
       console.error('Delete failed', error);
-      alert(`Failed to delete delivery partner: ${error?.message || error}`);
+      const rawMessage = error?.message || String(error);
+      const friendlyMessage = rawMessage.includes("foreign key constraint")
+        ? "Cannot delete this delivery partner because there are related records (e.g., orders) linked to this user."
+        : rawMessage || "Failed to delete delivery partner";
+
+      toast.error(friendlyMessage, {
+        position: "top-right",
+        autoClose: 4000,
+      });
     } finally {
       setDeleting(false);
     }
@@ -259,14 +297,36 @@ export function DeliveryPartners() {
 
   const handleStatusChange = async (dpUserId: string, newStatus: string) => {
     try {
-      await adminApi.updateDeliveryPartnerStatus(dpUserId, newStatus as any);
+      // Use helper to get status code
+      const result = await apiRequestWithStatus(`/admin/delivery-partners/${dpUserId}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: newStatus }),
+      });
       
-      // Refresh list
-      const updatedDPs = await adminApi.getAllDeliveryPartners();
-      setDeliveryPartners(updatedDPs);
-    } catch (error) {
+      // Show toast based on status
+      if (result.status < 300) {
+        toast.success(result.message, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        // Refresh list
+        const updatedDPs = await adminApi.getAllDeliveryPartners();
+        setDeliveryPartners(updatedDPs);
+      } else {
+        // Show red toast for any error status (status >= 400)
+        toast.error(result.message, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+    } catch (error: any) {
       console.error('Status update failed', error);
-      alert(`Failed to update status: ${error}`);
+      // Show error toast for unexpected errors
+      const errorMessage = error?.message || "Failed to update status";
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 3000,
+      });
     }
   };
 

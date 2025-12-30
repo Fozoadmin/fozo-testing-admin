@@ -15,12 +15,14 @@ import {
 } from "@/components/ui/table";
 import { Search, User, Trash2 } from "lucide-react";
 import { DialogDescription } from "@/components/ui/dialog";
+import { toast } from "react-toastify";
+import { apiRequestWithStatus } from "@/lib/utils";
 
 export function Customers() {
   const [customers, setCustomers] = useState<any[]>([]);
+  const [allCustomers, setAllCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searching, setSearching] = useState(false);
   
   // Detail popup
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
@@ -34,27 +36,39 @@ export function Customers() {
     fetchCustomers();
   }, []);
 
-  const fetchCustomers = async (search?: string) => {
+  // Real-time local search filtering
+  useEffect(() => {
+    if (searchTerm.trim()) {
+      const searchTermLower = searchTerm.toLowerCase().trim();
+      const filtered = allCustomers.filter((customer) => {
+        const name = customer.fullName?.toLowerCase() || '';
+        const email = customer.email?.toLowerCase() || '';
+        const phone = customer.phoneNumber?.toLowerCase() || '';
+        return name.includes(searchTermLower) || email.includes(searchTermLower) || phone.includes(searchTermLower);
+      });
+      setCustomers(filtered);
+    } else {
+      // If search is empty, show all customers
+      setCustomers(allCustomers);
+    }
+  }, [searchTerm, allCustomers]);
+
+  const fetchCustomers = async () => {
     try {
-      setSearching(true);
-      const data = await adminApi.getAllUsers('customer', search);
+      const data = await adminApi.getAllUsers('customer');
+      setAllCustomers(data);
       setCustomers(data);
     } catch (error) {
       console.error('Error fetching customers:', error);
     } finally {
       setLoading(false);
-      setSearching(false);
     }
   };
 
-  const handleSearch = () => {
-    fetchCustomers(searchTerm);
-  };
-
-  const handleClearSearch = () => {
-    setSearchTerm("");
-    fetchCustomers();
-  };
+  // const handleClearSearch = () => {
+  //   setSearchTerm("");
+  //   setCustomers(allCustomers);
+  // };
 
   const openCustomerDetail = (customer: any) => {
     setSelectedCustomer(customer);
@@ -71,16 +85,36 @@ export function Customers() {
     
     try {
       setDeleting(true);
-      await adminApi.deleteUser(selectedCustomer.id);
+      // Use helper to get status code
+      const result = await apiRequestWithStatus(`/admin/users/${selectedCustomer.id}`, {
+        method: 'DELETE',
+      });
       
-      // Refresh list
-      await fetchCustomers(searchTerm);
-      setDeleteConfirm(false);
-      setSelectedCustomer(null);
-      alert("Customer deleted successfully!");
+      // Show toast based on status
+      if (result.status < 300) {
+        toast.success(result.message, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        // Refresh list
+        await fetchCustomers();
+        setDeleteConfirm(false);
+        setSelectedCustomer(null);
+      } else {
+        // Show red toast for any error status (status >= 400)
+        toast.error(result.message, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
     } catch (error: any) {
       console.error('Delete failed', error);
-      alert(`Failed to delete customer: ${error?.message || error}`);
+      // Show error toast for unexpected errors
+      const errorMessage = error?.message || "Failed to delete customer";
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 3000,
+      });
     } finally {
       setDeleting(false);
     }
@@ -92,22 +126,19 @@ export function Customers() {
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle>Customers</CardTitle>
-            <div className="flex gap-2 w-full max-w-md">
-              <Input 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder="Search by name, email, or phone"
-              />
-              <Button onClick={handleSearch} disabled={searching} className="gap-2">
-                <Search className="h-4 w-4" />
-                Search
-              </Button>
-              {searchTerm && (
-                <Button variant="outline" onClick={handleClearSearch}>
-                  Clear
-                </Button>
-              )}
+            <div className="flex gap-2 items-end">
+              <div className="flex-1 max-w-md">
+                <label className="text-sm font-medium mb-1 block">Search Customers</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search by name, email, or phone..."
+                    className="pl-9 h-9 w-[300px]"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </CardHeader>

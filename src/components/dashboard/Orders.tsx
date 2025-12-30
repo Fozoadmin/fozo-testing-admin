@@ -20,9 +20,10 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Copy, ExternalLink, Loader2, MapPin, Phone, User2, Truck, IndianRupee, CheckCircle2, XCircle, Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, apiRequestWithStatus } from "@/lib/utils";
 import { ORDER_STATUS, getStatusLabel } from "@/constants/orderStatus";
 import type { OrderStatus } from "@/constants/orderStatus";
+import { toast } from "react-toastify";
 
 // ------------------ Types ------------------
 export type Order = {
@@ -312,12 +313,40 @@ export function Orders() {
     try {
       // optimistic UI update
       setOrders((os) => os.map((o) => (o.id === order.id ? { ...o, orderStatus: newStatus } : o)));
-      await adminApi.updateOrderStatus(order.id, newStatus);
-      setSelected((sel) => (sel && sel.id === order.id ? { ...sel, orderStatus: newStatus } : sel));
-    } catch (e) {
+      
+      // Use helper to get status code
+      const result = await apiRequestWithStatus(`/orders/${order.id}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ newStatus }),
+      });
+      
+      // Show toast based on status
+      if (result.status < 300) {
+        toast.success(result.message, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        setSelected((sel) => (sel && sel.id === order.id ? { ...sel, orderStatus: newStatus } : sel));
+      } else {
+        // revert on failure
+        setOrders((os) => os.map((o) => (o.id === order.id ? { ...o, orderStatus: prev } : o)));
+        setSelected((sel) => (sel && sel.id === order.id ? { ...sel, orderStatus: prev } : sel));
+        // Show red toast for error
+        toast.error(result.message, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+    } catch (e: any) {
       // revert on failure
       setOrders((os) => os.map((o) => (o.id === order.id ? { ...o, orderStatus: prev } : o)));
       setSelected((sel) => (sel && sel.id === order.id ? { ...sel, orderStatus: prev } : sel));
+      // Show error toast for unexpected errors
+      const errorMessage = e?.message || "Failed to update order status";
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 3000,
+      });
     } finally {
       setUpdatingStatusId(null);
     }
@@ -327,6 +356,11 @@ export function Orders() {
   const confirmOutForDelivery = async () => {
     if (!pendingOutForDeliveryOrder || !dpSelectedId) return;
     setUpdatingStatusId(pendingOutForDeliveryOrder.id);
+    const prev = pendingOutForDeliveryOrder.orderStatus;
+    const prevDpId = pendingOutForDeliveryOrder.deliveryPartnerId;
+    const prevDpName = pendingOutForDeliveryOrder.deliveryPartnerName;
+    const prevDpPhone = pendingOutForDeliveryOrder.deliveryPartnerPhone;
+    
     try {
       // optimistic update for UI
       const chosen = dpList.find((d) => d.id === dpSelectedId);
@@ -343,23 +377,78 @@ export function Orders() {
             : o
         )
       );
-      await adminApi.updateOrderStatus(pendingOutForDeliveryOrder.id, ORDER_STATUS.OUT_FOR_DELIVERY, dpSelectedId);
-      setSelected((sel) =>
-        sel && sel.id === pendingOutForDeliveryOrder.id
-          ? {
-              ...sel,
-              orderStatus: ORDER_STATUS.OUT_FOR_DELIVERY,
-              deliveryPartnerId: dpSelectedId,
-              deliveryPartnerName: chosen?.fullName || sel.deliveryPartnerName,
-              deliveryPartnerPhone: chosen?.phoneNumber || sel.deliveryPartnerPhone,
-            }
-          : sel
+      
+      // Use helper to get status code
+      const result = await apiRequestWithStatus(`/orders/${pendingOutForDeliveryOrder.id}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          newStatus: ORDER_STATUS.OUT_FOR_DELIVERY,
+          deliveryPartnerId: dpSelectedId,
+        }),
+      });
+      
+      // Show toast based on status
+      if (result.status < 300) {
+        toast.success(result.message, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        setSelected((sel) =>
+          sel && sel.id === pendingOutForDeliveryOrder.id
+            ? {
+                ...sel,
+                orderStatus: ORDER_STATUS.OUT_FOR_DELIVERY,
+                deliveryPartnerId: dpSelectedId,
+                deliveryPartnerName: chosen?.fullName || sel.deliveryPartnerName,
+                deliveryPartnerPhone: chosen?.phoneNumber || sel.deliveryPartnerPhone,
+              }
+            : sel
+        );
+        setAssignOpen(false);
+        setPendingOutForDeliveryOrder(null);
+        setDpSelectedId("");
+      } else {
+        // revert on failure
+        setOrders((os) =>
+          os.map((o) =>
+            o.id === pendingOutForDeliveryOrder.id
+              ? {
+                  ...o,
+                  orderStatus: prev,
+                  deliveryPartnerId: prevDpId,
+                  deliveryPartnerName: prevDpName,
+                  deliveryPartnerPhone: prevDpPhone,
+                }
+              : o
+          )
+        );
+        // Show red toast for error
+        toast.error(result.message, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+    } catch (e: any) {
+      // On failure, revert optimistic change
+      setOrders((os) =>
+        os.map((o) =>
+          o.id === pendingOutForDeliveryOrder.id
+            ? {
+                ...o,
+                orderStatus: prev,
+                deliveryPartnerId: prevDpId,
+                deliveryPartnerName: prevDpName,
+                deliveryPartnerPhone: prevDpPhone,
+              }
+            : o
+        )
       );
-      setAssignOpen(false);
-      setPendingOutForDeliveryOrder(null);
-      setDpSelectedId("");
-    } catch (e) {
-      // On failure, we let the optimistic change revert by reloading selected from orders or you can refetch
+      // Show error toast for unexpected errors
+      const errorMessage = e?.message || "Failed to update order status";
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 3000,
+      });
     } finally {
       setUpdatingStatusId(null);
     }

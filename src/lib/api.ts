@@ -182,6 +182,31 @@ export const adminApi = {
     '/bags',
     { method: 'POST', body: JSON.stringify(body) }
   ),
+  updateSurpriseBag: (bagId: string, body: {
+    targetRestaurantId?: string; // admin updating for a specific restaurant
+    bagName?: string;
+    denominationValue?: number;
+    actualWorth?: number;
+    description?: string;
+    imageUrl?: string;
+    quantityAvailable?: number;
+    pickupStartTime?: string; // HH:MM:SS
+    pickupEndTime?: string;   // HH:MM:SS
+    availableDate?: string;  // YYYY-MM-DD
+    isActive?: boolean;
+    isVegetarian?: boolean;
+  }) => apiRequest<{ message: string; bag: any }>(
+    `/bags/${bagId}`,
+    { method: 'PUT', body: JSON.stringify(body) }
+  ),
+  deleteSurpriseBag: (bagId: string, targetRestaurantId?: string) => 
+    apiRequest<{ message: string }>(
+      `/bags/${bagId}`,
+      { 
+        method: 'DELETE', 
+        body: JSON.stringify({ targetRestaurantId }) 
+      }
+    ),
   // Auth/Registration
   registerPasswordUser: (body: {
     phoneNumber?: string;
@@ -201,6 +226,7 @@ export const adminApi = {
       contactPersonName?: string;
       fssaiLicenseNumber?: string;
       gstinNumber?: string;
+      imageUrl?: string;
       bankAccountDetails?: any;
       primaryLocation?: any;
       operatingHours?: any[];
@@ -286,5 +312,84 @@ export const adminApi = {
       method: 'PUT',
       body: JSON.stringify(settingsData),
     }),
+  // Finance Management
+  getRestaurantFinancialSummary: (restaurantIds?: string[], startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (restaurantIds && restaurantIds.length > 0) {
+      params.append('restaurantIds', restaurantIds.join(','));
+    }
+    if (startDate) {
+      params.append('startDate', startDate);
+    }
+    if (endDate) {
+      params.append('endDate', endDate);
+    }
+    return apiRequest<any[]>(`/admin/finance/restaurants${params.toString() ? `?${params.toString()}` : ''}`);
+  },
+  getDeliveryPartnerFinancialSummary: (deliveryPartnerIds?: string[], startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (deliveryPartnerIds && deliveryPartnerIds.length > 0) {
+      params.append('deliveryPartnerIds', deliveryPartnerIds.join(','));
+    }
+    if (startDate) {
+      params.append('startDate', startDate);
+    }
+    if (endDate) {
+      params.append('endDate', endDate);
+    }
+    return apiRequest<any[]>(`/admin/finance/delivery-partners${params.toString() ? `?${params.toString()}` : ''}`);
+  },
+  // Image Upload
+  uploadRestaurantImage: async (file: File): Promise<{ imageUrl: string }> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const token = getAuthToken();
+    const headers: HeadersInit = {
+      'x-api-key': API_KEY,
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/upload/restaurant`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Upload failed' }));
+      throw new Error(error.message || `HTTP ${response.status}`);
+    }
+    
+    return response.json();
+  },
+  uploadSurpriseBagImage: async (file: File): Promise<{ imageUrl: string }> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const token = getAuthToken();
+    const headers: HeadersInit = {
+      'x-api-key': API_KEY,
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/upload/surprise-bag`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Upload failed' }));
+      throw new Error(error.message || `HTTP ${response.status}`);
+    }
+    
+    return response.json();
+  },
 };
-

@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { type LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type StatCardProps = {
   icon: LucideIcon;
@@ -8,11 +9,19 @@ type StatCardProps = {
   suffix?: string;
   delta?: number;
   className?: string;
+  onClick?: () => void;
 };
 
-export function StatCard({ icon: Icon, title, value, suffix = "", delta, className = "" }: StatCardProps) {
+export function StatCard({ icon: Icon, title, value, suffix = "", delta, className = "", onClick }: StatCardProps) {
   return (
-    <Card className={`rounded-2xl shadow-sm ${className}`}>
+    <Card
+      className={cn(
+        "rounded-2xl shadow-sm",
+        onClick && "cursor-pointer transition-colors hover:bg-muted/60",
+        className,
+      )}
+      onClick={onClick}
+    >
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm text-muted-foreground font-medium">{title}</CardTitle>
         <Icon className="h-5 w-5 text-muted-foreground" />

@@ -3,6 +3,8 @@ import { useState, useEffect } from "react"
 import { AuthProvider, useAuth } from "@/contexts/AuthContext"
 import Login from "@/pages/Login"
 import Dashboard from "@/pages/Dashboard"
+import { ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth()
@@ -45,6 +47,18 @@ export default function App() {
   return (
     <AuthProvider>
       <AppRoutes />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </AuthProvider>
   )
 }

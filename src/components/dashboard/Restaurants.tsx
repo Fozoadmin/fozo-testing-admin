@@ -14,9 +14,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, MapPin, Loader2, Search, Building2, Edit, Trash2, CheckCircle2, XCircle, Ban } from "lucide-react";
+import { Plus, MapPin, Loader2, Building2, Edit, Trash2, CheckCircle2, XCircle, Ban, Search } from "lucide-react";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { isTenDigitPhone, normalizePhoneDigits, apiRequestWithStatus } from "@/lib/utils";
+import { toast } from "react-toastify";
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
@@ -29,9 +31,9 @@ export function Restaurants() {
   const [creating, setCreating] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   
-  // Search
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searching, setSearching] = useState(false);
+  // Search states
+  const [allRestaurants, setAllRestaurants] = useState<any[]>([]);
+  const [restaurantSearchFilter, setRestaurantSearchFilter] = useState("");
   
   // Detail popup
   const [selectedRestaurant, setSelectedRestaurant] = useState<any | null>(null);
@@ -90,10 +92,44 @@ export function Restaurants() {
     bankName: ""
   });
 
+  // Image upload states
+  const [restaurantImageUrl, setRestaurantImageUrl] = useState<string>("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+
   useEffect(() => {
-    fetchRestaurants();
+    fetchAllRestaurants();
     fetchCuisines();
   }, []);
+
+  // Fetch all restaurants for dropdown
+  const fetchAllRestaurants = async () => {
+    try {
+      const data = await adminApi.getAllRestaurants();
+      setAllRestaurants(data);
+      setRestaurants(data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching restaurants:', error);
+      setLoading(false);
+    }
+  };
+
+  // Real-time local search filtering
+  useEffect(() => {
+    if (restaurantSearchFilter.trim()) {
+      const searchTerm = restaurantSearchFilter.toLowerCase().trim();
+      const filtered = allRestaurants.filter((restaurant) => {
+        const name = restaurant.restaurantName?.toLowerCase() || '';
+        const email = restaurant.userEmail?.toLowerCase() || '';
+        const phone = restaurant.phoneNumber?.toLowerCase() || '';
+        return name.includes(searchTerm) || email.includes(searchTerm) || phone.includes(searchTerm);
+      });
+      setRestaurants(filtered);
+    } else {
+      // If search is empty, show all restaurants
+      setRestaurants(allRestaurants);
+    }
+  }, [restaurantSearchFilter, allRestaurants]);
 
   const fetchCuisines = async () => {
     try {
@@ -104,26 +140,29 @@ export function Restaurants() {
     }
   };
 
-  const fetchRestaurants = async (search?: string) => {
-    try {
-      setSearching(true);
-      const data = await adminApi.getAllRestaurants(search);
-      setRestaurants(data);
-    } catch (error) {
-      console.error('Error fetching restaurants:', error);
-    } finally {
-      setLoading(false);
-      setSearching(false);
-    }
-  };
-
-  const handleSearch = () => {
-    fetchRestaurants(searchTerm);
-  };
-
   const handleClearSearch = () => {
-    setSearchTerm("");
-    fetchRestaurants();
+    setRestaurantSearchFilter("");
+    setRestaurants(allRestaurants);
+  };
+
+  const handleImageUpload = async (file: File) => {
+    try {
+      setUploadingImage(true);
+      const result = await adminApi.uploadRestaurantImage(file);
+      setRestaurantImageUrl(result.imageUrl);
+      toast.success("Image uploaded successfully!", {
+        position: "top-right",
+        autoClose: 2000,
+      });
+    } catch (error: any) {
+      console.error('Image upload failed:', error);
+      toast.error(error.message || "Failed to upload image", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const openRestaurantDetail = (restaurant: any) => {
@@ -166,6 +205,7 @@ export function Restaurants() {
       bankName: ""
     });
     setSelectedCuisineIds([]);
+      setRestaurantImageUrl("");
   };
 
   // Geocode address to get lat/long
@@ -236,6 +276,16 @@ export function Restaurants() {
         alert("Please provide either email or phone number");
         return;
       }
+
+      if (formR.phoneNumber && !isTenDigitPhone(formR.phoneNumber)) {
+        alert("Mobile number must be exactly 10 digits");
+        return;
+      }
+
+      if (location.contactNumber && !isTenDigitPhone(location.contactNumber)) {
+        alert("Mobile number must be exactly 10 digits");
+        return;
+      }
       
       if (!location.address || !location.latitude || !location.longitude) {
         alert("Please provide complete location details (Address, Latitude, Longitude)");
@@ -262,39 +312,63 @@ export function Restaurants() {
         closeTime: operatingHours[day].isClosed ? null : operatingHours[day].close + ':00',
         isClosed: operatingHours[day].isClosed
       }));
+
+      const userPhoneDigits = normalizePhoneDigits(formR.phoneNumber);
+      const locationPhoneDigits = normalizePhoneDigits(location.contactNumber);
       
-      // Single API call to onboard restaurant with all details
-      await adminApi.onboardRestaurant({
-        phoneNumber: formR.phoneNumber ? `+91${formR.phoneNumber}` : undefined,
-        email: formR.email || undefined,
-        password: formR.password,
-        fullName: formR.fullName,
-        userType: 'restaurant',
-        restaurantName: formR.restaurantName,
-        contactPersonName: formR.contactPersonName || formR.fullName,
-        fssaiLicenseNumber: formR.fssaiLicenseNumber || undefined,
-        gstinNumber: formR.gstinNumber || undefined,
-        bankAccountDetails,
-        primaryLocation: {
-          locationName: location.locationName || formR.restaurantName,
-          address: location.address,
-          latitude: parseFloat(location.latitude),
-          longitude: parseFloat(location.longitude),
-          contactNumber: location.contactNumber ? `+91${location.contactNumber}` : (formR.phoneNumber ? `+91${formR.phoneNumber}` : undefined),
-          email: location.email || formR.email
-        },
-        operatingHours: hoursArray,
-        restaurantCuisineIds: selectedCuisineIds
+      // Single API call to onboard restaurant with all details - using helper to get status
+      const result = await apiRequestWithStatus('/admin/restaurants', {
+        method: 'POST',
+        body: JSON.stringify({
+          phoneNumber: userPhoneDigits ? `+91${userPhoneDigits}` : undefined,
+          email: formR.email || undefined,
+          password: formR.password,
+          fullName: formR.fullName,
+          userType: 'restaurant',
+          restaurantName: formR.restaurantName,
+          contactPersonName: formR.contactPersonName || formR.fullName,
+          fssaiLicenseNumber: formR.fssaiLicenseNumber || undefined,
+          gstinNumber: formR.gstinNumber || undefined,
+          imageUrl: restaurantImageUrl || undefined,
+          bankAccountDetails,
+          primaryLocation: {
+            locationName: location.locationName || formR.restaurantName,
+            address: location.address,
+            latitude: parseFloat(location.latitude),
+            longitude: parseFloat(location.longitude),
+            contactNumber: locationPhoneDigits ? `+91${locationPhoneDigits}` : (userPhoneDigits ? `+91${userPhoneDigits}` : undefined),
+            email: location.email || formR.email
+          },
+          operatingHours: hoursArray,
+          restaurantCuisineIds: selectedCuisineIds
+        })
       });
       
-      // Refresh the list
-      setRestaurants(await adminApi.getAllRestaurants());
-      setOpenAdd(false);
-      resetForm();
-      alert("Restaurant onboarded successfully!");
-    } catch (err) {
+      // Show toast based on status
+      if (result.status < 300) {
+        toast.success(result.message, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        // Refresh the list
+        setRestaurants(await adminApi.getAllRestaurants());
+        setOpenAdd(false);
+        resetForm();
+      } else {
+        // Show red toast for any error status (status >= 400)
+        toast.error(result.message, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+    } catch (err: any) {
       console.error('Create restaurant failed', err);
-      alert(`Failed to create restaurant: ${err}`);
+      // Show error toast for unexpected errors
+      const errorMessage = err?.message || "Failed to add restaurant";
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 3000,
+      });
     } finally {
       setCreating(false);
     }
@@ -371,6 +445,9 @@ export function Restaurants() {
       // Pre-fill cuisines
       setSelectedCuisineIds(fullDetails.cuisines ? fullDetails.cuisines.map((c: any) => c.id) : []);
       
+      // Pre-fill image URL
+      setRestaurantImageUrl(fullDetails.imageUrl || "");
+      
       setOpenEdit(true);
     } catch (error) {
       console.error('Error loading restaurant details:', error);
@@ -405,6 +482,12 @@ export function Restaurants() {
         closeTime: operatingHours[day].isClosed ? null : operatingHours[day].close + ':00',
         isClosed: operatingHours[day].isClosed
       }));
+
+      if (location.contactNumber && !isTenDigitPhone(location.contactNumber)) {
+        alert("Mobile number must be exactly 10 digits");
+        return;
+      }
+      const locationPhoneDigits = normalizePhoneDigits(location.contactNumber);
       
       // Update restaurant profile (basic info, location, hours, bank)
       await adminApi.updateRestaurantProfile(selectedRestaurant.restaurantId, {
@@ -412,13 +495,14 @@ export function Restaurants() {
         contactPersonName: formR.contactPersonName,
         fssaiLicenseNumber: formR.fssaiLicenseNumber || undefined,
         gstinNumber: formR.gstinNumber || undefined,
+        imageUrl: restaurantImageUrl || undefined,
         bankAccountDetails,
         primaryLocation: {
           locationName: location.locationName || formR.restaurantName,
           address: location.address,
           latitude: parseFloat(location.latitude),
           longitude: parseFloat(location.longitude),
-          contactNumber: location.contactNumber ? `+91${location.contactNumber}` : undefined,
+          contactNumber: locationPhoneDigits ? `+91${locationPhoneDigits}` : undefined,
           email: location.email || undefined
         },
         operatingHours: hoursArray
@@ -458,7 +542,10 @@ export function Restaurants() {
       setRestaurants(updatedRestaurants);
       setDeleteConfirm(false);
       setSelectedRestaurant(null);
-      alert("Restaurant deleted successfully!");
+      toast.success("Restaurant deleted successfully!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
     } catch (error) {
       console.error('Delete failed', error);
       alert(`Failed to delete restaurant: ${error}`);
@@ -469,14 +556,36 @@ export function Restaurants() {
 
   const handleStatusChange = async (restaurantId: string, newStatus: string) => {
     try {
-      await adminApi.updateRestaurantStatus(restaurantId, newStatus as any);
+      // Use helper to get status code
+      const result = await apiRequestWithStatus(`/admin/restaurants/${restaurantId}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: newStatus }),
+      });
       
-      // Refresh list
-      const updatedRestaurants = await adminApi.getAllRestaurants();
-      setRestaurants(updatedRestaurants);
-    } catch (error) {
+      // Show toast based on status
+      if (result.status < 300) {
+        toast.success(`Restaurant ${newStatus} successfully`, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        // Refresh list
+        const updatedRestaurants = await adminApi.getAllRestaurants();
+        setRestaurants(updatedRestaurants);
+      } else {
+        // Show red toast for any error status (status >= 400)
+        toast.error(result.message, {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }
+    } catch (error: any) {
       console.error('Status update failed', error);
-      alert(`Failed to update status: ${error}`);
+      // Show error toast for unexpected errors
+      const errorMessage = error?.message || "Failed to update status";
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 3000,
+      });
     }
   };
 
@@ -552,6 +661,36 @@ export function Restaurants() {
                     <div>
                       <label className="text-sm font-medium">GSTIN</label>
                       <Input value={formR.gstinNumber} onChange={e => setFormR({...formR, gstinNumber: e.target.value})} placeholder="22AAAAA0000A1Z5" />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-sm font-medium">Restaurant Image (Optional)</label>
+                      <div className="space-y-2">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleImageUpload(file);
+                            }
+                          }}
+                          disabled={uploadingImage}
+                          className="cursor-pointer"
+                        />
+                        {uploadingImage && (
+                          <p className="text-xs text-muted-foreground">Uploading image...</p>
+                        )}
+                        {restaurantImageUrl && (
+                          <div className="mt-2">
+                            <img 
+                              src={restaurantImageUrl} 
+                              alt="Restaurant preview" 
+                              className="w-32 h-32 object-cover rounded-md border"
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">Image uploaded successfully</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                   
@@ -725,20 +864,22 @@ export function Restaurants() {
             </DialogContent>
           </Dialog>
           </div>
-          <div className="flex gap-2">
-            <Input 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              placeholder="Search by name, email, or phone"
-              className="max-w-md"
-            />
-            <Button onClick={handleSearch} disabled={searching} className="gap-2">
-              <Search className="h-4 w-4" />
-              Search
-            </Button>
-            {searchTerm && (
-              <Button variant="outline" onClick={handleClearSearch}>
+          {/* Restaurant Real-time Search */}
+          <div className="flex gap-2 items-end">
+            <div className="flex-1 max-w-md">
+              <label className="text-sm font-medium mb-1 block">Search Restaurants</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={restaurantSearchFilter}
+                  onChange={(e) => setRestaurantSearchFilter(e.target.value)}
+                  placeholder="Search by name, email, or phone..."
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            {restaurantSearchFilter && (
+              <Button variant="outline" onClick={handleClearSearch} className="mb-0">
                 Clear
               </Button>
             )}
@@ -850,6 +991,19 @@ export function Restaurants() {
           </DialogHeader>
           {selectedRestaurant && (
             <div className="grid gap-6">
+              {/* Restaurant Image */}
+              {selectedRestaurant.imageUrl && (
+                <div className="flex justify-center">
+                  <div className="space-y-2">
+                    <img 
+                      src={selectedRestaurant.imageUrl} 
+                      alt={selectedRestaurant.restaurantName || 'Restaurant'} 
+                      className="w-full max-w-md h-64 object-cover rounded-lg border shadow-sm"
+                    />
+                  </div>
+                </div>
+              )}
+              
               {/* Basic Info */}
               <div>
                 <h3 className="font-semibold mb-3">Basic Information</h3>
@@ -997,6 +1151,36 @@ export function Restaurants() {
                 <div>
                   <label className="text-sm font-medium">GSTIN</label>
                   <Input value={formR.gstinNumber} onChange={e => setFormR({...formR, gstinNumber: e.target.value})} placeholder="22AAAAA0000A1Z5" />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-sm font-medium">Restaurant Image (Optional)</label>
+                  <div className="space-y-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleImageUpload(file);
+                        }
+                      }}
+                      disabled={uploadingImage}
+                      className="cursor-pointer"
+                    />
+                    {uploadingImage && (
+                      <p className="text-xs text-muted-foreground">Uploading image...</p>
+                    )}
+                    {restaurantImageUrl && (
+                      <div className="mt-2">
+                        <img 
+                          src={restaurantImageUrl} 
+                          alt="Restaurant preview" 
+                          className="w-32 h-32 object-cover rounded-md border"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">Image uploaded successfully</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </TabsContent>
