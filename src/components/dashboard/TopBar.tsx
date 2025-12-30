@@ -20,13 +20,22 @@ export function TopBar({ onLogoClick, onMenuClick }: TopBarProps) {
   return (
     <div className="h-16 flex items-center justify-between border-b px-4 lg:px-6 bg-background/60 backdrop-blur">
       <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={onMenuClick}
+        >
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">Open menu</span>
+        </Button>
         <button
           type="button"
           onClick={onLogoClick}
           className="flex items-center gap-2 text-xl font-semibold hover:opacity-80 transition-opacity"
         >
-          <LayoutDashboard className="h-6 w-6" />
-          <span>Admin</span>
+          <span>Fozo Admin</span>
         </button>
       </div>
       <div className="flex items-center gap-2">
@@ -47,16 +56,6 @@ export function TopBar({ onLogoClick, onMenuClick }: TopBarProps) {
           className="sm:hidden"
         >
           <LogOut className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-          onClick={onMenuClick}
-        >
-          <Menu className="h-5 w-5" />
-          <span className="sr-only">Open menu</span>
         </Button>
       </div>
     </div>

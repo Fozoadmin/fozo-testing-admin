@@ -153,7 +153,7 @@ export default function Dashboard() {
         </SheetContent>
       </Sheet>
 
-      <div className="max-w-[1400px] w-full mx-auto grid grid-cols-1 md:grid-cols-[16rem_1fr] gap-0 flex-1">
+      <div className="max-w-[1400px] w-full grid grid-cols-1 md:grid-cols-[16rem_1fr] gap-0 flex-1">
         {/* Sidebar */}
         <Sidebar active={active} setActive={setActive} />
 

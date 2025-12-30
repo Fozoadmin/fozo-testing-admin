@@ -20,7 +20,7 @@ export default function Login() {
     setLoading(true)
 
     try {
-      const data = await apiRequest<{ user: any; token: string }>(
+      const data = await apiRequest<{ user: any; accessToken: string }>(
         '/auth/login-password',
         {
           method: 'POST',
@@ -33,7 +33,7 @@ export default function Login() {
       )
 
       // Use context to store auth data
-      login(data.user, data.token)
+      login(data.user, data.accessToken)
       nav("/dashboard")
     } catch (err: any) {
       console.error('Login error:', err)
