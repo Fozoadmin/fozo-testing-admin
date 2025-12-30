@@ -65,10 +65,10 @@ export function Customers() {
     }
   };
 
-  const handleClearSearch = () => {
-    setSearchTerm("");
-    setCustomers(allCustomers);
-  };
+  // const handleClearSearch = () => {
+  //   setSearchTerm("");
+  //   setCustomers(allCustomers);
+  // };
 
   const openCustomerDetail = (customer: any) => {
     setSelectedCustomer(customer);
