@@ -663,7 +663,7 @@ export function Restaurants() {
                       <Input value={formR.gstinNumber} onChange={e => setFormR({...formR, gstinNumber: e.target.value})} placeholder="22AAAAA0000A1Z5" />
                     </div>
                     <div className="col-span-2">
-                      <label className="text-sm font-medium">Restaurant Image</label>
+                      <label className="text-sm font-medium">Restaurant Image (Optional)</label>
                       <div className="space-y-2">
                         <Input
                           type="file"
@@ -1153,7 +1153,7 @@ export function Restaurants() {
                   <Input value={formR.gstinNumber} onChange={e => setFormR({...formR, gstinNumber: e.target.value})} placeholder="22AAAAA0000A1Z5" />
                 </div>
                 <div className="col-span-2">
-                  <label className="text-sm font-medium">Restaurant Image</label>
+                  <label className="text-sm font-medium">Restaurant Image (Optional)</label>
                   <div className="space-y-2">
                     <Input
                       type="file"
