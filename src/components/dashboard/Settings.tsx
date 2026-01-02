@@ -33,6 +33,7 @@ interface SettingsData extends Record<string, string> {
   // Content & Text
   textNoServiceInArea: string;
   textAppUnderMaintenance: string;
+  textOrderingDisabled: string;
   supportPhoneNumber: string;
   supportEmail: string;
   urlPrivacyPolicy: string;
@@ -439,6 +440,18 @@ export function Settings() {
                     type="text"
                     value={settings.textAppUnderMaintenance}
                     onChange={(e) => updateSetting('textAppUnderMaintenance', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="textOrderingDisabled">
+                    Disable Order Message
+                  </Label>
+                  <Input
+                    id="textOrderingDisabled"
+                    type="text"
+                    placeholder="Message shown when ordering is disabled"
+                    value={settings.textOrderingDisabled}
+                    onChange={(e) => updateSetting('textOrderingDisabled', e.target.value)}
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
