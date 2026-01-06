@@ -14,14 +14,14 @@ interface SettingsData extends Record<string, string> {
   platformCommissionRate: string;
   handlingFeeFixed: string;
   gstRate: string;
-  
+
   // Operational & Logistics
   customerSearchRadiusKm: string;
   maxDeliveryRadiusKm: string;
   dpBaseFee: string;
   dpFeePerKm: string;
   restaurantConfirmTimeoutSeconds: string;
-  
+
   // App Control & Kill Switches
   isOrderingDisabled: string;
   isPaymentGatewayDown: string;
@@ -29,7 +29,10 @@ interface SettingsData extends Record<string, string> {
   allowNewRegistrations: string;
   forceUpdateMinVersionIos: string;
   forceUpdateMinVersionAndroid: string;
-  
+  textForceUpdateMessage: string;
+  urlAppStore: string;
+  urlPlayStore: string;
+
   // Content & Text
   textNoServiceInArea: string;
   textAppUnderMaintenance: string;
@@ -71,12 +74,12 @@ export function Settings() {
 
   const handleSave = async () => {
     if (!settings || !originalSettings) return;
-    
+
     try {
       setSaving(true);
       setError(null);
       setSuccess(null);
-      
+
       // Compare current settings with original to find only changed values
       const changedSettings: Record<string, string> = {};
       for (const key in settings) {
@@ -89,7 +92,7 @@ export function Settings() {
           }
         }
       }
-      
+
       // If nothing changed, show message and return early
       if (Object.keys(changedSettings).length === 0) {
         setSuccess('No changes detected. Settings are already up to date.');
@@ -97,21 +100,21 @@ export function Settings() {
         setSaving(false);
         return;
       }
-      
+
       // Only send changed settings to the backend
       const result = await adminApi.updateSettings(changedSettings);
-      
+
       // Update original settings to reflect the saved state
       const updatedOriginal: SettingsData = { ...originalSettings };
       for (const key in changedSettings) {
         updatedOriginal[key as keyof SettingsData] = changedSettings[key];
       }
       setOriginalSettings(updatedOriginal);
-      
+
       // Show success message with number of changed settings
       const changedCount = result.changedKeys?.length || Object.keys(changedSettings).length;
       setSuccess(`Successfully updated ${changedCount} setting(s)!`);
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
@@ -147,57 +150,57 @@ export function Settings() {
       </div>
     );
   }
-  
+
   return (
     <div className="h-full w-full flex flex-col gap-6 overflow-y-auto p-6">
       {/* User Profile Section */}
-        <Card className="rounded-2xl">
-          <CardHeader className="pb-2">
+      <Card className="rounded-2xl">
+        <CardHeader className="pb-2">
           <CardTitle>Admin Profile</CardTitle>
-          </CardHeader>
-          <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Full Name</label>
-                    <div className="text-sm mt-1">{user?.fullName || '—'}</div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Email</label>
-                    <div className="text-sm mt-1">{user?.email || '—'}</div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Phone Number</label>
-                    <div className="text-sm mt-1">{user?.phoneNumber || '—'}</div>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">User Type</label>
-                    <div className="text-sm mt-1">
-                      <Badge variant="default" className="bg-blue-100 text-blue-800 border-blue-200">
-                        {user?.userType || '—'}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Account Status</label>
-                    <div className="text-sm mt-1">
-                      <Badge variant={user?.isActive ? "default" : "destructive"}>
-                        {user?.isVerified ? "Active" : "Inactive"}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Verification Status</label>
-                    <div className="text-sm mt-1">
-                      <Badge variant={user?.isVerified ? "default" : "secondary"}>
-                        {user?.isVerified ? "Verified" : "Unverified"}
-                      </Badge>
-                    </div>
-                  </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Full Name</label>
+                <div className="text-sm mt-1">{user?.fullName || '—'}</div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Email</label>
+                <div className="text-sm mt-1">{user?.email || '—'}</div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Phone Number</label>
+                <div className="text-sm mt-1">{user?.phoneNumber || '—'}</div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">User Type</label>
+                <div className="text-sm mt-1">
+                  <Badge variant="default" className="bg-blue-100 text-blue-800 border-blue-200">
+                    {user?.userType || '—'}
+                  </Badge>
                 </div>
               </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Account Status</label>
+                <div className="text-sm mt-1">
+                  <Badge variant={user?.isActive ? "default" : "destructive"}>
+                    {user?.isVerified ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Verification Status</label>
+                <div className="text-sm mt-1">
+                  <Badge variant={user?.isVerified ? "default" : "secondary"}>
+                    {user?.isVerified ? "Verified" : "Unverified"}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -330,7 +333,7 @@ export function Settings() {
             <Separator />
 
             {/* App Control & Kill Switches */}
-                <div>
+            <div>
               <h3 className="text-lg font-semibold mb-3">App Control & Kill Switches</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -410,10 +413,10 @@ export function Settings() {
                     value={settings.forceUpdateMinVersionAndroid}
                     onChange={(e) => updateSetting('forceUpdateMinVersionAndroid', e.target.value)}
                   />
-                  </div>
                 </div>
               </div>
-              
+            </div>
+
             <Separator />
 
             {/* Content & Text */}
@@ -454,6 +457,55 @@ export function Settings() {
                     onChange={(e) => updateSetting('textOrderingDisabled', e.target.value)}
                   />
                 </div>
+                <div className="space-y-4 mt-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="textForceUpdateMessage">
+                      Mobile App Update Message
+                    </Label>
+                    <Input
+                      id="textForceUpdateMessage"
+                      type="text"
+                      placeholder="A new version of the app is available. Please update to continue using the app."
+                      value={settings.textForceUpdateMessage}
+                      onChange={(e) => updateSetting('textForceUpdateMessage', e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Custom message shown to users when app update is required
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="urlAppStore">
+                        App Store URL (iOS)
+                      </Label>
+                      <Input
+                        id="urlAppStore"
+                        type="url"
+                        placeholder="https://apps.apple.com/app/id..."
+                        value={settings.urlAppStore}
+                        onChange={(e) => updateSetting('urlAppStore', e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Full App Store URL for iOS app updates
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="urlPlayStore">
+                        Play Store URL (Android)
+                      </Label>
+                      <Input
+                        id="urlPlayStore"
+                        type="url"
+                        placeholder="https://play.google.com/store/apps/details?id=..."
+                        value={settings.urlPlayStore}
+                        onChange={(e) => updateSetting('urlPlayStore', e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Full Play Store URL for Android app updates
+                      </p>
+                    </div>
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="supportPhoneNumber">
@@ -464,7 +516,7 @@ export function Settings() {
                       type="tel"
                       value={settings.supportPhoneNumber}
                       onChange={(e) => updateSetting('supportPhoneNumber', e.target.value)}
-                  />
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="supportEmail">
@@ -541,9 +593,9 @@ export function Settings() {
             >
               {saving ? 'Saving...' : 'Save Settings'}
             </Button>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
