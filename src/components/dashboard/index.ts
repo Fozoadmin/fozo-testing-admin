@@ -9,4 +9,4 @@ export { Customers } from './Customers';
 export { SurpriseBags } from './SurpriseBags';
 export { Finance } from './Finance';
 export { Settings } from './Settings';
-
+export { Notifications } from './Notifications';

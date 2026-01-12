@@ -1,0 +1,429 @@
+import { useState, useEffect } from "react";
+import { adminApi } from "@/lib/api";
+import { motion } from "framer-motion";
+import { Plus, Bell, Trash2, Calendar, Clock, ChevronDown, Check, Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "react-toastify";
+
+export function Notifications() {
+    const [notifications, setNotifications] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [formData, setFormData] = useState({
+        title: "",
+        description: "",
+        scheduledAt: "",
+    });
+    const [targetType, setTargetType] = useState<"all" | "specific" | "all_customers" | "all_restaurants" | "all_delivery_partners">("all_customers");
+    const [users, setUsers] = useState<any[]>([]);
+    const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+    const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+    const [userSearch, setUserSearch] = useState("");
+    const [filterType, setFilterType] = useState<"all" | "customer" | "restaurant" | "delivery_partner">("all");
+    const [selectedNotification, setSelectedNotification] = useState<any>(null);
+    const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+    const fetchUsers = async () => {
+        try {
+            const data = await adminApi.getAllUsers();
+            setUsers(data);
+        } catch (error) {
+            console.error("Error fetching users:", error);
+        }
+    };
+
+    useEffect(() => {
+        if (targetType === "specific" && users.length === 0) {
+            fetchUsers();
+        }
+    }, [targetType]);
+
+    const toggleUser = (userId: string) => {
+        setSelectedUserIds(prev =>
+            prev.includes(userId)
+                ? prev.filter(id => id !== userId)
+                : [...prev, userId]
+        );
+    };
+
+    const fetchNotifications = async () => {
+        try {
+            setLoading(true);
+            const data = await adminApi.getAllNotifications();
+            setNotifications(data);
+        } catch (error) {
+            console.error("Error fetching notifications:", error);
+            toast.error("Failed to fetch notifications");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchNotifications();
+    }, []);
+
+    const handleCreate = async () => {
+        if (!formData.title || !formData.scheduledAt) {
+            toast.error("Title and Scheduled Time are required");
+            return;
+        }
+
+        try {
+            await adminApi.createNotification({
+                ...formData,
+                targetType,
+                targetUserIds: targetType === 'specific' ? selectedUserIds : undefined
+            });
+            toast.success("Notification created successfully");
+            setIsDialogOpen(false);
+            setFormData({ title: "", description: "", scheduledAt: "" });
+            setTargetType("all");
+            setSelectedUserIds([]);
+            fetchNotifications();
+        } catch (error: any) {
+            toast.error(error.message || "Failed to create notification");
+        }
+    };
+
+    const handleDelete = async (id: number) => {
+        if (!confirm("Are you sure you want to delete this notification?")) return;
+
+        try {
+            await adminApi.deleteNotification(id);
+            toast.success("Notification deleted successfully");
+            fetchNotifications();
+        } catch (error: any) {
+            toast.error(error.message || "Failed to delete notification");
+        }
+    };
+
+    const handleViewDetails = async (notification: any) => {
+        try {
+            // Optimistically set what we have
+            setSelectedNotification(notification);
+            setIsDetailsOpen(true);
+
+            // Fetch full details (specifically for target users)
+            const fullDetails = await adminApi.getNotificationById(notification.id);
+            setSelectedNotification(fullDetails);
+        } catch (error) {
+            console.error("Error fetching notification details:", error);
+            toast.error("Failed to load full details");
+        }
+    };
+
+    return (
+        <div className="flex flex-col h-full gap-6">
+            <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                    <Bell className="h-5 w-5 md:h-6 md:w-6" />
+                    Notifications
+                </h2>
+
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button className="flex items-center gap-2 bg-primary dark:text-black hover:bg-primary/90">
+                            <Plus className="h-4 w-4" />
+                            Add Notification
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                            <DialogTitle>Create Notification</DialogTitle>
+                            <DialogDescription>
+                                Fill in the details below to schedule a new notification.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <label htmlFor="title" className="text-sm font-medium">
+                                    Title *
+                                </label>
+                                <Input
+                                    id="title"
+                                    placeholder="Notification Title"
+                                    value={formData.title}
+                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <label htmlFor="description" className="text-sm font-medium">
+                                    Description
+                                </label>
+                                <Textarea
+                                    id="description"
+                                    placeholder="Enter notification details..."
+                                    value={formData.description}
+                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                    rows={4}
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <label htmlFor="scheduledAt" className="text-sm font-medium">
+                                    Scheduled Time *
+                                </label>
+                                <Input
+                                    id="scheduledAt"
+                                    type="datetime-local"
+                                    value={formData.scheduledAt}
+                                    onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <label className="text-sm font-medium">Target Audience *</label>
+                                <Select value={targetType} onValueChange={(val: any) => setTargetType(val)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select audience" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Users</SelectItem>
+                                        <SelectItem value="all_customers">All Customers</SelectItem>
+                                        <SelectItem value="all_restaurants">All Restaurants</SelectItem>
+                                        <SelectItem value="all_delivery_partners">All Delivery Partners</SelectItem>
+                                        <SelectItem value="specific">Specific Users</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {targetType === "specific" && (
+                                <div className="grid gap-2 relative">
+                                    <label className="text-sm font-medium">Select Users ({selectedUserIds.length} selected)</label>
+                                    <div
+                                        className="min-h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm cursor-pointer hover:border-ring flex items-center justify-between"
+                                        onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                                    >
+                                        <div className="flex flex-wrap gap-1 max-h-20 overflow-hidden">
+                                            {selectedUserIds.length === 0 ? "Select users..." :
+                                                users.filter(u => selectedUserIds.includes(u.id)).slice(0, 3).map(u => (
+                                                    <Badge key={u.id} variant="secondary" className="mr-1">{u.fullName}</Badge>
+                                                ))
+                                            }
+                                            {selectedUserIds.length > 3 && <Badge variant="secondary">+{selectedUserIds.length - 3} more</Badge>}
+                                        </div>
+                                        <ChevronDown className="h-4 w-4 opacity-50" />
+                                    </div>
+
+                                    {isUserDropdownOpen && (
+                                        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover text-popover-foreground rounded-md border shadow-md">
+                                            <div className="p-2 border-b">
+                                                <div className="flex items-center px-3 border rounded-md">
+                                                    <Search className="h-4 w-4 mr-2 opacity-50" />
+                                                    <input
+                                                        className="flex h-9 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                                                        placeholder="Search by name, email, or phone..."
+                                                        value={userSearch}
+                                                        onChange={(e) => setUserSearch(e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="flex gap-1 mt-2 overflow-x-auto pb-1">
+                                                    <Badge
+                                                        variant={filterType === 'all' ? "default" : "outline"}
+                                                        className="cursor-pointer whitespace-nowrap"
+                                                        onClick={() => setFilterType('all')}
+                                                    >
+                                                        All
+                                                    </Badge>
+                                                    <Badge
+                                                        variant={filterType === 'customer' ? "default" : "outline"}
+                                                        className="cursor-pointer whitespace-nowrap"
+                                                        onClick={() => setFilterType('customer')}
+                                                    >
+                                                        Customers
+                                                    </Badge>
+                                                    <Badge
+                                                        variant={filterType === 'restaurant' ? "default" : "outline"}
+                                                        className="cursor-pointer whitespace-nowrap"
+                                                        onClick={() => setFilterType('restaurant')}
+                                                    >
+                                                        Restaurants
+                                                    </Badge>
+                                                    <Badge
+                                                        variant={filterType === 'delivery_partner' ? "default" : "outline"}
+                                                        className="cursor-pointer whitespace-nowrap"
+                                                        onClick={() => setFilterType('delivery_partner')}
+                                                    >
+                                                        Partners
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                            <div className="max-h-[200px] overflow-auto p-1">
+                                                {users.filter(u => {
+                                                    const matchesSearch = u.fullName?.toLowerCase().includes(userSearch.toLowerCase()) ||
+                                                        u.email?.toLowerCase().includes(userSearch.toLowerCase()) ||
+                                                        u.phoneNumber?.includes(userSearch);
+                                                    const matchesType = filterType === 'all' || u.userType === filterType;
+                                                    return matchesSearch && matchesType;
+                                                }).map(user => (
+                                                    <div
+                                                        key={user.id}
+                                                        className="flex items-center space-x-2 p-2 hover:bg-accent rounded-sm cursor-pointer"
+                                                        onClick={() => toggleUser(user.id)}
+                                                    >
+                                                        <div className={`h-4 w-4 border rounded flex items-center justify-center ${selectedUserIds.includes(user.id) ? "bg-primary border-primary text-primary-foreground" : "border-input"}`}>
+                                                            {selectedUserIds.includes(user.id) && <Check className="h-3 w-3" />}
+                                                        </div>
+                                                        <div className="flex flex-col flex-1">
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-sm font-medium">{user.fullName}</span>
+                                                                <Badge variant="outline" className="text-[10px] h-4 px-1 capitalize">{user.userType?.replace('_', ' ')}</Badge>
+                                                            </div>
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {user.email && <span>{user.email}</span>}
+                                                                {user.email && user.phoneNumber && <span> • </span>}
+                                                                {user.phoneNumber && <span>{user.phoneNumber}</span>}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {users.length === 0 && <div className="p-4 text-center text-sm text-muted-foreground">No users found</div>}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <Button onClick={handleCreate} disabled={targetType === 'specific' && selectedUserIds.length === 0}>
+                                Create Notification
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+
+                <Sheet open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+                    <SheetContent className="w-full sm:max-w-md">
+                        <SheetHeader>
+                            <SheetTitle>Targeted Users</SheetTitle>
+                            <SheetDescription>
+                                {selectedNotification?.target_type === 'specific'
+                                    ? `${selectedNotification?.targets?.length || 0} users selected for this notification`
+                                    : `All ${selectedNotification?.target_type?.replace('all_', '').replace('_', ' ')} will receive this notification`
+                                }
+                            </SheetDescription>
+                        </SheetHeader>
+                        {selectedNotification && (
+                            <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-2">
+
+                                <div className="grid grid-cols-2 gap-4 text-sm mt-4 p-4 bg-muted/30 rounded-lg">
+                                    <div>
+                                        <p className="text-muted-foreground font-medium mb-1">Scheduled For</p>
+                                        <div className="flex items-center gap-2">
+                                            <Calendar className="h-4 w-4 opacity-70" />
+                                            <span>{new Date(selectedNotification.scheduled_at).toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="text-muted-foreground font-medium mb-1">Created By</p>
+                                        <div className="flex items-center gap-2">
+                                            <span className="capitalize">{selectedNotification.created_by_name || 'System/Admin'}</span>
+                                        </div>
+                                    </div>
+                                    <div className="col-span-2">
+                                        <p className="text-muted-foreground font-medium mb-1">Target Audience</p>
+                                        <Badge variant="outline" className="capitalize">
+                                            {selectedNotification.target_type === 'specific' ? 'Specific Users' :
+                                                selectedNotification.target_type?.replace('all_', 'All ').replace('_', ' ') || 'All Users'}
+                                        </Badge>
+                                    </div>
+                                </div>
+
+                                {selectedNotification.target_type === 'specific' && (
+                                    <div className="space-y-2 pt-2">
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="font-medium text-sm">Targeted Users ({selectedNotification.targets?.length || 0})</h4>
+                                        </div>
+                                        <div className="border rounded-md divide-y max-h-[300px] overflow-auto">
+                                            {selectedNotification.targets?.length > 0 ? (
+                                                selectedNotification.targets.map((user: any) => (
+                                                    <div key={user.id} className="p-3 flex items-center justify-between hover:bg-muted/50">
+                                                        <div>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-medium text-sm">{user.fullName}</span>
+                                                                <Badge variant="secondary" className="text-[10px] h-4 px-1 capitalize">
+                                                                    {user.userType?.replace('_', ' ')}
+                                                                </Badge>
+                                                            </div>
+                                                            <div className="text-xs text-muted-foreground mt-0.5">
+                                                                {user.email && <span>{user.email}</span>}
+                                                                {user.email && user.phoneNumber && <span> • </span>}
+                                                                {user.phoneNumber && <span>{user.phoneNumber}</span>}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="p-4 text-center text-muted-foreground text-sm">
+                                                    No specific users found (or fetching...)
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </SheetContent>
+                </Sheet>
+            </div>
+
+            <div className="flex-1 overflow-auto bg-card rounded-xl border shadow-sm">
+                {loading ? (
+                    <div className="flex items-center justify-center h-full">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                ) : notifications.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2">
+                        <Bell className="h-12 w-12 opacity-20" />
+                        <p>No notifications scheduled</p>
+                    </div>
+                ) : (
+                    <div className="divide-y divide-border">
+                        {notifications.map((notification) => (
+                            <motion.div
+                                key={notification.id}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="p-4 hover:bg-muted/50 transition-colors flex items-start justify-between group cursor-pointer"
+                                onClick={() => handleViewDetails(notification)}
+                            >
+                                <div className="space-y-1">
+                                    <h3 className="font-semibold">{notification.title}</h3>
+                                    {notification.description && (
+                                        <p className="text-sm text-muted-foreground">{notification.description}</p>
+                                    )}
+                                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                                        <span className="flex items-center gap-1">
+                                            <Calendar className="h-3 w-3" />
+                                            {new Date(notification.scheduled_at).toLocaleDateString()}
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                            <Clock className="h-3 w-3" />
+                                            {new Date(notification.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                        {notification.created_by_name && (
+                                            <span>Created by: {notification.created_by_name}</span>
+                                        )}
+                                    </div>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                    onClick={() => handleDelete(notification.id)}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div >
+    );
+}
