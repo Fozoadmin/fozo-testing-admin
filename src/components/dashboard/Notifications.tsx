@@ -92,8 +92,10 @@ export function Notifications() {
         }
 
         try {
+            const scheduledAtUTC = new Date(formData.scheduledAt).toISOString();
             await adminApi.createNotification({
                 ...formData,
+                scheduledAt: scheduledAtUTC,
                 targetType,
                 targetUserIds: targetType === 'specific' ? selectedUserIds : undefined
             });
@@ -143,7 +145,7 @@ export function Notifications() {
         setEditFormData({
             title: selectedNotification.title,
             description: selectedNotification.description || "",
-            scheduledAt: selectedNotification.scheduled_at ? new Date(selectedNotification.scheduled_at).toISOString().slice(0, 16) : "",
+            scheduledAt: selectedNotification.scheduled_at ? new Date(selectedNotification.scheduled_at).toLocaleString('sv-SE').replace(' ', 'T').slice(0, 16) : "",
         });
         setEditTargetType(selectedNotification.target_type);
 
@@ -163,8 +165,10 @@ export function Notifications() {
         }
 
         try {
+            const scheduledAtUTC = new Date(editFormData.scheduledAt).toISOString();
             await adminApi.updateNotification(selectedNotification.id, {
                 ...editFormData,
+                scheduledAt: scheduledAtUTC,
                 targetType: editTargetType,
                 targetUserIds: editTargetType === 'specific' ? editSelectedUserIds : undefined
             });
