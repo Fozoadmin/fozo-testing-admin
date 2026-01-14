@@ -9,7 +9,25 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "react-toastify";
+
+type OrderNotificationSettingKey =
+    | "orderConfirmedNotificationTitle"
+    | "orderConfirmedNotificationDescription"
+    | "orderOutForDeliveryNotificationTitle"
+    | "orderOutForDeliveryNotificationDescription"
+    | "orderDeliveredNotificationTitle"
+    | "orderDeliveredNotificationDescription"
+    | "orderCancelledByAdminNotificationTitle"
+    | "orderCancelledByAdminNotificationDescription"
+    | "orderCancelledByRestaurantNotificationTitle"
+    | "orderCancelledByRestaurantNotificationDescription"
+    | "orderRefundedNotificationTitle"
+    | "orderRefundedNotificationDescription";
+
+type OrderNotificationSettings = Record<OrderNotificationSettingKey, string>;
 
 export function Notifications() {
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -37,6 +55,11 @@ export function Notifications() {
     const [editTargetType, setEditTargetType] = useState<"all" | "specific" | "all_customers" | "all_restaurants" | "all_delivery_partners">("all");
     const [editSelectedUserIds, setEditSelectedUserIds] = useState<string[]>([]);
 
+    // Order notification template settings (from settings model)
+    const [orderNotificationSettings, setOrderNotificationSettings] = useState<OrderNotificationSettings | null>(null);
+    const [originalOrderNotificationSettings, setOriginalOrderNotificationSettings] = useState<OrderNotificationSettings | null>(null);
+    const [ordersDropdownOpen, setOrdersDropdownOpen] = useState<boolean>(false);
+
     const fetchUsers = async () => {
         try {
             const data = await adminApi.getAllUsers();
@@ -51,6 +74,112 @@ export function Notifications() {
             fetchUsers();
         }
     }, [targetType, editTargetType]);
+
+    const orderNotificationFields: {
+        keyPrefix: string;
+        titleKey: OrderNotificationSettingKey;
+        descriptionKey: OrderNotificationSettingKey;
+        label: string;
+    }[] = [
+        {
+            keyPrefix: "orderConfirmed",
+            titleKey: "orderConfirmedNotificationTitle",
+            descriptionKey: "orderConfirmedNotificationDescription",
+            label: "Confirmed",
+        },
+        {
+            keyPrefix: "orderOutForDelivery",
+            titleKey: "orderOutForDeliveryNotificationTitle",
+            descriptionKey: "orderOutForDeliveryNotificationDescription",
+            label: "Out for Delivery",
+        },
+        {
+            keyPrefix: "orderDelivered",
+            titleKey: "orderDeliveredNotificationTitle",
+            descriptionKey: "orderDeliveredNotificationDescription",
+            label: "Delivered",
+        },
+        {
+            keyPrefix: "orderCancelledByAdmin",
+            titleKey: "orderCancelledByAdminNotificationTitle",
+            descriptionKey: "orderCancelledByAdminNotificationDescription",
+            label: "Cancelled by Admin",
+        },
+        {
+            keyPrefix: "orderCancelledByRestaurant",
+            titleKey: "orderCancelledByRestaurantNotificationTitle",
+            descriptionKey: "orderCancelledByRestaurantNotificationDescription",
+            label: "Cancelled by Restaurant",
+        },
+        {
+            keyPrefix: "orderRefunded",
+            titleKey: "orderRefundedNotificationTitle",
+            descriptionKey: "orderRefundedNotificationDescription",
+            label: "Refunded",
+        },
+    ];
+
+    const fetchOrderNotificationSettings = async () => {
+        try {
+            const allSettings = await adminApi.getSettings();
+
+            const subset: OrderNotificationSettings = {
+                orderConfirmedNotificationTitle: allSettings.orderConfirmedNotificationTitle || "",
+                orderConfirmedNotificationDescription: allSettings.orderConfirmedNotificationDescription || "",
+                orderOutForDeliveryNotificationTitle: allSettings.orderOutForDeliveryNotificationTitle || "",
+                orderOutForDeliveryNotificationDescription: allSettings.orderOutForDeliveryNotificationDescription || "",
+                orderDeliveredNotificationTitle: allSettings.orderDeliveredNotificationTitle || "",
+                orderDeliveredNotificationDescription: allSettings.orderDeliveredNotificationDescription || "",
+                orderCancelledByAdminNotificationTitle: allSettings.orderCancelledByAdminNotificationTitle || "",
+                orderCancelledByAdminNotificationDescription: allSettings.orderCancelledByAdminNotificationDescription || "",
+                orderCancelledByRestaurantNotificationTitle: allSettings.orderCancelledByRestaurantNotificationTitle || "",
+                orderCancelledByRestaurantNotificationDescription: allSettings.orderCancelledByRestaurantNotificationDescription || "",
+                orderRefundedNotificationTitle: allSettings.orderRefundedNotificationTitle || "",
+                orderRefundedNotificationDescription: allSettings.orderRefundedNotificationDescription || "",
+            };
+
+            setOrderNotificationSettings(subset);
+            setOriginalOrderNotificationSettings({ ...subset });
+        } catch (error) {
+            console.error("Error fetching order notification settings:", error);
+            toast.error("Failed to load order notification templates");
+        }
+    };
+
+    const handleOrderNotificationChange = (key: OrderNotificationSettingKey, value: string) => {
+        if (!orderNotificationSettings) return;
+        setOrderNotificationSettings({
+            ...orderNotificationSettings,
+            [key]: value,
+        });
+    };
+
+    const handleSaveOrderNotifications = async () => {
+        if (!orderNotificationSettings || !originalOrderNotificationSettings) return;
+
+        const changedSettings: Record<string, string> = {};
+        (Object.keys(orderNotificationSettings) as OrderNotificationSettingKey[]).forEach((key) => {
+            const currentValue = orderNotificationSettings[key] || "";
+            const originalValue = originalOrderNotificationSettings[key] || "";
+            if (currentValue !== originalValue) {
+                changedSettings[key] = currentValue;
+            }
+        });
+
+        if (Object.keys(changedSettings).length === 0) {
+            toast.info("No changes to save for order notifications");
+            return;
+        }
+
+        try {
+            await adminApi.updateSettings(changedSettings);
+            toast.success("Order notification templates saved");
+            setOriginalOrderNotificationSettings({ ...orderNotificationSettings });
+        } catch (error: any) {
+            console.error("Error saving order notification settings:", error);
+            toast.error(error.message || "Failed to save order notification templates");
+        }
+    };
 
     const toggleUser = (userId: string) => {
         setSelectedUserIds(prev =>
@@ -83,6 +212,7 @@ export function Notifications() {
 
     useEffect(() => {
         fetchNotifications();
+        fetchOrderNotificationSettings();
     }, []);
 
     const handleCreate = async () => {
@@ -576,6 +706,75 @@ export function Notifications() {
                     </SheetContent>
                 </Sheet>
             </div>
+
+            {/* Orders Notifications dropdown using Settings model */}
+            <Card className="bg-card border shadow-sm">
+                <CardHeader
+                    className="flex flex-row items-center justify-between cursor-pointer"
+                    onClick={() => setOrdersDropdownOpen((prev) => !prev)}
+                >
+                    <div className="flex flex-col gap-1">
+                        <CardTitle className="text-base md:text-lg">Orders Notifications</CardTitle>
+                        <p className="text-xs md:text-sm text-muted-foreground">
+                            Configure default title and description templates for order status notifications
+                        </p>
+                    </div>
+                    <ChevronDown
+                        className={`h-4 w-4 transition-transform ${ordersDropdownOpen ? "rotate-180" : ""}`}
+                    />
+                </CardHeader>
+                {ordersDropdownOpen && (
+                    <CardContent className="space-y-4">
+                        {orderNotificationSettings ? (
+                            <>
+                                {orderNotificationFields.map((field, idx) => (
+                                    <div key={field.keyPrefix} className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-sm font-semibold">{field.label}</h3>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-medium text-muted-foreground">
+                                                    Title
+                                                </label>
+                                                <Input
+                                                    value={orderNotificationSettings[field.titleKey] || ""}
+                                                    onChange={(e) =>
+                                                        handleOrderNotificationChange(field.titleKey, e.target.value)
+                                                    }
+                                                    placeholder={`e.g. ${field.label}`}
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-medium text-muted-foreground">
+                                                    Description
+                                                </label>
+                                                <Input
+                                                    value={orderNotificationSettings[field.descriptionKey] || ""}
+                                                    onChange={(e) =>
+                                                        handleOrderNotificationChange(field.descriptionKey, e.target.value)
+                                                    }
+                                                    placeholder={`Your order is ${field.label.toLowerCase()}...`}
+                                                />
+                                            </div>
+                                        </div>
+                                        {idx !== orderNotificationFields.length - 1 && (
+                                            <Separator className="mt-2" />
+                                        )}
+                                    </div>
+                                ))}
+                                <div className="flex justify-end pt-2">
+                                    <Button size="sm" onClick={handleSaveOrderNotifications}>
+                                        Save Order Notification Templates
+                                    </Button>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="text-sm text-muted-foreground">Loading order notification templates...</div>
+                        )}
+                    </CardContent>
+                )}
+            </Card>
 
             <div className="flex-1 overflow-auto bg-card rounded-xl border shadow-sm">
                 {loading ? (
