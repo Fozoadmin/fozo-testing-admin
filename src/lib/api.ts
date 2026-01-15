@@ -76,7 +76,13 @@ export async function apiRequest<T>(
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
       throw new Error(error.message || `HTTP ${response.status}`);
     }
-    return response.json();
+    return response.json().then(json => {
+      // If the response follows the { success, data, message } pattern, return just the data
+      if (json && typeof json === 'object' && 'success' in json && 'data' in json && json.success === true) {
+        return json.data;
+      }
+      return json;
+    });
   }).finally(() => {
     // Remove from cache after completion
     requestCache.delete(cacheKey);
@@ -394,7 +400,8 @@ export const adminApi = {
       throw new Error(error.message || `HTTP ${response.status}`);
     }
 
-    return response.json();
+    const json = await response.json();
+    return json.success ? json.data : json;
   },
   uploadSurpriseBagImage: async (file: File): Promise<{ imageUrl: string }> => {
     const formData = new FormData();
@@ -420,6 +427,7 @@ export const adminApi = {
       throw new Error(error.message || `HTTP ${response.status}`);
     }
 
-    return response.json();
+    const json = await response.json();
+    return json.success ? json.data : json;
   },
 };
