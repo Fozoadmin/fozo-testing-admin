@@ -10,4 +10,4 @@ export { SurpriseBags } from './SurpriseBags';
 export { Coupons } from './Coupons';
 export { Finance } from './Finance';
 export { Settings } from './Settings';
-
+export { Notifications } from './Notifications';

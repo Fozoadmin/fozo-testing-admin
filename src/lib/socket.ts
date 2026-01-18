@@ -42,7 +42,6 @@ export function getSocket(): Socket | null {
   const token = getAuthToken();
   
   if (!token) {
-    console.warn('Socket: No auth token found, cannot connect');
     return null;
   }
 
@@ -60,8 +59,6 @@ export function getSocket(): Socket | null {
   isConnecting = true;
   const socketUrl = getSocketUrl();
   
-  console.log(`Socket: Connecting to ${socketUrl}`);
-  
   socketInstance = io(socketUrl, {
     auth: {
       token: token,
@@ -73,17 +70,15 @@ export function getSocket(): Socket | null {
   });
 
   socketInstance.on('connect', () => {
-    console.log('Socket: Connected successfully');
     isConnecting = false;
   });
 
-  socketInstance.on('disconnect', (reason) => {
-    console.log('Socket: Disconnected', reason);
+  socketInstance.on('disconnect', () => {
     isConnecting = false;
   });
 
   socketInstance.on('connect_error', (error) => {
-    console.error('Socket: Connection error', error);
+    console.error('Socket: Connection error', error.message);
     isConnecting = false;
   });
 
@@ -95,7 +90,6 @@ export function getSocket(): Socket | null {
  */
 export function disconnectSocket(): void {
   if (socketInstance) {
-    console.log('Socket: Disconnecting...');
     socketInstance.disconnect();
     socketInstance = null;
     isConnecting = false;
@@ -115,7 +109,6 @@ export function subscribeToEvent<T = any>(
   const socket = getSocket();
   
   if (!socket) {
-    console.warn(`Socket: Cannot subscribe to ${eventType}, socket not available`);
     return null;
   }
 
