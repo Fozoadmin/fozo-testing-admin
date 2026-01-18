@@ -312,6 +312,52 @@ export const adminApi = {
       method: 'PUT',
       body: JSON.stringify(settingsData),
     }),
+
+  // Coupons Management
+  getAllCoupons: (restaurantId?: string) => {
+    const params = new URLSearchParams();
+    if (restaurantId) params.append('restaurantId', restaurantId);
+    return apiRequest<{ coupons: any[] }>(`/admin/coupons${params.toString() ? `?${params.toString()}` : ''}`);
+  },
+  createCoupon: (body: {
+    code: string;
+    discountType: 'flat' | 'percentage';
+    discountValue: number;
+    restaurantId?: string | null;
+    minOrderValue?: number;
+    maxDiscountAmount?: number | null;
+    usageLimit?: number;
+    expiresAt?: string | null; // ISO string
+    isActive?: boolean;
+  }) => apiRequest<{ message: string; coupon: any }>(
+    '/admin/coupons',
+    { method: 'POST', body: JSON.stringify(body) }
+  ),
+  updateCoupon: (couponId: string, body: Partial<{
+    code: string;
+    discountType: 'flat' | 'percentage';
+    discountValue: number;
+    restaurantId: string | null;
+    minOrderValue: number;
+    maxDiscountAmount: number | null;
+    usageLimit: number;
+    expiresAt: string | null;
+    isActive: boolean;
+  }>) =>
+    apiRequest<{ message: string; coupon: any }>(
+      `/admin/coupons/${couponId}`,
+      { method: 'PUT', body: JSON.stringify(body) }
+    ),
+  setCouponActive: (couponId: string, isActive: boolean) =>
+    apiRequest<{ message: string; coupon: any }>(
+      `/admin/coupons/${couponId}`,
+      { method: 'PUT', body: JSON.stringify({ isActive }) }
+    ),
+  deleteCoupon: (couponId: string) =>
+    apiRequest<{ message: string; coupon: any }>(
+      `/admin/coupons/${couponId}`,
+      { method: 'DELETE' }
+    ),
   // Finance Management
   getRestaurantFinancialSummary: (restaurantIds?: string[], startDate?: string, endDate?: string) => {
     const params = new URLSearchParams();
