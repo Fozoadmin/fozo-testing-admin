@@ -196,8 +196,7 @@ export function Orders() {
 
   // Listen for new orders via socket
   useEffect(() => {
-    const unsubscribe = subscribeToEvent<Order>(SOCKET_EVENTS.NEW_ORDER, (newOrder: Order) => {
-      console.log('Socket: Received new_order event', newOrder);
+    const unsubscribe = subscribeToEvent<Order>(SOCKET_EVENTS.NEW_ORDER, () => {
       // Refetch all orders to ensure we have the latest data
       adminApi.getAllOrders()
         .then((data) => {

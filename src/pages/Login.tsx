@@ -36,7 +36,6 @@ export default function Login() {
       login(data.user, data.accessToken)
       nav("/dashboard")
     } catch (err: any) {
-      console.error('Login error:', err)
       setError(err.message || "Invalid username or password. Please try again.")
     } finally {
       setLoading(false)

@@ -34,7 +34,7 @@ export async function apiRequest<T>(
 
   // Create cache key
   const cacheKey = `${endpoint}-${JSON.stringify(fetchOptions.body || {})}`;
-  
+
   // Check if request is already in progress
   if (requestCache.has(cacheKey)) {
     return requestCache.get(cacheKey)!;
@@ -61,17 +61,17 @@ export async function apiRequest<T>(
     if (response.status === 401 || response.status === 403) {
       const errorData = await response.json().catch(() => ({}));
       const errorMessage = errorData.message?.toLowerCase() || '';
-      
-      if (errorMessage.includes('jwt expired') || 
-          errorMessage.includes('expired') || 
-          errorMessage.includes('invalid') ||
-          errorMessage.includes('unauthorized') ||
-          errorMessage.includes('verification failed')) {
+
+      if (errorMessage.includes('jwt expired') ||
+        errorMessage.includes('expired') ||
+        errorMessage.includes('invalid') ||
+        errorMessage.includes('unauthorized') ||
+        errorMessage.includes('verification failed')) {
         handleTokenExpiration();
         throw new Error('Token expired. Please login again.');
       }
     }
-    
+
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
       throw new Error(error.message || `HTTP ${response.status}`);
@@ -84,7 +84,7 @@ export async function apiRequest<T>(
 
   // Store the promise in cache
   requestCache.set(cacheKey, requestPromise);
-  
+
   return requestPromise;
 }
 
@@ -96,7 +96,7 @@ export const adminApi = {
     if (search) params.append('search', search);
     return apiRequest<any[]>(`/admin/users${params.toString() ? `?${params.toString()}` : ''}`);
   },
-  getAllRestaurants: (search?: string) => 
+  getAllRestaurants: (search?: string) =>
     apiRequest<any[]>(`/admin/restaurants${search ? `?search=${encodeURIComponent(search)}` : ''}`),
   getRestaurantById: (id: string) => apiRequest<any>(`/admin/restaurants/${id}`),
   getAllCuisines: () => apiRequest<Array<{ id: number; name: string }>>('/admin/cuisines'),
@@ -142,7 +142,7 @@ export const adminApi = {
     if (deliveryPartnerId) params.append('deliveryPartnerId', deliveryPartnerId);
     return apiRequest<{ orders: any[] }>(`/admin/orders${params.toString() ? `?${params.toString()}` : ''}`);
   },
-  getAllDeliveryPartners: (status?: string, isOnline?: string) => 
+  getAllDeliveryPartners: (status?: string, isOnline?: string) =>
     apiRequest<any[]>(`/admin/delivery-partners${status ? `?status=${status}` : ''}${isOnline ? `?isOnline=${isOnline}` : ''}`),
   // Note: Delivery partners use OTP-based auth, so email and password are optional
   onboardDeliveryPartner: (body: {
@@ -199,12 +199,12 @@ export const adminApi = {
     `/bags/${bagId}`,
     { method: 'PUT', body: JSON.stringify(body) }
   ),
-  deleteSurpriseBag: (bagId: string, targetRestaurantId?: string) => 
+  deleteSurpriseBag: (bagId: string, targetRestaurantId?: string) =>
     apiRequest<{ message: string }>(
       `/bags/${bagId}`,
-      { 
-        method: 'DELETE', 
-        body: JSON.stringify({ targetRestaurantId }) 
+      {
+        method: 'DELETE',
+        body: JSON.stringify({ targetRestaurantId })
       }
     ),
   // Auth/Registration
@@ -243,16 +243,16 @@ export const adminApi = {
     method: 'PUT',
     body: JSON.stringify({ status, documentsVerified }),
   }),
-  updateRestaurantCuisines: (restaurantId: string, cuisineIds: number[]) => 
+  updateRestaurantCuisines: (restaurantId: string, cuisineIds: number[]) =>
     apiRequest<{ message: string }>(`/admin/restaurants/${restaurantId}/cuisines`, {
       method: 'PUT',
       body: JSON.stringify({ cuisineIds }),
     }),
-  deleteRestaurant: (restaurantId: string) => 
+  deleteRestaurant: (restaurantId: string) =>
     apiRequest<{ message: string }>(`/admin/restaurants/${restaurantId}`, {
       method: 'DELETE',
     }),
-  deleteUser: (userId: string) => 
+  deleteUser: (userId: string) =>
     apiRequest<{ message: string }>(`/admin/users/${userId}`, {
       method: 'DELETE',
     }),
@@ -312,6 +312,52 @@ export const adminApi = {
       method: 'PUT',
       body: JSON.stringify(settingsData),
     }),
+
+  // Coupons Management
+  getAllCoupons: (restaurantId?: string) => {
+    const params = new URLSearchParams();
+    if (restaurantId) params.append('restaurantId', restaurantId);
+    return apiRequest<{ coupons: any[] }>(`/admin/coupons${params.toString() ? `?${params.toString()}` : ''}`);
+  },
+  createCoupon: (body: {
+    code: string;
+    discountType: 'flat' | 'percentage';
+    discountValue: number;
+    restaurantId?: string | null;
+    minOrderValue?: number;
+    maxDiscountAmount?: number | null;
+    usageLimit?: number;
+    expiresAt?: string | null; // ISO string
+    isActive?: boolean;
+  }) => apiRequest<{ message: string; coupon: any }>(
+    '/admin/coupons',
+    { method: 'POST', body: JSON.stringify(body) }
+  ),
+  updateCoupon: (couponId: string, body: Partial<{
+    code: string;
+    discountType: 'flat' | 'percentage';
+    discountValue: number;
+    restaurantId: string | null;
+    minOrderValue: number;
+    maxDiscountAmount: number | null;
+    usageLimit: number;
+    expiresAt: string | null;
+    isActive: boolean;
+  }>) =>
+    apiRequest<{ message: string; coupon: any }>(
+      `/admin/coupons/${couponId}`,
+      { method: 'PUT', body: JSON.stringify(body) }
+    ),
+  setCouponActive: (couponId: string, isActive: boolean) =>
+    apiRequest<{ message: string; coupon: any }>(
+      `/admin/coupons/${couponId}`,
+      { method: 'PUT', body: JSON.stringify({ isActive }) }
+    ),
+  deleteCoupon: (couponId: string) =>
+    apiRequest<{ message: string; coupon: any }>(
+      `/admin/coupons/${couponId}`,
+      { method: 'DELETE' }
+    ),
   // Finance Management
   getRestaurantFinancialSummary: (restaurantIds?: string[], startDate?: string, endDate?: string) => {
     const params = new URLSearchParams();
@@ -339,57 +385,87 @@ export const adminApi = {
     }
     return apiRequest<any[]>(`/admin/finance/delivery-partners${params.toString() ? `?${params.toString()}` : ''}`);
   },
+
+  // Notification Management
+  getAllNotifications: () => apiRequest<any[]>('/admin/notifications'),
+  getNotificationById: (id: string | number) => apiRequest<any>(`/admin/notifications/${id}`),
+  createNotification: (body: {
+    title: string;
+    description: string;
+    scheduledAt: string;
+    targetType?: 'all' | 'specific' | 'all_customers' | 'all_restaurants' | 'all_delivery_partners';
+    targetUserIds?: string[];
+  }) =>
+    apiRequest<{ message: string; notification: any }>('/admin/notifications', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  updateNotification: (id: string | number, body: {
+    title: string;
+    description: string;
+    scheduledAt: string;
+    targetType?: 'all' | 'specific' | 'all_customers' | 'all_restaurants' | 'all_delivery_partners';
+    targetUserIds?: string[];
+  }) =>
+    apiRequest<{ message: string; notification: any }>(`/admin/notifications/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+  deleteNotification: (id: string | number) =>
+    apiRequest<{ message: string }>(`/admin/notifications/${id}`, {
+      method: 'DELETE',
+    }),
   // Image Upload
   uploadRestaurantImage: async (file: File): Promise<{ imageUrl: string }> => {
     const formData = new FormData();
     formData.append('image', file);
-    
+
     const token = getAuthToken();
     const headers: HeadersInit = {
       'x-api-key': API_KEY,
     };
-    
+
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     const response = await fetch(`${API_BASE_URL}/upload/restaurant`, {
       method: 'POST',
       headers,
       body: formData,
     });
-    
+
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Upload failed' }));
       throw new Error(error.message || `HTTP ${response.status}`);
     }
-    
+
     return response.json();
   },
   uploadSurpriseBagImage: async (file: File): Promise<{ imageUrl: string }> => {
     const formData = new FormData();
     formData.append('image', file);
-    
+
     const token = getAuthToken();
     const headers: HeadersInit = {
       'x-api-key': API_KEY,
     };
-    
+
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     const response = await fetch(`${API_BASE_URL}/upload/surprise-bag`, {
       method: 'POST',
       headers,
       body: formData,
     });
-    
+
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Upload failed' }));
       throw new Error(error.message || `HTTP ${response.status}`);
     }
-    
+
     return response.json();
   },
 };

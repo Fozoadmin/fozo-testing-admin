@@ -9,6 +9,8 @@ import {
   Users,
   IndianRupee,
   Cog,
+  Bell,
+  Ticket,
 } from "lucide-react";
 // import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -20,8 +22,10 @@ import {
   DeliveryPartners,
   Customers,
   SurpriseBags,
+  Coupons,
   Finance,
   Settings,
+  Notifications,
 } from "@/components/dashboard";
 
 // const cities = ["Mumbai", "Bengaluru", "Delhi", "Hyderabad", "Pune", "Chennai"];
@@ -59,9 +63,8 @@ export default function Dashboard() {
               setActive("overview");
               setMobileSidebarOpen(false);
             }}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${
-              active === "overview" ? "bg-primary/10 text-primary" : "hover:bg-muted"
-            }`}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${active === "overview" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+              }`}
           >
             <LayoutDashboard className="h-4 w-4" />
             Overview
@@ -71,9 +74,8 @@ export default function Dashboard() {
               setActive("orders");
               setMobileSidebarOpen(false);
             }}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${
-              active === "orders" ? "bg-primary/10 text-primary" : "hover:bg-muted"
-            }`}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${active === "orders" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+              }`}
           >
             <ShoppingBag className="h-4 w-4" />
             Orders
@@ -83,9 +85,8 @@ export default function Dashboard() {
               setActive("restaurants");
               setMobileSidebarOpen(false);
             }}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${
-              active === "restaurants" ? "bg-primary/10 text-primary" : "hover:bg-muted"
-            }`}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${active === "restaurants" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+              }`}
           >
             <UtensilsCrossed className="h-4 w-4" />
             Restaurants
@@ -95,9 +96,8 @@ export default function Dashboard() {
               setActive("riders");
               setMobileSidebarOpen(false);
             }}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${
-              active === "riders" ? "bg-primary/10 text-primary" : "hover:bg-muted"
-            }`}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${active === "riders" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+              }`}
           >
             <Bike className="h-4 w-4" />
             Delivery Partners
@@ -107,21 +107,31 @@ export default function Dashboard() {
               setActive("bags");
               setMobileSidebarOpen(false);
             }}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${
-              active === "bags" ? "bg-primary/10 text-primary" : "hover:bg-muted"
-            }`}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${active === "bags" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+              }`}
           >
             <ShoppingBag className="h-4 w-4" />
             Surprise Bags
           </button>
           <button
             onClick={() => {
-              setActive("customers");
+              setActive("coupons");
               setMobileSidebarOpen(false);
             }}
             className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${
-              active === "customers" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+              active === "coupons" ? "bg-primary/10 text-primary" : "hover:bg-muted"
             }`}
+          >
+            <Ticket className="h-4 w-4" />
+            Coupons
+          </button>
+          <button
+            onClick={() => {
+              setActive("customers");
+              setMobileSidebarOpen(false);
+            }}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${active === "customers" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+              }`}
           >
             <Users className="h-4 w-4" />
             Customers
@@ -131,21 +141,30 @@ export default function Dashboard() {
               setActive("finance");
               setMobileSidebarOpen(false);
             }}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${
-              active === "finance" ? "bg-primary/10 text-primary" : "hover:bg-muted"
-            }`}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${active === "finance" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+              }`}
           >
             <IndianRupee className="h-4 w-4" />
             Finance
           </button>
           <button
             onClick={() => {
+              setActive("notifications");
+              setMobileSidebarOpen(false);
+            }}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${active === "notifications" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+              }`}
+          >
+            <Bell className="h-4 w-4" />
+            Notifications
+          </button>
+          <button
+            onClick={() => {
               setActive("settings");
               setMobileSidebarOpen(false);
             }}
-            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${
-              active === "settings" ? "bg-primary/10 text-primary" : "hover:bg-muted"
-            }`}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${active === "settings" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+              }`}
           >
             <Cog className="h-4 w-4" />
             Settings
@@ -187,6 +206,7 @@ export default function Dashboard() {
               <TabsTrigger value="restaurants" />
               <TabsTrigger value="riders" />
             <TabsTrigger value="bags" />
+            <TabsTrigger value="coupons" />
             <TabsTrigger value="customers" />
             <TabsTrigger value="finance" />
             <TabsTrigger value="settings" />
@@ -200,8 +220,10 @@ export default function Dashboard() {
             {active === "restaurants" && <Restaurants />}
             {active === "riders" && <DeliveryPartners />}
             {active === "bags" && <SurpriseBags />}
+            {active === "coupons" && <Coupons />}
             {active === "customers" && <Customers />}
             {active === "finance" && <Finance />}
+            {active === "notifications" && <Notifications />}
             {active === "settings" && <Settings />}
           </div>
         </main>
