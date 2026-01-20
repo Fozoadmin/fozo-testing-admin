@@ -10,6 +10,7 @@ import {
   IndianRupee,
   Cog,
   Bell,
+  Ticket,
 } from "lucide-react";
 // import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -21,6 +22,7 @@ import {
   DeliveryPartners,
   Customers,
   SurpriseBags,
+  Coupons,
   Finance,
   Settings,
   Notifications,
@@ -113,6 +115,18 @@ export default function Dashboard() {
           </button>
           <button
             onClick={() => {
+              setActive("coupons");
+              setMobileSidebarOpen(false);
+            }}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${
+              active === "coupons" ? "bg-primary/10 text-primary" : "hover:bg-muted"
+            }`}
+          >
+            <Ticket className="h-4 w-4" />
+            Coupons
+          </button>
+          <button
+            onClick={() => {
               setActive("customers");
               setMobileSidebarOpen(false);
             }}
@@ -191,10 +205,11 @@ export default function Dashboard() {
               <TabsTrigger value="orders" />
               <TabsTrigger value="restaurants" />
               <TabsTrigger value="riders" />
-              <TabsTrigger value="bags" />
-              <TabsTrigger value="customers" />
-              <TabsTrigger value="finance" />
-              <TabsTrigger value="settings" />
+            <TabsTrigger value="bags" />
+            <TabsTrigger value="coupons" />
+            <TabsTrigger value="customers" />
+            <TabsTrigger value="finance" />
+            <TabsTrigger value="settings" />
             </TabsList>
           </Tabs>
 
@@ -205,6 +220,7 @@ export default function Dashboard() {
             {active === "restaurants" && <Restaurants />}
             {active === "riders" && <DeliveryPartners />}
             {active === "bags" && <SurpriseBags />}
+            {active === "coupons" && <Coupons />}
             {active === "customers" && <Customers />}
             {active === "finance" && <Finance />}
             {active === "notifications" && <Notifications />}

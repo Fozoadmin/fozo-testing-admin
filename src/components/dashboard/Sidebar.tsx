@@ -7,6 +7,7 @@ import {
   IndianRupee,
   Cog,
   Bell,
+  Ticket,
 } from "lucide-react";
 
 type SidebarProps = {
@@ -21,6 +22,7 @@ export function Sidebar({ active, setActive }: SidebarProps) {
     { key: "restaurants", label: "Restaurants", icon: UtensilsCrossed },
     { key: "riders", label: "Delivery Partners", icon: Bike },
     { key: "bags", label: "Surprise Bags", icon: ShoppingBag },
+    { key: "coupons", label: "Coupons", icon: Ticket },
     { key: "customers", label: "Customers", icon: Users },
     { key: "finance", label: "Finance", icon: IndianRupee },
     { key: "notifications", label: "Notifications", icon: Bell },
