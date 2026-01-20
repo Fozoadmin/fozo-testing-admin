@@ -170,7 +170,7 @@ export const adminApi = {
     body: JSON.stringify({ status, documentsVerified }),
   }),
 
-  updateRestaurantCuisines: (restaurantId: string, cuisineIds: string[]) =>
+  updateRestaurantCuisines: (restaurantId: string, cuisineIds: (string | number)[]) =>
     apiRequest<any>(`/admin/restaurants/${restaurantId}/cuisines`, {
       method: 'PUT',
       body: JSON.stringify({ cuisineIds }),
