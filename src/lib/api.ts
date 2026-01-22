@@ -72,11 +72,18 @@ export async function apiRequest<T>(
       }
     }
 
-    if (!response.ok) {
+    if (!response.status || response.status >= 400) {
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
       throw new Error(error.message || `HTTP ${response.status}`);
     }
-    return response.json();
+
+    return response.json().then(json => {
+      // If the response follows the { success, data, message } pattern, return just the data
+      if (json && typeof json === 'object' && 'success' in json && 'data' in json && json.success === true) {
+        return json.data;
+      }
+      return json;
+    });
   }).finally(() => {
     // Remove from cache after completion
     requestCache.delete(cacheKey);
@@ -100,141 +107,60 @@ export const adminApi = {
     apiRequest<any[]>(`/admin/restaurants${search ? `?search=${encodeURIComponent(search)}` : ''}`),
   getRestaurantById: (id: string) => apiRequest<any>(`/admin/restaurants/${id}`),
   getAllCuisines: () => apiRequest<Array<{ id: number; name: string }>>('/admin/cuisines'),
-  // Onboard new restaurant (single transaction)
-  onboardRestaurant: (body: {
-    phoneNumber?: string;
-    email?: string;
-    password: string;
-    fullName: string;
-    userType: 'restaurant';
-    restaurantName: string;
-    contactPersonName?: string;
-    fssaiLicenseNumber?: string;
-    gstinNumber?: string;
-    bankAccountDetails?: {
-      accountNumber: string;
-      ifscCode: string;
-      accountHolderName: string;
-      bankName: string;
-    };
-    primaryLocation: {
-      locationName?: string;
-      address: string;
-      latitude: number;
-      longitude: number;
-      contactNumber?: string;
-      email?: string;
-    };
-    operatingHours: Array<{
-      dayOfWeek: string;
-      openTime: string | null;
-      closeTime: string | null;
-      isClosed: boolean;
-    }>;
-    restaurantCuisineIds: number[];
-  }) => apiRequest<{ message: string; restaurantId: string; status: string }>(
+
+  onboardRestaurant: (body: any) => apiRequest<any>(
     '/admin/restaurants',
     { method: 'POST', body: JSON.stringify(body) }
   ),
+
   getAllOrders: (status?: string, deliveryPartnerId?: string) => {
     const params = new URLSearchParams();
     if (status) params.append('status', status);
     if (deliveryPartnerId) params.append('deliveryPartnerId', deliveryPartnerId);
     return apiRequest<{ orders: any[] }>(`/admin/orders${params.toString() ? `?${params.toString()}` : ''}`);
   },
-  getAllDeliveryPartners: (status?: string, isOnline?: string) =>
-    apiRequest<any[]>(`/admin/delivery-partners${status ? `?status=${status}` : ''}${isOnline ? `?isOnline=${isOnline}` : ''}`),
-  // Note: Delivery partners use OTP-based auth, so email and password are optional
-  onboardDeliveryPartner: (body: {
-    phoneNumber: string; // Required - used for OTP authentication
-    email?: string; // Optional
-    password?: string; // Optional - DPs typically use OTP
-    fullName: string;
-    userType: 'delivery_partner';
-    vehicleType: 'bicycle' | 'scooter' | 'motorcycle' | 'car';
-    licenseNumber?: string;
-    bankAccountDetails?: {
-      accountNumber: string;
-      ifscCode: string;
-      accountHolderName: string;
-      bankName: string;
-    };
-  }) => apiRequest<{ message: string; userId: string; status: string }>(
+
+  getAllDeliveryPartners: (status?: string, isOnline?: string) => {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (isOnline) params.append('isOnline', isOnline);
+    return apiRequest<any[]>(`/admin/delivery-partners?${params.toString()}`);
+  },
+
+  onboardDeliveryPartner: (body: any) => apiRequest<any>(
     '/admin/delivery-partners',
     { method: 'POST', body: JSON.stringify(body) }
   ),
+
   getAllSurpriseBags: () => apiRequest<any[]>('/admin/bags'),
   getGroupedSurpriseBags: () => apiRequest<any[]>('/admin/bags/grouped'),
-  createSurpriseBag: (body: {
-    targetRestaurantId: string; // admin creating for a specific restaurant
-    bagName: string;
-    denominationValue: number;
-    actualWorth: number;
-    description?: string;
-    imageUrl?: string;
-    quantityAvailable: number;
-    pickupStartTime?: string; // HH:MM:SS
-    pickupEndTime?: string;   // HH:MM:SS
-    availableDate?: string;  // YYYY-MM-DD
-    isActive?: boolean;
-    isVegetarian?: boolean;
-  }) => apiRequest<{ message: string; bag: any }>(
+
+  createSurpriseBag: (body: any) => apiRequest<any>(
     '/bags',
     { method: 'POST', body: JSON.stringify(body) }
   ),
-  updateSurpriseBag: (bagId: string, body: {
-    targetRestaurantId?: string; // admin updating for a specific restaurant
-    bagName?: string;
-    denominationValue?: number;
-    actualWorth?: number;
-    description?: string;
-    imageUrl?: string;
-    quantityAvailable?: number;
-    pickupStartTime?: string; // HH:MM:SS
-    pickupEndTime?: string;   // HH:MM:SS
-    availableDate?: string;  // YYYY-MM-DD
-    isActive?: boolean;
-    isVegetarian?: boolean;
-  }) => apiRequest<{ message: string; bag: any }>(
+
+  updateSurpriseBag: (bagId: string, body: any) => apiRequest<any>(
     `/bags/${bagId}`,
     { method: 'PUT', body: JSON.stringify(body) }
   ),
+
   deleteSurpriseBag: (bagId: string, targetRestaurantId?: string) =>
-    apiRequest<{ message: string }>(
+    apiRequest<any>(
       `/bags/${bagId}`,
       {
         method: 'DELETE',
         body: JSON.stringify({ targetRestaurantId })
       }
     ),
-  // Auth/Registration
-  registerPasswordUser: (body: {
-    phoneNumber?: string;
-    email?: string;
-    password: string;
-    userType: 'restaurant' | 'delivery_partner';
-    fullName: string;
-  }) => apiRequest<{ message: string; userId: string }>(
-    '/auth/register-password',
-    { method: 'POST', body: JSON.stringify(body), requireAuth: false }
-  ),
+
   // Restaurant Admin Updates
-  updateRestaurantProfile: (
-    restaurantId: string,
-    profileData: {
-      restaurantName?: string;
-      contactPersonName?: string;
-      fssaiLicenseNumber?: string;
-      gstinNumber?: string;
-      imageUrl?: string;
-      bankAccountDetails?: any;
-      primaryLocation?: any;
-      operatingHours?: any[];
-    }
-  ) => apiRequest(`/admin/restaurants/${restaurantId}`, {
-    method: 'PUT',
-    body: JSON.stringify(profileData),
-  }),
+  updateRestaurantProfile: (restaurantId: string, profileData: any) =>
+    apiRequest(`/admin/restaurants/${restaurantId}`, {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
+    }),
+
   updateRestaurantStatus: (
     restaurantId: string,
     status: 'pending' | 'approved' | 'rejected' | 'suspended' | 'closed',
@@ -243,37 +169,30 @@ export const adminApi = {
     method: 'PUT',
     body: JSON.stringify({ status, documentsVerified }),
   }),
-  updateRestaurantCuisines: (restaurantId: string, cuisineIds: number[]) =>
-    apiRequest<{ message: string }>(`/admin/restaurants/${restaurantId}/cuisines`, {
+
+  updateRestaurantCuisines: (restaurantId: string, cuisineIds: (string | number)[]) =>
+    apiRequest<any>(`/admin/restaurants/${restaurantId}/cuisines`, {
       method: 'PUT',
       body: JSON.stringify({ cuisineIds }),
     }),
+
   deleteRestaurant: (restaurantId: string) =>
-    apiRequest<{ message: string }>(`/admin/restaurants/${restaurantId}`, {
+    apiRequest<any>(`/admin/restaurants/${restaurantId}`, {
       method: 'DELETE',
     }),
+
   deleteUser: (userId: string) =>
-    apiRequest<{ message: string }>(`/admin/users/${userId}`, {
+    apiRequest<any>(`/admin/users/${userId}`, {
       method: 'DELETE',
     }),
+
   // Delivery Partner Admin Updates
-  updateDeliveryPartner: (
-    dpUserId: string,
-    profileData: {
-      fullName?: string;
-      vehicleType?: 'bicycle' | 'scooter' | 'motorcycle' | 'car';
-      licenseNumber?: string;
-      bankAccountDetails?: {
-        accountNumber: string;
-        ifscCode: string;
-        accountHolderName: string;
-        bankName: string;
-      };
-    }
-  ) => apiRequest(`/admin/delivery-partners/${dpUserId}`, {
-    method: 'PUT',
-    body: JSON.stringify(profileData),
-  }),
+  updateDeliveryPartner: (dpUserId: string, profileData: any) =>
+    apiRequest(`/admin/delivery-partners/${dpUserId}`, {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
+    }),
+
   updateDeliveryPartnerStatus: (
     dpUserId: string,
     status: 'pending' | 'approved' | 'rejected' | 'suspended',
@@ -282,19 +201,15 @@ export const adminApi = {
     method: 'PUT',
     body: JSON.stringify({ status, documentsVerified }),
   }),
-  updateDeliveryPartnerOnlineStatus: (
-    dpId: string,
-    isOnline: boolean
-  ) => apiRequest<{ message: string; dp: any }>(`/admin/delivery-partners/${dpId}/online-status`, {
-    method: 'PUT',
-    body: JSON.stringify({ isOnline }),
-  }),
-  updateOrderStatus: (
-    orderId: string,
-    newStatus: AdminOrderStatus,
-    deliveryPartnerId?: string
-  ) =>
-    apiRequest<{ message: string; order: any }>(
+
+  updateDeliveryPartnerOnlineStatus: (dpId: string, isOnline: boolean) =>
+    apiRequest<any>(`/admin/delivery-partners/${dpId}/online-status`, {
+      method: 'PUT',
+      body: JSON.stringify({ isOnline }),
+    }),
+
+  updateOrderStatus: (orderId: string, newStatus: AdminOrderStatus, deliveryPartnerId?: string) =>
+    apiRequest<any>(
       `/orders/${orderId}/status`,
       {
         method: 'PUT',
@@ -308,7 +223,7 @@ export const adminApi = {
   // Settings Management
   getSettings: () => apiRequest<Record<string, string>>('/admin/settings'),
   updateSettings: (settingsData: Record<string, string>) =>
-    apiRequest<{ message: string; updated: any[]; changedKeys: string[]; changedSettings: Record<string, string> }>('/admin/settings', {
+    apiRequest<any>('/admin/settings', {
       method: 'PUT',
       body: JSON.stringify(settingsData),
     }),
@@ -319,153 +234,101 @@ export const adminApi = {
     if (restaurantId) params.append('restaurantId', restaurantId);
     return apiRequest<{ coupons: any[] }>(`/admin/coupons${params.toString() ? `?${params.toString()}` : ''}`);
   },
-  createCoupon: (body: {
-    code: string;
-    discountType: 'flat' | 'percentage';
-    discountValue: number;
-    restaurantId?: string | null;
-    minOrderValue?: number;
-    maxDiscountAmount?: number | null;
-    usageLimit?: number;
-    expiresAt?: string | null; // ISO string
-    isActive?: boolean;
-  }) => apiRequest<{ message: string; coupon: any }>(
+
+  createCoupon: (body: any) => apiRequest<any>(
     '/admin/coupons',
     { method: 'POST', body: JSON.stringify(body) }
   ),
-  updateCoupon: (couponId: string, body: Partial<{
-    code: string;
-    discountType: 'flat' | 'percentage';
-    discountValue: number;
-    restaurantId: string | null;
-    minOrderValue: number;
-    maxDiscountAmount: number | null;
-    usageLimit: number;
-    expiresAt: string | null;
-    isActive: boolean;
-  }>) =>
-    apiRequest<{ message: string; coupon: any }>(
+
+  updateCoupon: (couponId: string, body: any) =>
+    apiRequest<any>(
       `/admin/coupons/${couponId}`,
       { method: 'PUT', body: JSON.stringify(body) }
     ),
+
   setCouponActive: (couponId: string, isActive: boolean) =>
-    apiRequest<{ message: string; coupon: any }>(
+    apiRequest<any>(
       `/admin/coupons/${couponId}`,
       { method: 'PUT', body: JSON.stringify({ isActive }) }
     ),
+
   deleteCoupon: (couponId: string) =>
-    apiRequest<{ message: string; coupon: any }>(
+    apiRequest<any>(
       `/admin/coupons/${couponId}`,
       { method: 'DELETE' }
     ),
+
   // Finance Management
   getRestaurantFinancialSummary: (restaurantIds?: string[], startDate?: string, endDate?: string) => {
     const params = new URLSearchParams();
-    if (restaurantIds && restaurantIds.length > 0) {
-      params.append('restaurantIds', restaurantIds.join(','));
-    }
-    if (startDate) {
-      params.append('startDate', startDate);
-    }
-    if (endDate) {
-      params.append('endDate', endDate);
-    }
-    return apiRequest<any[]>(`/admin/finance/restaurants${params.toString() ? `?${params.toString()}` : ''}`);
+    if (restaurantIds && restaurantIds.length > 0) params.append('restaurantIds', restaurantIds.join(','));
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    return apiRequest<any[]>(`/admin/finance/restaurants?${params.toString()}`);
   },
+
   getDeliveryPartnerFinancialSummary: (deliveryPartnerIds?: string[], startDate?: string, endDate?: string) => {
     const params = new URLSearchParams();
-    if (deliveryPartnerIds && deliveryPartnerIds.length > 0) {
-      params.append('deliveryPartnerIds', deliveryPartnerIds.join(','));
-    }
-    if (startDate) {
-      params.append('startDate', startDate);
-    }
-    if (endDate) {
-      params.append('endDate', endDate);
-    }
-    return apiRequest<any[]>(`/admin/finance/delivery-partners${params.toString() ? `?${params.toString()}` : ''}`);
+    if (deliveryPartnerIds && deliveryPartnerIds.length > 0) params.append('deliveryPartnerIds', deliveryPartnerIds.join(','));
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    return apiRequest<any[]>(`/admin/finance/delivery-partners?${params.toString()}`);
   },
 
   // Notification Management
   getAllNotifications: () => apiRequest<any[]>('/admin/notifications'),
   getNotificationById: (id: string | number) => apiRequest<any>(`/admin/notifications/${id}`),
-  createNotification: (body: {
-    title: string;
-    description: string;
-    scheduledAt: string;
-    targetType?: 'all' | 'specific' | 'all_customers' | 'all_restaurants' | 'all_delivery_partners';
-    targetUserIds?: string[];
-  }) =>
-    apiRequest<{ message: string; notification: any }>('/admin/notifications', {
+  createNotification: (body: any) =>
+    apiRequest<any>('/admin/notifications', {
       method: 'POST',
       body: JSON.stringify(body),
     }),
-  updateNotification: (id: string | number, body: {
-    title: string;
-    description: string;
-    scheduledAt: string;
-    targetType?: 'all' | 'specific' | 'all_customers' | 'all_restaurants' | 'all_delivery_partners';
-    targetUserIds?: string[];
-  }) =>
-    apiRequest<{ message: string; notification: any }>(`/admin/notifications/${id}`, {
+  updateNotification: (id: string | number, body: any) =>
+    apiRequest<any>(`/admin/notifications/${id}`, {
       method: 'PUT',
       body: JSON.stringify(body),
     }),
   deleteNotification: (id: string | number) =>
-    apiRequest<{ message: string }>(`/admin/notifications/${id}`, {
+    apiRequest<any>(`/admin/notifications/${id}`, {
       method: 'DELETE',
     }),
+
   // Image Upload
   uploadRestaurantImage: async (file: File): Promise<{ imageUrl: string }> => {
     const formData = new FormData();
     formData.append('image', file);
-
     const token = getAuthToken();
-    const headers: HeadersInit = {
-      'x-api-key': API_KEY,
-    };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
+    const headers: HeadersInit = { 'x-api-key': API_KEY };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
     const response = await fetch(`${API_BASE_URL}/upload/restaurant`, {
       method: 'POST',
       headers,
       body: formData,
     });
-
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Upload failed' }));
       throw new Error(error.message || `HTTP ${response.status}`);
     }
-
-    return response.json();
+    const json = await response.json();
+    return json.success ? json.data : json;
   },
+
   uploadSurpriseBagImage: async (file: File): Promise<{ imageUrl: string }> => {
     const formData = new FormData();
     formData.append('image', file);
-
     const token = getAuthToken();
-    const headers: HeadersInit = {
-      'x-api-key': API_KEY,
-    };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
+    const headers: HeadersInit = { 'x-api-key': API_KEY };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
     const response = await fetch(`${API_BASE_URL}/upload/surprise-bag`, {
       method: 'POST',
       headers,
       body: formData,
     });
-
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Upload failed' }));
       throw new Error(error.message || `HTTP ${response.status}`);
     }
-
-    return response.json();
+    const json = await response.json();
+    return json.success ? json.data : json;
   },
 };

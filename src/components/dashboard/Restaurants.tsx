@@ -30,27 +30,27 @@ export function Restaurants() {
   const [openAdd, setOpenAdd] = useState(false);
   const [creating, setCreating] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
-  
+
   // Search states
   const [allRestaurants, setAllRestaurants] = useState<any[]>([]);
   const [restaurantSearchFilter, setRestaurantSearchFilter] = useState("");
-  
+
   // Detail popup
   const [selectedRestaurant, setSelectedRestaurant] = useState<any | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
-  
+
   // Edit mode
   const [openEdit, setOpenEdit] = useState(false);
   const [editing, setEditing] = useState(false);
-  
+
   // Delete confirmation
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  
+
   // Cuisines
   const [cuisines, setCuisines] = useState<Array<{ id: number; name: string }>>([]);
   const [selectedCuisineIds, setSelectedCuisineIds] = useState<number[]>([]);
-  
+
   // Basic Info
   const [formR, setFormR] = useState({
     fullName: "",
@@ -74,7 +74,7 @@ export function Restaurants() {
   });
 
   // Operating Hours
-  const [operatingHours, setOperatingHours] = useState<Record<string, {open: string, close: string, isClosed: boolean}>>({
+  const [operatingHours, setOperatingHours] = useState<Record<string, { open: string, close: string, isClosed: boolean }>>({
     monday: { open: "09:00", close: "22:00", isClosed: false },
     tuesday: { open: "09:00", close: "22:00", isClosed: false },
     wednesday: { open: "09:00", close: "22:00", isClosed: false },
@@ -205,7 +205,7 @@ export function Restaurants() {
       bankName: ""
     });
     setSelectedCuisineIds([]);
-      setRestaurantImageUrl("");
+    setRestaurantImageUrl("");
   };
 
   // Geocode address to get lat/long
@@ -221,20 +221,20 @@ export function Restaurants() {
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${GOOGLE_MAPS_API_KEY}`
       );
-      
+
       const data = await response.json();
-      
+
       if (data.status === "OK" && data.results && data.results.length > 0) {
         const result = data.results[0];
         const lat = result.geometry.location.lat;
         const lng = result.geometry.location.lng;
-        
+
         setLocation({
           ...location,
           latitude: lat.toString(),
           longitude: lng.toString()
         });
-        
+
         alert("Location coordinates found successfully!");
       } else {
         alert(`Geocoding failed: ${data.status}. Please check the address and try again.`);
@@ -250,28 +250,28 @@ export function Restaurants() {
   // Check if all required fields are filled
   const isFormValid = () => {
     // Basic info validation
-    const basicValid = formR.fullName && formR.password && formR.restaurantName && 
-                       (formR.email || formR.phoneNumber);
-    
+    const basicValid = formR.fullName && formR.password && formR.restaurantName &&
+      (formR.email || formR.phoneNumber);
+
     // Location validation (must have address AND coordinates)
     const locationValid = location.address && location.latitude && location.longitude;
-    
+
     // Cuisine validation (at least one cuisine must be selected)
     const cuisineValid = selectedCuisineIds.length > 0;
-    
+
     return basicValid && locationValid && cuisineValid;
   };
 
   const handleCreate = async () => {
     try {
       setCreating(true);
-      
+
       // Validate required fields
       if (!formR.fullName || !formR.password || !formR.restaurantName) {
         alert("Please fill in all required fields (Name, Password, Restaurant Name)");
         return;
       }
-      
+
       if (!formR.email && !formR.phoneNumber) {
         alert("Please provide either email or phone number");
         return;
@@ -286,17 +286,17 @@ export function Restaurants() {
         alert("Mobile number must be exactly 10 digits");
         return;
       }
-      
+
       if (!location.address || !location.latitude || !location.longitude) {
         alert("Please provide complete location details (Address, Latitude, Longitude)");
         return;
       }
-      
+
       if (selectedCuisineIds.length === 0) {
         alert("Please select at least one cuisine");
         return;
       }
-      
+
       // Build bank details object if any field is provided
       const bankAccountDetails = (bankDetails.accountNumber || bankDetails.ifscCode) ? {
         accountNumber: bankDetails.accountNumber,
@@ -304,7 +304,7 @@ export function Restaurants() {
         accountHolderName: bankDetails.accountHolderName,
         bankName: bankDetails.bankName
       } : undefined;
-      
+
       // Build operating hours array
       const hoursArray = DAYS_OF_WEEK.map(day => ({
         dayOfWeek: day,
@@ -315,7 +315,7 @@ export function Restaurants() {
 
       const userPhoneDigits = normalizePhoneDigits(formR.phoneNumber);
       const locationPhoneDigits = normalizePhoneDigits(location.contactNumber);
-      
+
       // Single API call to onboard restaurant with all details - using helper to get status
       const result = await apiRequestWithStatus('/admin/restaurants', {
         method: 'POST',
@@ -343,7 +343,7 @@ export function Restaurants() {
           restaurantCuisineIds: selectedCuisineIds
         })
       });
-      
+
       // Show toast based on status
       if (result.status < 300) {
         toast.success(result.message, {
@@ -389,7 +389,7 @@ export function Restaurants() {
       // Fetch full restaurant details including location and operating hours
       const fullDetails = await adminApi.getRestaurantById(restaurant.restaurantId);
       setSelectedRestaurant(fullDetails);
-      
+
       // Pre-fill form with existing data
       setFormR({
         fullName: fullDetails.userFullName || "",
@@ -401,7 +401,7 @@ export function Restaurants() {
         fssaiLicenseNumber: fullDetails.fssaiLicenseNumber || "",
         gstinNumber: fullDetails.gstinNumber || ""
       });
-      
+
       // Pre-fill location
       if (fullDetails.primaryLocation) {
         setLocation({
@@ -413,10 +413,10 @@ export function Restaurants() {
           email: fullDetails.primaryLocation.email || ""
         });
       }
-      
+
       // Pre-fill operating hours
       if (fullDetails.operatingHours) {
-        const hours: Record<string, {open: string, close: string, isClosed: boolean}> = {};
+        const hours: Record<string, { open: string, close: string, isClosed: boolean }> = {};
         DAYS_OF_WEEK.forEach(day => {
           const dayData = fullDetails.operatingHours[day];
           if (dayData) {
@@ -431,7 +431,7 @@ export function Restaurants() {
         });
         setOperatingHours(hours);
       }
-      
+
       // Pre-fill bank details
       if (fullDetails.bankAccountDetails) {
         setBankDetails({
@@ -441,13 +441,13 @@ export function Restaurants() {
           bankName: fullDetails.bankAccountDetails.bankName || ""
         });
       }
-      
+
       // Pre-fill cuisines
-      setSelectedCuisineIds(fullDetails.cuisines ? fullDetails.cuisines.map((c: any) => c.id) : []);
-      
+      setSelectedCuisineIds(fullDetails.cuisines ? fullDetails.cuisines.map((c: any) => c.id || c.cuisineId) : []);
+
       // Pre-fill image URL
       setRestaurantImageUrl(fullDetails.imageUrl || "");
-      
+
       setOpenEdit(true);
     } catch (error) {
       console.error('Error loading restaurant details:', error);
@@ -457,16 +457,16 @@ export function Restaurants() {
 
   const handleUpdate = async () => {
     if (!selectedRestaurant) return;
-    
+
     try {
       setEditing(true);
-      
+
       // Validate cuisines
       if (selectedCuisineIds.length === 0) {
-        alert("Please select at least one cuisine");
+        toast.error("Please select at least one cuisine");
         return;
       }
-      
+
       // Build bank details object if any field is provided
       const bankAccountDetails = (bankDetails.accountNumber || bankDetails.ifscCode) ? {
         accountNumber: bankDetails.accountNumber,
@@ -474,7 +474,7 @@ export function Restaurants() {
         accountHolderName: bankDetails.accountHolderName,
         bankName: bankDetails.bankName
       } : undefined;
-      
+
       // Build operating hours array
       const hoursArray = DAYS_OF_WEEK.map(day => ({
         dayOfWeek: day,
@@ -484,18 +484,28 @@ export function Restaurants() {
       }));
 
       if (location.contactNumber && !isTenDigitPhone(location.contactNumber)) {
-        alert("Mobile number must be exactly 10 digits");
+        toast.error("Location mobile number must be exactly 10 digits");
         return;
       }
+
+      if (formR.phoneNumber && !isTenDigitPhone(formR.phoneNumber)) {
+        toast.error("Owner mobile number must be exactly 10 digits");
+        return;
+      }
+
       const locationPhoneDigits = normalizePhoneDigits(location.contactNumber);
-      
-      // Update restaurant profile (basic info, location, hours, bank)
+      const ownerPhoneDigits = normalizePhoneDigits(formR.phoneNumber);
+
+      // Update restaurant profile (basic info, location, hours, bank, and owner info)
       await adminApi.updateRestaurantProfile(selectedRestaurant.restaurantId, {
         restaurantName: formR.restaurantName,
         contactPersonName: formR.contactPersonName,
         fssaiLicenseNumber: formR.fssaiLicenseNumber || undefined,
         gstinNumber: formR.gstinNumber || undefined,
         imageUrl: restaurantImageUrl || undefined,
+        fullName: formR.fullName || undefined,
+        email: formR.email || undefined,
+        phoneNumber: ownerPhoneDigits ? `+91${ownerPhoneDigits}` : undefined,
         bankAccountDetails,
         primaryLocation: {
           locationName: location.locationName || formR.restaurantName,
@@ -507,19 +517,19 @@ export function Restaurants() {
         },
         operatingHours: hoursArray
       });
-      
+
       // Update cuisines
       await adminApi.updateRestaurantCuisines(selectedRestaurant.restaurantId, selectedCuisineIds);
-      
+
       // Refresh list
       const updatedRestaurants = await adminApi.getAllRestaurants();
       setRestaurants(updatedRestaurants);
       setOpenEdit(false);
       resetForm();
-      alert("Restaurant updated successfully!");
+      toast.success("Restaurant updated successfully!");
     } catch (error) {
       console.error('Update failed', error);
-      alert(`Failed to update restaurant: ${error}`);
+      toast.error(`Failed to update restaurant: ${error}`);
     } finally {
       setEditing(false);
     }
@@ -532,11 +542,11 @@ export function Restaurants() {
 
   const handleDelete = async () => {
     if (!selectedRestaurant) return;
-    
+
     try {
       setDeleting(true);
       await adminApi.deleteRestaurant(selectedRestaurant.restaurantId);
-      
+
       // Refresh list
       const updatedRestaurants = await adminApi.getAllRestaurants();
       setRestaurants(updatedRestaurants);
@@ -561,7 +571,7 @@ export function Restaurants() {
         method: 'PUT',
         body: JSON.stringify({ status: newStatus }),
       });
-      
+
       // Show toast based on status
       if (result.status < 300) {
         toast.success(`Restaurant ${newStatus} successfully`, {
@@ -597,272 +607,272 @@ export function Restaurants() {
             <CardTitle>Partner Restaurants</CardTitle>
             <Dialog open={openAdd} onOpenChange={(open) => { setOpenAdd(open); if (!open) resetForm(); }}>
               <DialogTrigger asChild>
-                <Button className="gap-2"><Plus className="h-4 w-4"/>Add Restaurant</Button>
+                <Button className="gap-2"><Plus className="h-4 w-4" />Add Restaurant</Button>
               </DialogTrigger>
-            <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Add Restaurant</DialogTitle>
-                <DialogDescription>Complete restaurant onboarding with all details</DialogDescription>
-              </DialogHeader>
-              
-              <Tabs defaultValue="basic" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                  <TabsTrigger value="location">Location</TabsTrigger>
-                  <TabsTrigger value="hours">Operating Hours</TabsTrigger>
-                  <TabsTrigger value="bank">Bank Details</TabsTrigger>
-                </TabsList>
-                
-                {/* Basic Info Tab */}
-                <TabsContent value="basic" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium">Owner Full Name *</label>
-                      <Input value={formR.fullName} onChange={e => setFormR({...formR, fullName: e.target.value})} placeholder="John Doe" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Restaurant Name *</label>
-                      <Input value={formR.restaurantName} onChange={e => setFormR({...formR, restaurantName: e.target.value})} placeholder="Tasty Bites" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Email *</label>
-                      <Input type="email" value={formR.email} onChange={e => setFormR({...formR, email: e.target.value})} placeholder="owner@restaurant.com" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Phone Number *</label>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium px-3 py-2 bg-muted rounded-md">+91</span>
-                        <Input 
-                          value={formR.phoneNumber} 
-                          onChange={e => {
-                            const value = e.target.value.replace(/\D/g, '');
-                            if (value.length <= 10) {
-                              setFormR({...formR, phoneNumber: value});
-                            }
-                          }}
-                          placeholder="9876543210"
-                          maxLength={10}
-                        />
+              <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Add Restaurant</DialogTitle>
+                  <DialogDescription>Complete restaurant onboarding with all details</DialogDescription>
+                </DialogHeader>
+
+                <Tabs defaultValue="basic" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                    <TabsTrigger value="location">Location</TabsTrigger>
+                    <TabsTrigger value="hours">Operating Hours</TabsTrigger>
+                    <TabsTrigger value="bank">Bank Details</TabsTrigger>
+                  </TabsList>
+
+                  {/* Basic Info Tab */}
+                  <TabsContent value="basic" className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium">Owner Full Name *</label>
+                        <Input value={formR.fullName} onChange={e => setFormR({ ...formR, fullName: e.target.value })} placeholder="John Doe" />
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">Enter 10-digit mobile number</p>
+                      <div>
+                        <label className="text-sm font-medium">Restaurant Name *</label>
+                        <Input value={formR.restaurantName} onChange={e => setFormR({ ...formR, restaurantName: e.target.value })} placeholder="Tasty Bites" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Email *</label>
+                        <Input type="email" value={formR.email} onChange={e => setFormR({ ...formR, email: e.target.value })} placeholder="owner@restaurant.com" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Phone Number *</label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium px-3 py-2 bg-muted rounded-md">+91</span>
+                          <Input
+                            value={formR.phoneNumber}
+                            onChange={e => {
+                              const value = e.target.value.replace(/\D/g, '');
+                              if (value.length <= 10) {
+                                setFormR({ ...formR, phoneNumber: value });
+                              }
+                            }}
+                            placeholder="9876543210"
+                            maxLength={10}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Enter 10-digit mobile number</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Password *</label>
+                        <Input type="password" value={formR.password} onChange={e => setFormR({ ...formR, password: e.target.value })} placeholder="Initial password" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Contact Person</label>
+                        <Input value={formR.contactPersonName} onChange={e => setFormR({ ...formR, contactPersonName: e.target.value })} placeholder="Manager name" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">FSSAI License</label>
+                        <Input value={formR.fssaiLicenseNumber} onChange={e => setFormR({ ...formR, fssaiLicenseNumber: e.target.value })} placeholder="12345678901234" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">GSTIN</label>
+                        <Input value={formR.gstinNumber} onChange={e => setFormR({ ...formR, gstinNumber: e.target.value })} placeholder="22AAAAA0000A1Z5" />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-sm font-medium">Restaurant Image (Optional)</label>
+                        <div className="space-y-2">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleImageUpload(file);
+                              }
+                            }}
+                            disabled={uploadingImage}
+                            className="cursor-pointer"
+                          />
+                          {uploadingImage && (
+                            <p className="text-xs text-muted-foreground">Uploading image...</p>
+                          )}
+                          {restaurantImageUrl && (
+                            <div className="mt-2">
+                              <img
+                                src={restaurantImageUrl}
+                                alt="Restaurant preview"
+                                className="w-32 h-32 object-cover rounded-md border"
+                              />
+                              <p className="text-xs text-muted-foreground mt-1">Image uploaded successfully</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-sm font-medium">Password *</label>
-                      <Input type="password" value={formR.password} onChange={e => setFormR({...formR, password: e.target.value})} placeholder="Initial password" />
+
+                    {/* Cuisine Selection */}
+                    <div className="mt-4">
+                      <MultiSelect
+                        label="Cuisines *"
+                        options={cuisines}
+                        selected={selectedCuisineIds}
+                        onChange={setSelectedCuisineIds}
+                        placeholder="Select cuisines..."
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Search and select multiple cuisines. At least one is required.
+                      </p>
                     </div>
-                    <div>
-                      <label className="text-sm font-medium">Contact Person</label>
-                      <Input value={formR.contactPersonName} onChange={e => setFormR({...formR, contactPersonName: e.target.value})} placeholder="Manager name" />
+
+                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-sm text-green-800">
+                        <strong>Note:</strong> Restaurants onboarded by admins are automatically approved and verified.
+                      </p>
                     </div>
-                    <div>
-                      <label className="text-sm font-medium">FSSAI License</label>
-                      <Input value={formR.fssaiLicenseNumber} onChange={e => setFormR({...formR, fssaiLicenseNumber: e.target.value})} placeholder="12345678901234" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">GSTIN</label>
-                      <Input value={formR.gstinNumber} onChange={e => setFormR({...formR, gstinNumber: e.target.value})} placeholder="22AAAAA0000A1Z5" />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="text-sm font-medium">Restaurant Image (Optional)</label>
-                      <div className="space-y-2">
+                  </TabsContent>
+
+                  {/* Location Tab */}
+                  <TabsContent value="location" className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2">
+                        <label className="text-sm font-medium">Location Name</label>
+                        <Input value={location.locationName} onChange={e => setLocation({ ...location, locationName: e.target.value })} placeholder="Main Branch" />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-sm font-medium">Address *</label>
+                        <Input value={location.address} onChange={e => setLocation({ ...location, address: e.target.value })} placeholder="123 Main Street, City, State - 400001" />
+                        <p className="text-xs text-muted-foreground mt-1">Enter the full address and click the button below to get coordinates</p>
+                      </div>
+                      <div className="col-span-2">
+                        <Button
+                          type="button"
+                          onClick={handleGeocodeAddress}
+                          disabled={!location.address || geocoding}
+                          className="w-full gap-2"
+                          variant="secondary"
+                        >
+                          {geocoding ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Getting Coordinates...
+                            </>
+                          ) : (
+                            <>
+                              <MapPin className="h-4 w-4" />
+                              Get Coordinates from Address
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Latitude *</label>
                         <Input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              handleImageUpload(file);
-                            }
-                          }}
-                          disabled={uploadingImage}
-                          className="cursor-pointer"
+                          type="text"
+                          value={location.latitude}
+                          readOnly
+                          placeholder="Auto-filled from address"
+                          className="bg-muted cursor-not-allowed"
                         />
-                        {uploadingImage && (
-                          <p className="text-xs text-muted-foreground">Uploading image...</p>
-                        )}
-                        {restaurantImageUrl && (
-                          <div className="mt-2">
-                            <img 
-                              src={restaurantImageUrl} 
-                              alt="Restaurant preview" 
-                              className="w-32 h-32 object-cover rounded-md border"
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">Image uploaded successfully</p>
-                          </div>
-                        )}
+                        <p className="text-xs text-muted-foreground mt-1">Auto-populated from address</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Longitude *</label>
+                        <Input
+                          type="text"
+                          value={location.longitude}
+                          readOnly
+                          placeholder="Auto-filled from address"
+                          className="bg-muted cursor-not-allowed"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">Auto-populated from address</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Location Contact</label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium px-3 py-2 bg-muted rounded-md">+91</span>
+                          <Input
+                            value={location.contactNumber}
+                            onChange={e => {
+                              const value = e.target.value.replace(/\D/g, '');
+                              if (value.length <= 10) {
+                                setLocation({ ...location, contactNumber: value });
+                              }
+                            }}
+                            placeholder="9876543210"
+                            maxLength={10}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Location Email</label>
+                        <Input type="email" value={location.email} onChange={e => setLocation({ ...location, email: e.target.value })} placeholder="branch@restaurant.com" />
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Cuisine Selection */}
-                  <div className="mt-4">
-                    <MultiSelect
-                      label="Cuisines *"
-                      options={cuisines}
-                      selected={selectedCuisineIds}
-                      onChange={setSelectedCuisineIds}
-                      placeholder="Select cuisines..."
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Search and select multiple cuisines. At least one is required.
-                    </p>
-                  </div>
-                  
-                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-sm text-green-800">
-                      <strong>Note:</strong> Restaurants onboarded by admins are automatically approved and verified.
-                    </p>
-                  </div>
-                </TabsContent>
-                
-                {/* Location Tab */}
-                <TabsContent value="location" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2">
-                      <label className="text-sm font-medium">Location Name</label>
-                      <Input value={location.locationName} onChange={e => setLocation({...location, locationName: e.target.value})} placeholder="Main Branch" />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="text-sm font-medium">Address *</label>
-                      <Input value={location.address} onChange={e => setLocation({...location, address: e.target.value})} placeholder="123 Main Street, City, State - 400001" />
-                      <p className="text-xs text-muted-foreground mt-1">Enter the full address and click the button below to get coordinates</p>
-                    </div>
-                    <div className="col-span-2">
-                      <Button 
-                        type="button"
-                        onClick={handleGeocodeAddress} 
-                        disabled={!location.address || geocoding}
-                        className="w-full gap-2"
-                        variant="secondary"
-                      >
-                        {geocoding ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Getting Coordinates...
-                          </>
-                        ) : (
-                          <>
-                            <MapPin className="h-4 w-4" />
-                            Get Coordinates from Address
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Latitude *</label>
-                      <Input 
-                        type="text" 
-                        value={location.latitude} 
-                        readOnly 
-                        placeholder="Auto-filled from address"
-                        className="bg-muted cursor-not-allowed"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">Auto-populated from address</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Longitude *</label>
-                      <Input 
-                        type="text" 
-                        value={location.longitude} 
-                        readOnly 
-                        placeholder="Auto-filled from address"
-                        className="bg-muted cursor-not-allowed"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">Auto-populated from address</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Location Contact</label>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium px-3 py-2 bg-muted rounded-md">+91</span>
-                        <Input 
-                          value={location.contactNumber} 
-                          onChange={e => {
-                            const value = e.target.value.replace(/\D/g, '');
-                            if (value.length <= 10) {
-                              setLocation({...location, contactNumber: value});
-                            }
-                          }}
-                          placeholder="9876543210"
-                          maxLength={10}
+                  </TabsContent>
+
+                  {/* Operating Hours Tab */}
+                  <TabsContent value="hours" className="space-y-2">
+                    {DAYS_OF_WEEK.map(day => (
+                      <div key={day} className="flex items-center gap-4 p-2 border rounded">
+                        <div className="w-24 font-medium capitalize">{day}</div>
+                        <input
+                          type="checkbox"
+                          checked={operatingHours[day].isClosed}
+                          onChange={(e) => updateOperatingHours(day, 'isClosed', e.target.checked)}
+                          className="h-4 w-4"
                         />
+                        <label className="text-sm">Closed</label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="time"
+                            value={operatingHours[day].open}
+                            onChange={(e) => updateOperatingHours(day, 'open', e.target.value)}
+                            disabled={operatingHours[day].isClosed}
+                            className="w-32"
+                          />
+                          <span>to</span>
+                          <Input
+                            type="time"
+                            value={operatingHours[day].close}
+                            onChange={(e) => updateOperatingHours(day, 'close', e.target.value)}
+                            disabled={operatingHours[day].isClosed}
+                            className="w-32"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </TabsContent>
+
+                  {/* Bank Details Tab */}
+                  <TabsContent value="bank" className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium">Account Holder Name</label>
+                        <Input value={bankDetails.accountHolderName} onChange={e => setBankDetails({ ...bankDetails, accountHolderName: e.target.value })} placeholder="John Doe" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Bank Name</label>
+                        <Input value={bankDetails.bankName} onChange={e => setBankDetails({ ...bankDetails, bankName: e.target.value })} placeholder="HDFC Bank" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Account Number</label>
+                        <Input value={bankDetails.accountNumber} onChange={e => setBankDetails({ ...bankDetails, accountNumber: e.target.value })} placeholder="1234567890" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">IFSC Code</label>
+                        <Input value={bankDetails.ifscCode} onChange={e => setBankDetails({ ...bankDetails, ifscCode: e.target.value })} placeholder="HDFC0001234" />
                       </div>
                     </div>
-                    <div>
-                      <label className="text-sm font-medium">Location Email</label>
-                      <Input type="email" value={location.email} onChange={e => setLocation({...location, email: e.target.value})} placeholder="branch@restaurant.com" />
-                    </div>
-                  </div>
-                </TabsContent>
-                
-                {/* Operating Hours Tab */}
-                <TabsContent value="hours" className="space-y-2">
-                  {DAYS_OF_WEEK.map(day => (
-                    <div key={day} className="flex items-center gap-4 p-2 border rounded">
-                      <div className="w-24 font-medium capitalize">{day}</div>
-                      <input 
-                        type="checkbox" 
-                        checked={operatingHours[day].isClosed} 
-                        onChange={(e) => updateOperatingHours(day, 'isClosed', e.target.checked)}
-                        className="h-4 w-4"
-                      />
-                      <label className="text-sm">Closed</label>
-                      <div className="flex items-center gap-2">
-                        <Input 
-                          type="time" 
-                          value={operatingHours[day].open} 
-                          onChange={(e) => updateOperatingHours(day, 'open', e.target.value)}
-                          disabled={operatingHours[day].isClosed}
-                          className="w-32"
-                        />
-                        <span>to</span>
-                        <Input 
-                          type="time" 
-                          value={operatingHours[day].close} 
-                          onChange={(e) => updateOperatingHours(day, 'close', e.target.value)}
-                          disabled={operatingHours[day].isClosed}
-                          className="w-32"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </TabsContent>
-                
-                {/* Bank Details Tab */}
-                <TabsContent value="bank" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium">Account Holder Name</label>
-                      <Input value={bankDetails.accountHolderName} onChange={e => setBankDetails({...bankDetails, accountHolderName: e.target.value})} placeholder="John Doe" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Bank Name</label>
-                      <Input value={bankDetails.bankName} onChange={e => setBankDetails({...bankDetails, bankName: e.target.value})} placeholder="HDFC Bank" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Account Number</label>
-                      <Input value={bankDetails.accountNumber} onChange={e => setBankDetails({...bankDetails, accountNumber: e.target.value})} placeholder="1234567890" />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">IFSC Code</label>
-                      <Input value={bankDetails.ifscCode} onChange={e => setBankDetails({...bankDetails, ifscCode: e.target.value})} placeholder="HDFC0001234" />
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
-              
-              <div className="flex justify-end gap-2 mt-4">
-                <Button variant="outline" onClick={() => { setOpenAdd(false); resetForm(); }}>Cancel</Button>
-                <Button disabled={creating || !isFormValid()} onClick={handleCreate}>
-                  {creating ? 'Creating...' : 'Create Restaurant'}
-                </Button>
-              </div>
-              {!isFormValid() && (
-                <p className="text-xs text-amber-600 text-right mt-2">
-                  Please fill all required fields including address coordinates and at least one cuisine
-                </p>
-              )}
-            </DialogContent>
-          </Dialog>
+                  </TabsContent>
+                </Tabs>
+
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button variant="outline" onClick={() => { setOpenAdd(false); resetForm(); }}>Cancel</Button>
+                  <Button disabled={creating || !isFormValid()} onClick={handleCreate}>
+                    {creating ? 'Creating...' : 'Create Restaurant'}
+                  </Button>
+                </div>
+                {!isFormValid() && (
+                  <p className="text-xs text-amber-600 text-right mt-2">
+                    Please fill all required fields including address coordinates and at least one cuisine
+                  </p>
+                )}
+              </DialogContent>
+            </Dialog>
           </div>
           {/* Restaurant Real-time Search */}
           <div className="flex gap-2 items-end">
@@ -906,7 +916,7 @@ export function Restaurants() {
               </TableHeader>
               <TableBody>
                 {restaurants.map((r) => (
-                  <TableRow 
+                  <TableRow
                     key={r.restaurantId}
                   >
                     <TableCell className="font-medium cursor-pointer hover:underline" onClick={() => openRestaurantDetail(r)}>{r.restaurantName || 'N/A'}</TableCell>
@@ -954,16 +964,16 @@ export function Restaurants() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="sm"
                           onClick={() => openEditDialog(r)}
                           className="h-8 w-8 p-0"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="sm"
                           onClick={() => openDeleteDialog(r)}
                           className="h-8 w-8 p-0 text-destructive hover:text-destructive"
@@ -995,15 +1005,15 @@ export function Restaurants() {
               {selectedRestaurant.imageUrl && (
                 <div className="flex justify-center">
                   <div className="space-y-2">
-                    <img 
-                      src={selectedRestaurant.imageUrl} 
-                      alt={selectedRestaurant.restaurantName || 'Restaurant'} 
+                    <img
+                      src={selectedRestaurant.imageUrl}
+                      alt={selectedRestaurant.restaurantName || 'Restaurant'}
                       className="w-full max-w-md h-64 object-cover rounded-lg border shadow-sm"
                     />
                   </div>
                 </div>
               )}
-              
+
               {/* Basic Info */}
               <div>
                 <h3 className="font-semibold mb-3">Basic Information</h3>
@@ -1037,8 +1047,8 @@ export function Restaurants() {
                     <div className="text-sm mt-1">
                       <Badge variant={
                         selectedRestaurant.status === "approved" ? "default" :
-                        selectedRestaurant.status === "rejected" ? "destructive" :
-                        "secondary"
+                          selectedRestaurant.status === "rejected" ? "destructive" :
+                            "secondary"
                       }>
                         {selectedRestaurant.status || 'pending'}
                       </Badge>
@@ -1099,9 +1109,9 @@ export function Restaurants() {
       </Dialog>
 
       {/* Edit Restaurant Dialog */}
-      <Dialog open={openEdit} onOpenChange={(open) => { 
-        setOpenEdit(open); 
-        if (!open) resetForm(); 
+      <Dialog open={openEdit} onOpenChange={(open) => {
+        setOpenEdit(open);
+        if (!open) resetForm();
       }}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -1110,7 +1120,7 @@ export function Restaurants() {
               Update details for {selectedRestaurant?.restaurantName}
             </DialogDescription>
           </DialogHeader>
-          
+
           <Tabs defaultValue="basic" className="w-full">
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
@@ -1119,17 +1129,17 @@ export function Restaurants() {
               <TabsTrigger value="cuisines">Cuisines</TabsTrigger>
               <TabsTrigger value="bank">Bank</TabsTrigger>
             </TabsList>
-            
+
             {/* Basic Info Tab */}
             <TabsContent value="basic" className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Restaurant Name *</label>
-                  <Input value={formR.restaurantName} onChange={e => setFormR({...formR, restaurantName: e.target.value})} placeholder="Tasty Bites" />
+                  <Input value={formR.restaurantName} onChange={e => setFormR({ ...formR, restaurantName: e.target.value })} placeholder="Tasty Bites" />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Contact Person</label>
-                  <Input value={formR.contactPersonName} onChange={e => setFormR({...formR, contactPersonName: e.target.value})} placeholder="Manager name" />
+                  <Input value={formR.contactPersonName} onChange={e => setFormR({ ...formR, contactPersonName: e.target.value })} placeholder="Manager name" />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Email</label>
@@ -1146,11 +1156,11 @@ export function Restaurants() {
                 </div>
                 <div>
                   <label className="text-sm font-medium">FSSAI License</label>
-                  <Input value={formR.fssaiLicenseNumber} onChange={e => setFormR({...formR, fssaiLicenseNumber: e.target.value})} placeholder="12345678901234" />
+                  <Input value={formR.fssaiLicenseNumber} onChange={e => setFormR({ ...formR, fssaiLicenseNumber: e.target.value })} placeholder="12345678901234" />
                 </div>
                 <div>
                   <label className="text-sm font-medium">GSTIN</label>
-                  <Input value={formR.gstinNumber} onChange={e => setFormR({...formR, gstinNumber: e.target.value})} placeholder="22AAAAA0000A1Z5" />
+                  <Input value={formR.gstinNumber} onChange={e => setFormR({ ...formR, gstinNumber: e.target.value })} placeholder="22AAAAA0000A1Z5" />
                 </div>
                 <div className="col-span-2">
                   <label className="text-sm font-medium">Restaurant Image (Optional)</label>
@@ -1172,9 +1182,9 @@ export function Restaurants() {
                     )}
                     {restaurantImageUrl && (
                       <div className="mt-2">
-                        <img 
-                          src={restaurantImageUrl} 
-                          alt="Restaurant preview" 
+                        <img
+                          src={restaurantImageUrl}
+                          alt="Restaurant preview"
                           className="w-32 h-32 object-cover rounded-md border"
                         />
                         <p className="text-xs text-muted-foreground mt-1">Image uploaded successfully</p>
@@ -1184,23 +1194,23 @@ export function Restaurants() {
                 </div>
               </div>
             </TabsContent>
-            
+
             {/* Location Tab */}
             <TabsContent value="location" className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="text-sm font-medium">Location Name</label>
-                  <Input value={location.locationName} onChange={e => setLocation({...location, locationName: e.target.value})} placeholder="Main Branch" />
+                  <Input value={location.locationName} onChange={e => setLocation({ ...location, locationName: e.target.value })} placeholder="Main Branch" />
                 </div>
                 <div className="col-span-2">
                   <label className="text-sm font-medium">Address *</label>
-                  <Input value={location.address} onChange={e => setLocation({...location, address: e.target.value})} placeholder="123 Main Street, City, State - 400001" />
+                  <Input value={location.address} onChange={e => setLocation({ ...location, address: e.target.value })} placeholder="123 Main Street, City, State - 400001" />
                   <p className="text-xs text-muted-foreground mt-1">Enter the full address and click below to update coordinates</p>
                 </div>
                 <div className="col-span-2">
-                  <Button 
+                  <Button
                     type="button"
-                    onClick={handleGeocodeAddress} 
+                    onClick={handleGeocodeAddress}
                     disabled={!location.address || geocoding}
                     className="w-full gap-2"
                     variant="secondary"
@@ -1220,19 +1230,19 @@ export function Restaurants() {
                 </div>
                 <div>
                   <label className="text-sm font-medium">Latitude *</label>
-                  <Input 
-                    type="text" 
-                    value={location.latitude} 
-                    readOnly 
+                  <Input
+                    type="text"
+                    value={location.latitude}
+                    readOnly
                     className="bg-muted cursor-not-allowed"
                   />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Longitude *</label>
-                  <Input 
-                    type="text" 
-                    value={location.longitude} 
-                    readOnly 
+                  <Input
+                    type="text"
+                    value={location.longitude}
+                    readOnly
                     className="bg-muted cursor-not-allowed"
                   />
                 </div>
@@ -1240,12 +1250,12 @@ export function Restaurants() {
                   <label className="text-sm font-medium">Location Contact</label>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium px-3 py-2 bg-muted rounded-md">+91</span>
-                    <Input 
-                      value={location.contactNumber} 
+                    <Input
+                      value={location.contactNumber}
                       onChange={e => {
                         const value = e.target.value.replace(/\D/g, '');
                         if (value.length <= 10) {
-                          setLocation({...location, contactNumber: value});
+                          setLocation({ ...location, contactNumber: value });
                         }
                       }}
                       placeholder="9876543210"
@@ -1255,35 +1265,35 @@ export function Restaurants() {
                 </div>
                 <div>
                   <label className="text-sm font-medium">Location Email</label>
-                  <Input type="email" value={location.email} onChange={e => setLocation({...location, email: e.target.value})} placeholder="branch@restaurant.com" />
+                  <Input type="email" value={location.email} onChange={e => setLocation({ ...location, email: e.target.value })} placeholder="branch@restaurant.com" />
                 </div>
               </div>
             </TabsContent>
-            
+
             {/* Operating Hours Tab */}
             <TabsContent value="hours" className="space-y-2">
               {DAYS_OF_WEEK.map(day => (
                 <div key={day} className="flex items-center gap-4 p-2 border rounded">
                   <div className="w-24 font-medium capitalize">{day}</div>
-                  <input 
-                    type="checkbox" 
-                    checked={operatingHours[day].isClosed} 
+                  <input
+                    type="checkbox"
+                    checked={operatingHours[day].isClosed}
                     onChange={(e) => updateOperatingHours(day, 'isClosed', e.target.checked)}
                     className="h-4 w-4"
                   />
                   <label className="text-sm">Closed</label>
                   <div className="flex items-center gap-2">
-                    <Input 
-                      type="time" 
-                      value={operatingHours[day].open} 
+                    <Input
+                      type="time"
+                      value={operatingHours[day].open}
                       onChange={(e) => updateOperatingHours(day, 'open', e.target.value)}
                       disabled={operatingHours[day].isClosed}
                       className="w-32"
                     />
                     <span>to</span>
-                    <Input 
-                      type="time" 
-                      value={operatingHours[day].close} 
+                    <Input
+                      type="time"
+                      value={operatingHours[day].close}
                       onChange={(e) => updateOperatingHours(day, 'close', e.target.value)}
                       disabled={operatingHours[day].isClosed}
                       className="w-32"
@@ -1292,7 +1302,7 @@ export function Restaurants() {
                 </div>
               ))}
             </TabsContent>
-            
+
             {/* Cuisines Tab */}
             <TabsContent value="cuisines" className="space-y-4">
               <MultiSelect
@@ -1306,34 +1316,34 @@ export function Restaurants() {
                 Search and select multiple cuisines. At least one is required.
               </p>
             </TabsContent>
-            
+
             {/* Bank Details Tab */}
             <TabsContent value="bank" className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Account Holder Name</label>
-                  <Input value={bankDetails.accountHolderName} onChange={e => setBankDetails({...bankDetails, accountHolderName: e.target.value})} placeholder="John Doe" />
+                  <Input value={bankDetails.accountHolderName} onChange={e => setBankDetails({ ...bankDetails, accountHolderName: e.target.value })} placeholder="John Doe" />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Bank Name</label>
-                  <Input value={bankDetails.bankName} onChange={e => setBankDetails({...bankDetails, bankName: e.target.value})} placeholder="HDFC Bank" />
+                  <Input value={bankDetails.bankName} onChange={e => setBankDetails({ ...bankDetails, bankName: e.target.value })} placeholder="HDFC Bank" />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Account Number</label>
-                  <Input value={bankDetails.accountNumber} onChange={e => setBankDetails({...bankDetails, accountNumber: e.target.value})} placeholder="1234567890" />
+                  <Input value={bankDetails.accountNumber} onChange={e => setBankDetails({ ...bankDetails, accountNumber: e.target.value })} placeholder="1234567890" />
                 </div>
                 <div>
                   <label className="text-sm font-medium">IFSC Code</label>
-                  <Input value={bankDetails.ifscCode} onChange={e => setBankDetails({...bankDetails, ifscCode: e.target.value})} placeholder="HDFC0001234" />
+                  <Input value={bankDetails.ifscCode} onChange={e => setBankDetails({ ...bankDetails, ifscCode: e.target.value })} placeholder="HDFC0001234" />
                 </div>
               </div>
             </TabsContent>
           </Tabs>
-          
+
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => { setOpenEdit(false); resetForm(); }}>Cancel</Button>
-            <Button 
-              disabled={editing || !formR.restaurantName} 
+            <Button
+              disabled={editing || !formR.restaurantName}
               onClick={handleUpdate}
             >
               {editing ? 'Updating...' : 'Update Restaurant'}
@@ -1360,9 +1370,9 @@ export function Restaurants() {
           </div>
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => setDeleteConfirm(false)}>Cancel</Button>
-            <Button 
+            <Button
               variant="destructive"
-              disabled={deleting} 
+              disabled={deleting}
               onClick={handleDelete}
             >
               {deleting ? 'Deleting...' : 'Delete Restaurant'}
