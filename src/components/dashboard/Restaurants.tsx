@@ -59,6 +59,7 @@ export function Restaurants() {
     password: "",
     restaurantName: "",
     description: "",
+    whatYouGet: "",
     contactPersonName: "",
     fssaiLicenseNumber: "",
     gstinNumber: ""
@@ -179,6 +180,7 @@ export function Restaurants() {
       password: "",
       restaurantName: "",
       description: "",
+      whatYouGet: "",
       contactPersonName: "",
       fssaiLicenseNumber: "",
       gstinNumber: ""
@@ -329,6 +331,7 @@ export function Restaurants() {
           userType: 'restaurant',
           restaurantName: formR.restaurantName,
           description: formR.description || undefined,
+          whatYouGet: formR.whatYouGet || undefined,
           contactPersonName: formR.contactPersonName || formR.fullName,
           fssaiLicenseNumber: formR.fssaiLicenseNumber || undefined,
           gstinNumber: formR.gstinNumber || undefined,
@@ -401,6 +404,7 @@ export function Restaurants() {
         password: "", // Don't pre-fill password
         restaurantName: fullDetails.restaurantName || "",
         description: fullDetails.description || "",
+        whatYouGet: fullDetails.whatYouGet || "",
         contactPersonName: fullDetails.contactPersonName || "",
         fssaiLicenseNumber: fullDetails.fssaiLicenseNumber || "",
         gstinNumber: fullDetails.gstinNumber || ""
@@ -504,6 +508,7 @@ export function Restaurants() {
       await adminApi.updateRestaurantProfile(selectedRestaurant.restaurantId, {
         restaurantName: formR.restaurantName,
         description: formR.description,
+        whatYouGet: formR.whatYouGet,
         contactPersonName: formR.contactPersonName,
         fssaiLicenseNumber: formR.fssaiLicenseNumber || undefined,
         gstinNumber: formR.gstinNumber || undefined,
@@ -672,6 +677,15 @@ export function Restaurants() {
                           value={formR.description}
                           onChange={e => setFormR({ ...formR, description: e.target.value })}
                           placeholder="Tell us about your restaurant..."
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-sm font-medium">What You Get</label>
+                        <textarea
+                          className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          value={formR.whatYouGet}
+                          onChange={e => setFormR({ ...formR, whatYouGet: e.target.value })}
+                          placeholder="Describe what customers will get..."
                         />
                       </div>
                       <div>
@@ -1040,6 +1054,10 @@ export function Restaurants() {
                     <label className="text-sm font-medium text-muted-foreground">Description</label>
                     <div className="text-sm mt-1">{selectedRestaurant.description || '—'}</div>
                   </div>
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-muted-foreground">What You Get</label>
+                    <div className="text-sm mt-1">{selectedRestaurant.whatYouGet || '—'}</div>
+                  </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Contact Person</label>
                     <div className="text-sm mt-1">{selectedRestaurant.contactPersonName || '—'}</div>
@@ -1162,6 +1180,15 @@ export function Restaurants() {
                     value={formR.description}
                     onChange={e => setFormR({ ...formR, description: e.target.value })}
                     placeholder="Tell us about your restaurant..."
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-sm font-medium">What You Get</label>
+                  <textarea
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={formR.whatYouGet}
+                    onChange={e => setFormR({ ...formR, whatYouGet: e.target.value })}
+                    placeholder="Describe what customers will get..."
                   />
                 </div>
                 <div>
