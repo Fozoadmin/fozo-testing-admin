@@ -58,6 +58,7 @@ export function Restaurants() {
     phoneNumber: "",
     password: "",
     restaurantName: "",
+    description: "",
     contactPersonName: "",
     fssaiLicenseNumber: "",
     gstinNumber: ""
@@ -177,6 +178,7 @@ export function Restaurants() {
       phoneNumber: "",
       password: "",
       restaurantName: "",
+      description: "",
       contactPersonName: "",
       fssaiLicenseNumber: "",
       gstinNumber: ""
@@ -326,6 +328,7 @@ export function Restaurants() {
           fullName: formR.fullName,
           userType: 'restaurant',
           restaurantName: formR.restaurantName,
+          description: formR.description || undefined,
           contactPersonName: formR.contactPersonName || formR.fullName,
           fssaiLicenseNumber: formR.fssaiLicenseNumber || undefined,
           gstinNumber: formR.gstinNumber || undefined,
@@ -397,6 +400,7 @@ export function Restaurants() {
         phoneNumber: fullDetails.phoneNumber?.replace('+91', '') || "",
         password: "", // Don't pre-fill password
         restaurantName: fullDetails.restaurantName || "",
+        description: fullDetails.description || "",
         contactPersonName: fullDetails.contactPersonName || "",
         fssaiLicenseNumber: fullDetails.fssaiLicenseNumber || "",
         gstinNumber: fullDetails.gstinNumber || ""
@@ -499,6 +503,7 @@ export function Restaurants() {
       // Update restaurant profile (basic info, location, hours, bank, and owner info)
       await adminApi.updateRestaurantProfile(selectedRestaurant.restaurantId, {
         restaurantName: formR.restaurantName,
+        description: formR.description,
         contactPersonName: formR.contactPersonName,
         fssaiLicenseNumber: formR.fssaiLicenseNumber || undefined,
         gstinNumber: formR.gstinNumber || undefined,
@@ -659,6 +664,15 @@ export function Restaurants() {
                       <div>
                         <label className="text-sm font-medium">Password *</label>
                         <Input type="password" value={formR.password} onChange={e => setFormR({ ...formR, password: e.target.value })} placeholder="Initial password" />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-sm font-medium">Description</label>
+                        <textarea
+                          className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          value={formR.description}
+                          onChange={e => setFormR({ ...formR, description: e.target.value })}
+                          placeholder="Tell us about your restaurant..."
+                        />
                       </div>
                       <div>
                         <label className="text-sm font-medium">Contact Person</label>
@@ -1022,6 +1036,10 @@ export function Restaurants() {
                     <label className="text-sm font-medium text-muted-foreground">Restaurant Name</label>
                     <div className="text-sm mt-1">{selectedRestaurant.restaurantName || '—'}</div>
                   </div>
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-muted-foreground">Description</label>
+                    <div className="text-sm mt-1">{selectedRestaurant.description || '—'}</div>
+                  </div>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Contact Person</label>
                     <div className="text-sm mt-1">{selectedRestaurant.contactPersonName || '—'}</div>
@@ -1136,6 +1154,15 @@ export function Restaurants() {
                 <div>
                   <label className="text-sm font-medium">Restaurant Name *</label>
                   <Input value={formR.restaurantName} onChange={e => setFormR({ ...formR, restaurantName: e.target.value })} placeholder="Tasty Bites" />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-sm font-medium">Description</label>
+                  <textarea
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={formR.description}
+                    onChange={e => setFormR({ ...formR, description: e.target.value })}
+                    placeholder="Tell us about your restaurant..."
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Contact Person</label>
