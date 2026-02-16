@@ -81,43 +81,43 @@ export function Notifications() {
         descriptionKey: OrderNotificationSettingKey;
         label: string;
     }[] = [
-        {
-            keyPrefix: "orderConfirmed",
-            titleKey: "orderConfirmedNotificationTitle",
-            descriptionKey: "orderConfirmedNotificationDescription",
-            label: "Confirmed",
-        },
-        {
-            keyPrefix: "orderOutForDelivery",
-            titleKey: "orderOutForDeliveryNotificationTitle",
-            descriptionKey: "orderOutForDeliveryNotificationDescription",
-            label: "Out for Delivery",
-        },
-        {
-            keyPrefix: "orderDelivered",
-            titleKey: "orderDeliveredNotificationTitle",
-            descriptionKey: "orderDeliveredNotificationDescription",
-            label: "Delivered",
-        },
-        {
-            keyPrefix: "orderCancelledByAdmin",
-            titleKey: "orderCancelledByAdminNotificationTitle",
-            descriptionKey: "orderCancelledByAdminNotificationDescription",
-            label: "Cancelled by Admin",
-        },
-        {
-            keyPrefix: "orderCancelledByRestaurant",
-            titleKey: "orderCancelledByRestaurantNotificationTitle",
-            descriptionKey: "orderCancelledByRestaurantNotificationDescription",
-            label: "Cancelled by Restaurant",
-        },
-        {
-            keyPrefix: "orderRefunded",
-            titleKey: "orderRefundedNotificationTitle",
-            descriptionKey: "orderRefundedNotificationDescription",
-            label: "Refunded",
-        },
-    ];
+            {
+                keyPrefix: "orderConfirmed",
+                titleKey: "orderConfirmedNotificationTitle",
+                descriptionKey: "orderConfirmedNotificationDescription",
+                label: "Confirmed",
+            },
+            {
+                keyPrefix: "orderOutForDelivery",
+                titleKey: "orderOutForDeliveryNotificationTitle",
+                descriptionKey: "orderOutForDeliveryNotificationDescription",
+                label: "Out for Delivery",
+            },
+            {
+                keyPrefix: "orderDelivered",
+                titleKey: "orderDeliveredNotificationTitle",
+                descriptionKey: "orderDeliveredNotificationDescription",
+                label: "Delivered",
+            },
+            {
+                keyPrefix: "orderCancelledByAdmin",
+                titleKey: "orderCancelledByAdminNotificationTitle",
+                descriptionKey: "orderCancelledByAdminNotificationDescription",
+                label: "Cancelled by Admin",
+            },
+            {
+                keyPrefix: "orderCancelledByRestaurant",
+                titleKey: "orderCancelledByRestaurantNotificationTitle",
+                descriptionKey: "orderCancelledByRestaurantNotificationDescription",
+                label: "Cancelled by Restaurant",
+            },
+            {
+                keyPrefix: "orderRefunded",
+                titleKey: "orderRefundedNotificationTitle",
+                descriptionKey: "orderRefundedNotificationDescription",
+                label: "Refunded",
+            },
+        ];
 
     const fetchOrderNotificationSettings = async () => {
         try {
@@ -215,6 +215,8 @@ export function Notifications() {
         fetchOrderNotificationSettings();
     }, []);
 
+    const [isCreating, setIsCreating] = useState(false);
+
     const handleCreate = async () => {
         if (!formData.title || !formData.scheduledAt) {
             toast.error("Title and Scheduled Time are required");
@@ -222,6 +224,7 @@ export function Notifications() {
         }
 
         try {
+            setIsCreating(true);
             const scheduledAtUTC = new Date(formData.scheduledAt).toISOString();
             await adminApi.createNotification({
                 ...formData,
@@ -237,6 +240,8 @@ export function Notifications() {
             fetchNotifications();
         } catch (error: any) {
             toast.error(error.message || "Failed to create notification");
+        } finally {
+            setIsCreating(false);
         }
     };
 
@@ -487,8 +492,8 @@ export function Notifications() {
                                 </div>
                             )}
 
-                            <Button onClick={handleCreate} disabled={targetType === 'specific' && selectedUserIds.length === 0}>
-                                Create Notification
+                            <Button onClick={handleCreate} disabled={isCreating || (targetType === 'specific' && selectedUserIds.length === 0)}>
+                                {isCreating ? "Creating..." : "Create Notification"}
                             </Button>
                         </div>
                     </DialogContent>
