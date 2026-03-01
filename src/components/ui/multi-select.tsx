@@ -9,9 +9,10 @@ interface MultiSelectProps {
   onChange: (selected: number[]) => void;
   placeholder?: string;
   label?: string;
+  onCreate?: (val: string) => void;
 }
 
-export function MultiSelect({ options, selected, onChange, placeholder = "Select items...", label }: MultiSelectProps) {
+export function MultiSelect({ options, selected, onChange, placeholder = "Select items...", label, onCreate }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -40,14 +41,14 @@ export function MultiSelect({ options, selected, onChange, placeholder = "Select
   };
 
   const selectedOptions = options.filter(opt => selected.includes(opt.id));
-  const filteredOptions = options.filter(opt => 
+  const filteredOptions = options.filter(opt =>
     opt.name.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div className="space-y-2 relative" ref={dropdownRef}>
       {label && <label className="text-sm font-medium">{label}</label>}
-      
+
       {/* Selected Items Display */}
       <div
         onClick={() => setOpen(!open)}
@@ -65,6 +66,7 @@ export function MultiSelect({ options, selected, onChange, placeholder = "Select
               >
                 {option.name}
                 <button
+                  type="button"
                   className="ml-1 rounded-full outline-none hover:bg-muted"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -85,32 +87,51 @@ export function MultiSelect({ options, selected, onChange, placeholder = "Select
         <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg">
           <div className="p-2">
             <Input
-              placeholder="Search..."
+              placeholder="Search or add new..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-8"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && search.trim() && filteredOptions.length === 0) {
+                  e.preventDefault();
+                  if (onCreate) {
+                    onCreate(search.trim());
+                    setSearch("");
+                  }
+                }
+              }}
             />
           </div>
           <div className="max-h-64 overflow-auto p-1">
             {filteredOptions.length === 0 ? (
-              <div className="py-6 text-center text-sm text-muted-foreground">
+              <div className="py-2 text-center text-sm text-muted-foreground">
                 No items found.
+                {search.trim() && onCreate && (
+                  <button
+                    type="button"
+                    className="mt-2 block w-full text-primary hover:underline"
+                    onClick={() => {
+                      onCreate(search.trim());
+                      setSearch("");
+                    }}
+                  >
+                    Create "{search.trim()}"
+                  </button>
+                )}
               </div>
             ) : (
               filteredOptions.map((option) => (
                 <div
                   key={option.id}
                   onClick={() => handleSelect(option.id)}
-                  className={`flex items-center px-2 py-1.5 text-sm rounded cursor-pointer hover:bg-accent ${
-                    selected.includes(option.id) ? 'bg-accent' : ''
-                  }`}
+                  className={`flex items-center px-2 py-1.5 text-sm rounded cursor-pointer hover:bg-accent ${selected.includes(option.id) ? 'bg-accent' : ''
+                    }`}
                 >
                   <div
-                    className={`mr-2 flex h-4 w-4 items-center justify-center rounded-sm border ${
-                      selected.includes(option.id)
-                        ? "bg-primary border-primary"
-                        : "border-input"
-                    }`}
+                    className={`mr-2 flex h-4 w-4 items-center justify-center rounded-sm border ${selected.includes(option.id)
+                      ? "bg-primary border-primary"
+                      : "border-input"
+                      }`}
                   >
                     {selected.includes(option.id) && (
                       <svg

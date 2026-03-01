@@ -13,6 +13,7 @@ interface SettingsData extends Record<string, string> {
   // Financial & Pricing
   platformCommissionRate: string;
   handlingFeeFixed: string;
+  deliveryFee: string;
   gstRate: string;
 
   // Operational & Logistics
@@ -41,6 +42,12 @@ interface SettingsData extends Record<string, string> {
   supportEmail: string;
   urlPrivacyPolicy: string;
   urlTermsAndConditions: string;
+
+  // Social Media
+  socialInstagramUrl: string;
+  socialFacebookUrl: string;
+  socialTwitterUrl: string;
+  socialLinkedinUrl: string;
 }
 
 export function Settings() {
@@ -553,6 +560,66 @@ export function Settings() {
                       onChange={(e) => updateSetting('urlTermsAndConditions', e.target.value)}
                     />
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Social Media */}
+            <div>
+              <h3 className="text-lg font-semibold mb-1">Social Media</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Social media profile URLs displayed across the app
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="socialInstagramUrl">
+                    Instagram URL
+                  </Label>
+                  <Input
+                    id="socialInstagramUrl"
+                    type="url"
+                    placeholder="https://www.instagram.com/getfozo/"
+                    value={settings.socialInstagramUrl}
+                    onChange={(e) => updateSetting('socialInstagramUrl', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="socialFacebookUrl">
+                    Facebook URL
+                  </Label>
+                  <Input
+                    id="socialFacebookUrl"
+                    type="url"
+                    placeholder="https://www.facebook.com/getfozo/"
+                    value={settings.socialFacebookUrl}
+                    onChange={(e) => updateSetting('socialFacebookUrl', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="socialTwitterUrl">
+                    Twitter (X) URL
+                  </Label>
+                  <Input
+                    id="socialTwitterUrl"
+                    type="url"
+                    placeholder="https://x.com/getfozo"
+                    value={settings.socialTwitterUrl}
+                    onChange={(e) => updateSetting('socialTwitterUrl', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="socialLinkedinUrl">
+                    LinkedIn URL
+                  </Label>
+                  <Input
+                    id="socialLinkedinUrl"
+                    type="url"
+                    placeholder="https://www.linkedin.com/company/getfozo/"
+                    value={settings.socialLinkedinUrl}
+                    onChange={(e) => updateSetting('socialLinkedinUrl', e.target.value)}
+                  />
                 </div>
               </div>
             </div>

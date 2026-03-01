@@ -25,6 +25,7 @@ type Coupon = {
   usageCount: number;
   expiresAt: string | null;
   isActive: boolean;
+  visibility: boolean;
   createdAt: string;
 };
 
@@ -76,6 +77,7 @@ export function Coupons() {
     usageLimit: "100000",
     expiresAt: "", // datetime-local string
     isActive: true,
+    visibility: true,
   });
 
   const loadCoupons = async (silent = false) => {
@@ -189,6 +191,7 @@ export function Coupons() {
         usageLimit,
         expiresAt,
         isActive: form.isActive,
+        visibility: form.visibility,
       });
       toast.success("Coupon created");
       setOpenCreate(false);
@@ -202,6 +205,7 @@ export function Coupons() {
         usageLimit: "100000",
         expiresAt: "",
         isActive: true,
+        visibility: true,
       });
       setSelectedRestaurant(null);
       setRestaurantSearchFilter("");
@@ -226,6 +230,7 @@ export function Coupons() {
       usageLimit: String(coupon.usageLimit ?? 100000),
       expiresAt: coupon.expiresAt ? new Date(coupon.expiresAt).toISOString().slice(0, 16) : "",
       isActive: coupon.isActive,
+      visibility: coupon.visibility ?? true,
     });
 
     if (coupon.restaurantId) {
@@ -267,6 +272,7 @@ export function Coupons() {
         usageLimit,
         expiresAt,
         isActive: form.isActive,
+        visibility: form.visibility,
       });
       toast.success("Coupon updated");
       setOpenEdit(false);
@@ -507,6 +513,14 @@ export function Coupons() {
                     </div>
                     <Switch checked={form.isActive} onCheckedChange={(v) => setForm((s) => ({ ...s, isActive: v }))} />
                   </div>
+
+                  <div className="flex items-center justify-between md:col-span-2 p-3 rounded-lg border">
+                    <div>
+                      <div className="font-medium">Visibility</div>
+                      <div className="text-xs text-muted-foreground">Hidden coupons won't appear in customer app but are still usable if code is known.</div>
+                    </div>
+                    <Switch checked={form.visibility} onCheckedChange={(v) => setForm((s) => ({ ...s, visibility: v }))} />
+                  </div>
                 </div>
 
                 <DialogFooter>
@@ -546,6 +560,7 @@ export function Coupons() {
                   <TableHead>Usage</TableHead>
                   <TableHead>Expires</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Visibility</TableHead>
                   <TableHead>Actions</TableHead>
                   <TableHead className="text-right">Active</TableHead>
                 </TableRow>
@@ -553,7 +568,7 @@ export function Coupons() {
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={12} className="text-center text-muted-foreground py-8">
                       No coupons found.
                     </TableCell>
                   </TableRow>
@@ -591,6 +606,13 @@ export function Coupons() {
                             <Badge>Live</Badge>
                           ) : (
                             <Badge variant="secondary">Inactive</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {c.visibility ? (
+                            <Badge variant="outline">Visible</Badge>
+                          ) : (
+                            <Badge variant="secondary">Hidden</Badge>
                           )}
                         </TableCell>
                         <TableCell>
@@ -787,6 +809,14 @@ export function Coupons() {
                 <div className="text-xs text-muted-foreground">Inactive coupons won’t validate in checkout.</div>
               </div>
               <Switch checked={form.isActive} onCheckedChange={(v) => setForm((s) => ({ ...s, isActive: v }))} />
+            </div>
+
+            <div className="flex items-center justify-between md:col-span-2 p-3 rounded-lg border">
+              <div>
+                <div className="font-medium">Visibility</div>
+                <div className="text-xs text-muted-foreground">Hidden coupons won't appear in customer app but are still usable if code is known.</div>
+              </div>
+              <Switch checked={form.visibility} onCheckedChange={(v) => setForm((s) => ({ ...s, visibility: v }))} />
             </div>
           </div>
 
