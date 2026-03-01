@@ -106,7 +106,11 @@ export const adminApi = {
   getAllRestaurants: (search?: string) =>
     apiRequest<any[]>(`/admin/restaurants${search ? `?search=${encodeURIComponent(search)}` : ''}`),
   getRestaurantById: (id: string) => apiRequest<any>(`/admin/restaurants/${id}`),
-  getAllCuisines: () => apiRequest<Array<{ id: number; name: string }>>('/admin/cuisines'),
+  getAllCuisines: () => apiRequest<Array<{ id: number; name: string; imageUrl?: string }>>('/admin/cuisines'),
+  createCuisine: (body: { name: string; imageUrl?: string }) => apiRequest<{ id: number; name: string; imageUrl?: string }>(
+    '/admin/cuisines',
+    { method: 'POST', body: JSON.stringify(body) }
+  ),
 
   onboardRestaurant: (body: any) => apiRequest<any>(
     '/admin/restaurants',
@@ -320,6 +324,25 @@ export const adminApi = {
     const headers: HeadersInit = { 'x-api-key': API_KEY };
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const response = await fetch(`${API_BASE_URL}/upload/surprise-bag`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Upload failed' }));
+      throw new Error(error.message || `HTTP ${response.status}`);
+    }
+    const json = await response.json();
+    return json.success ? json.data : json;
+  },
+
+  uploadCuisineImage: async (file: File): Promise<{ imageUrl: string }> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const token = getAuthToken();
+    const headers: HeadersInit = { 'x-api-key': API_KEY };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const response = await fetch(`${API_BASE_URL}/upload/cuisine`, {
       method: 'POST',
       headers,
       body: formData,

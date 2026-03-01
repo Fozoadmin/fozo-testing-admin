@@ -266,20 +266,6 @@ export function Settings() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="deliveryFee">
-                    Delivery Fee (INR)
-                  </Label>
-                  <Input
-                    id="deliveryFee"
-                    type="number"
-                    min="0"
-                    value={settings.deliveryFee}
-                    onChange={(e) => updateSetting('deliveryFee', e.target.value)}
-                  />
-                </div>
-              </div>
             </div>
 
             <Separator />

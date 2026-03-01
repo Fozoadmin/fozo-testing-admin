@@ -98,6 +98,12 @@ export function Restaurants() {
   const [restaurantImageUrl, setRestaurantImageUrl] = useState<string>("");
   const [uploadingImage, setUploadingImage] = useState(false);
 
+  // Cuisine Creation states
+  const [openAddCuisine, setOpenAddCuisine] = useState(false);
+  const [newCuisineName, setNewCuisineName] = useState("");
+  const [newCuisineImageUrl, setNewCuisineImageUrl] = useState("");
+  const [uploadingCuisineImage, setUploadingCuisineImage] = useState(false);
+
   useEffect(() => {
     fetchAllRestaurants();
     fetchCuisines();
@@ -139,6 +145,55 @@ export function Restaurants() {
       setCuisines(data);
     } catch (error) {
       console.error('Error fetching cuisines:', error);
+    }
+  };
+
+  const handleCreateCuisine = (name: string) => {
+    const existing = cuisines.find(c => c.name.toLowerCase() === name.toLowerCase());
+    if (existing) {
+      if (!selectedCuisineIds.includes(existing.id)) {
+        setSelectedCuisineIds([...selectedCuisineIds, existing.id]);
+      }
+      return;
+    }
+    setNewCuisineName(name);
+    setNewCuisineImageUrl("");
+    setOpenAddCuisine(true);
+  };
+
+  const handleCuisineImageUpload = async (file: File) => {
+    try {
+      setUploadingCuisineImage(true);
+      const result = await adminApi.uploadCuisineImage(file);
+      setNewCuisineImageUrl(result.imageUrl);
+      toast.success("Image uploaded successfully!", { position: "top-right", autoClose: 2000 });
+    } catch (error: any) {
+      console.error('Image upload failed:', error);
+      toast.error(error.message || "Failed to upload image");
+    } finally {
+      setUploadingCuisineImage(false);
+    }
+  };
+
+  const submitNewCuisine = async () => {
+    if (!newCuisineName.trim()) {
+      toast.error("Cuisine name is required");
+      return;
+    }
+    try {
+      const newCuisine = await adminApi.createCuisine({
+        name: newCuisineName.trim(),
+        imageUrl: newCuisineImageUrl.trim() || undefined
+      });
+      setCuisines(prev => [...prev, newCuisine].sort((a, b) => a.name.localeCompare(b.name)));
+      setSelectedCuisineIds(prev => [...prev, newCuisine.id]);
+      setOpenAddCuisine(false);
+      setNewCuisineName("");
+      setNewCuisineImageUrl("");
+      toast.success(`Cuisine "${newCuisine.name}" added successfully`);
+    } catch (error: any) {
+      console.error('Error creating cuisine:', error);
+      toast.error(error?.message || `Failed to create cuisine "${newCuisineName}"`);
     }
   };
 
@@ -734,13 +789,25 @@ export function Restaurants() {
 
                     {/* Cuisine Selection */}
                     <div className="mt-4">
-                      <MultiSelect
-                        label="Cuisines *"
-                        options={cuisines}
-                        selected={selectedCuisineIds}
-                        onChange={setSelectedCuisineIds}
-                        placeholder="Select cuisines..."
-                      />
+                      <div className="flex items-end gap-2">
+                        <div className="flex-1">
+                          <MultiSelect
+                            label="Cuisines *"
+                            options={cuisines}
+                            selected={selectedCuisineIds}
+                            onChange={setSelectedCuisineIds}
+                            placeholder="Select cuisines..."
+                            onCreate={handleCreateCuisine}
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => { setNewCuisineName(""); setNewCuisineImageUrl(""); setOpenAddCuisine(true); }}
+                        >
+                          <Plus className="mr-2 h-4 w-4" /> Add Cuisine
+                        </Button>
+                      </div>
                       <p className="text-xs text-muted-foreground mt-1">
                         Search and select multiple cuisines. At least one is required.
                       </p>
@@ -1359,13 +1426,25 @@ export function Restaurants() {
 
             {/* Cuisines Tab */}
             <TabsContent value="cuisines" className="space-y-4">
-              <MultiSelect
-                label="Cuisines *"
-                options={cuisines}
-                selected={selectedCuisineIds}
-                onChange={setSelectedCuisineIds}
-                placeholder="Select cuisines..."
-              />
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <MultiSelect
+                    label="Cuisines *"
+                    options={cuisines}
+                    selected={selectedCuisineIds}
+                    onChange={setSelectedCuisineIds}
+                    placeholder="Select cuisines..."
+                    onCreate={handleCreateCuisine}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => { setNewCuisineName(""); setNewCuisineImageUrl(""); setOpenAddCuisine(true); }}
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Add Cuisine
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Search and select multiple cuisines. At least one is required.
               </p>
@@ -1401,6 +1480,65 @@ export function Restaurants() {
               onClick={handleUpdate}
             >
               {editing ? 'Updating...' : 'Update Restaurant'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Cuisine Dialog */}
+      <Dialog open={openAddCuisine} onOpenChange={setOpenAddCuisine}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Cuisine</DialogTitle>
+            <DialogDescription>
+              Create a new cuisine to associate with restaurants.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Cuisine Name *</label>
+              <Input
+                value={newCuisineName}
+                onChange={e => setNewCuisineName(e.target.value)}
+                placeholder="e.g. Italian, Fast Food"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Cuisine Image URL (Optional)</label>
+              <Input
+                value={newCuisineImageUrl}
+                onChange={e => setNewCuisineImageUrl(e.target.value)}
+                placeholder="https://example.com/image.jpg"
+              />
+              <div className="mt-2 text-center text-sm font-semibold">OR</div>
+              <div className="mt-2">
+                <label className="text-sm font-medium">Upload Image</label>
+                <div className="mt-1 flex flex-col gap-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        handleCuisineImageUpload(e.target.files[0]);
+                      }
+                    }}
+                    disabled={uploadingCuisineImage}
+                    className="cursor-pointer"
+                  />
+                  {uploadingCuisineImage && (
+                    <p className="text-xs text-muted-foreground">Uploading image...</p>
+                  )}
+                  {newCuisineImageUrl && !newCuisineImageUrl.startsWith('http') && (
+                    <p className="text-xs text-green-600">Image uploaded to storage successfully.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setOpenAddCuisine(false)}>Cancel</Button>
+            <Button disabled={uploadingCuisineImage || !newCuisineName.trim()} onClick={submitNewCuisine}>
+              Add Cuisine
             </Button>
           </div>
         </DialogContent>
