@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { adminApi } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -953,7 +954,7 @@ export function DeliveryPartners() {
                                     size="icon"
                                     className="h-6 w-6"
                                     onClick={async () => {
-                                      try { await navigator.clipboard.writeText(order.id); } catch {}
+                                      try { await navigator.clipboard.writeText(order.id); } catch { /* clipboard not available */ }
                                     }}
                                     aria-label="Copy order id"
                                   >

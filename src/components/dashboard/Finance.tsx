@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { adminApi } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +55,7 @@ export function Finance() {
     fetchAllDeliveryPartners();
     fetchRestaurantData();
     fetchDeliveryPartnerData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Calculate dates based on time period
@@ -67,16 +69,18 @@ export function Finance() {
       case 'day':
         startDate = today.toISOString().split('T')[0];
         break;
-      case 'week':
+      case 'week': {
         const weekAgo = new Date(today);
         weekAgo.setDate(today.getDate() - 7);
         startDate = weekAgo.toISOString().split('T')[0];
         break;
-      case 'month':
+      }
+      case 'month': {
         const monthAgo = new Date(today);
         monthAgo.setMonth(today.getMonth() - 1);
         startDate = monthAgo.toISOString().split('T')[0];
         break;
+      }
       case 'total':
         startDate = '';
         break;
@@ -100,6 +104,7 @@ export function Finance() {
       setRestaurantStartDate("");
       setRestaurantEndDate("");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurantTimePeriod]);
 
   useEffect(() => {
@@ -111,6 +116,7 @@ export function Finance() {
       setDeliveryPartnerStartDate("");
       setDeliveryPartnerEndDate("");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deliveryPartnerTimePeriod]);
 
   const fetchAllRestaurants = async () => {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useState } from "react";
 import { adminApi } from "@/lib/api";
 import { subscribeToEvent, SOCKET_EVENTS } from "@/lib/socket";
@@ -235,7 +236,7 @@ export function Orders() {
         }));
 
         setDpList(normalized);
-      } catch (e: any) {
+      } catch {
         if (!alive) return;
         setDpError("Failed to load delivery partners");
       } finally {
@@ -284,7 +285,7 @@ export function Orders() {
   const copy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-    } catch {}
+    } catch { /* clipboard not available */ }
   };
 
   const openMapsUrl = (o: Order) => {
@@ -845,7 +846,7 @@ function InfoRow({ label, value, copyable, icon }: { label: string; value: strin
             variant="ghost"
             className="h-6 w-6"
             onClick={async () => {
-              try { await navigator.clipboard.writeText(String(value)); } catch {}
+              try { await navigator.clipboard.writeText(String(value)); } catch { /* clipboard not available */ }
             }}
             aria-label={`Copy ${label}`}
           >

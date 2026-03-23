@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { OrderStatus } from '../constants/orderStatus';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';

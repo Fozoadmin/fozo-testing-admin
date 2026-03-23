@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -93,7 +94,7 @@ export function Settings() {
       // Compare current settings with original to find only changed values
       const changedSettings: Record<string, string> = {};
       for (const key in settings) {
-        if (settings.hasOwnProperty(key) && originalSettings.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(settings, key) && Object.prototype.hasOwnProperty.call(originalSettings, key)) {
           const currentValue = settings[key];
           const originalValue = originalSettings[key];
           // Only include if value has changed

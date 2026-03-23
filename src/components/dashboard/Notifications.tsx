@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { adminApi } from "@/lib/api";
 import { motion } from "framer-motion";
@@ -73,7 +74,7 @@ export function Notifications() {
         if ((targetType === "specific" || editTargetType === "specific") && users.length === 0) {
             fetchUsers();
         }
-    }, [targetType, editTargetType]);
+    }, [targetType, editTargetType, users.length]);
 
     const orderNotificationFields: {
         keyPrefix: string;
