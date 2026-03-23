@@ -354,4 +354,59 @@ export const adminApi = {
     const json = await response.json();
     return json.success ? json.data : json;
   },
+
+  uploadGroceryImage: async (file: File): Promise<{ imageUrl: string }> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const token = getAuthToken();
+    const headers: HeadersInit = { 'x-api-key': API_KEY };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const response = await fetch(`${API_BASE_URL}/upload/grocery`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Upload failed' }));
+      throw new Error(error.message || `HTTP ${response.status}`);
+    }
+    const json = await response.json();
+    return json.success ? json.data : json;
+  },
+
+  // Grocery Store Management
+  getAllGroceryStores: (search?: string) =>
+    apiRequest<any[]>(`/admin/grocery-stores${search ? `?search=${encodeURIComponent(search)}` : ''}`),
+
+  getGroceryStoreById: (id: string) =>
+    apiRequest<any>(`/admin/grocery-stores/${id}`),
+
+  createGroceryStore: (body: any) =>
+    apiRequest<any>('/admin/grocery-stores', { method: 'POST', body: JSON.stringify(body) }),
+
+  updateGroceryStore: (id: string, body: any) =>
+    apiRequest<any>(`/admin/grocery-stores/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+
+  deleteGroceryStore: (id: string) =>
+    apiRequest<any>(`/admin/grocery-stores/${id}`, { method: 'DELETE' }),
+
+  // Grocery Item Management
+  getAllGroceryItems: (storeId?: string, search?: string) => {
+    const params = new URLSearchParams();
+    if (storeId) params.append('storeId', storeId);
+    if (search) params.append('search', search);
+    return apiRequest<any[]>(`/admin/grocery-items${params.toString() ? `?${params.toString()}` : ''}`);
+  },
+
+  getGroceryItemById: (id: string) =>
+    apiRequest<any>(`/admin/grocery-items/${id}`),
+
+  createGroceryItem: (body: any) =>
+    apiRequest<any>('/admin/grocery-items', { method: 'POST', body: JSON.stringify(body) }),
+
+  updateGroceryItem: (id: string, body: any) =>
+    apiRequest<any>(`/admin/grocery-items/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+
+  deleteGroceryItem: (id: string) =>
+    apiRequest<any>(`/admin/grocery-items/${id}`, { method: 'DELETE' }),
 };

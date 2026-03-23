@@ -11,6 +11,8 @@ import {
   Cog,
   Bell,
   Ticket,
+  Store,
+  Apple,
 } from "lucide-react";
 // import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -26,6 +28,8 @@ import {
   Finance,
   Settings,
   Notifications,
+  GroceryStores,
+  GroceryItems,
 } from "@/components/dashboard";
 
 // const cities = ["Mumbai", "Bengaluru", "Delhi", "Hyderabad", "Pune", "Chennai"];
@@ -149,6 +153,26 @@ export default function Dashboard() {
           </button>
           <button
             onClick={() => {
+              setActive("grocery-stores");
+              setMobileSidebarOpen(false);
+            }}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${active === "grocery-stores" ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
+          >
+            <Store className="h-4 w-4" />
+            Grossy Stores
+          </button>
+          <button
+            onClick={() => {
+              setActive("grocery-items");
+              setMobileSidebarOpen(false);
+            }}
+            className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${active === "grocery-items" ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}
+          >
+            <Apple className="h-4 w-4" />
+            Grossy Items
+          </button>
+          <button
+            onClick={() => {
               setActive("notifications");
               setMobileSidebarOpen(false);
             }}
@@ -210,6 +234,8 @@ export default function Dashboard() {
             <TabsTrigger value="customers" />
             <TabsTrigger value="finance" />
             <TabsTrigger value="settings" />
+            <TabsTrigger value="grocery-stores" />
+            <TabsTrigger value="grocery-items" />
             </TabsList>
           </Tabs>
 
@@ -225,6 +251,8 @@ export default function Dashboard() {
             {active === "finance" && <Finance />}
             {active === "notifications" && <Notifications />}
             {active === "settings" && <Settings />}
+            {active === "grocery-stores" && <GroceryStores />}
+            {active === "grocery-items" && <GroceryItems />}
           </div>
         </main>
       </div>

@@ -11,3 +11,5 @@ export { Coupons } from './Coupons';
 export { Finance } from './Finance';
 export { Settings } from './Settings';
 export { Notifications } from './Notifications';
+export { GroceryStores } from './GroceryStores';
+export { GroceryItems } from './GroceryItems';
