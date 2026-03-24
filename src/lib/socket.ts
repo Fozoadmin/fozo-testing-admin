@@ -9,6 +9,8 @@ export const SOCKET_EVENTS = {
   NEW_ORDER: 'new_order',
   SETTINGS_UPDATED: 'settings_updated',
   ORDER_UPDATED: 'order_updated',
+  NEW_GROCERY_ORDER: 'new_grocery_order',
+  GROCERY_ORDER_UPDATED: 'grocery_order_updated',
 } as const;
 
 type SocketEventType = typeof SOCKET_EVENTS[keyof typeof SOCKET_EVENTS];

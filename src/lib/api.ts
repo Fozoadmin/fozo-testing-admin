@@ -410,4 +410,17 @@ export const adminApi = {
 
   deleteGroceryItem: (id: string) =>
     apiRequest<any>(`/admin/grocery-items/${id}`, { method: 'DELETE' }),
+
+  // Grocery Order Management
+  getAllGroceryOrders: (status?: string) => {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    return apiRequest<{ orders: any[] }>(`/admin/grocery-orders${params.toString() ? `?${params.toString()}` : ''}`);
+  },
+
+  updateGroceryOrderStatus: (orderId: string, newStatus: string) =>
+    apiRequest<any>(`/admin/grocery-orders/${orderId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ newStatus }),
+    }),
 };

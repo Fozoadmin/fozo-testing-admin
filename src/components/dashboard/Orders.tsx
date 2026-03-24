@@ -20,7 +20,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Copy, ExternalLink, Loader2, MapPin, Phone, User2, Truck, IndianRupee, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Copy, ExternalLink, Loader2, MapPin, Phone, User2, Truck, IndianRupee, CheckCircle2, XCircle, Clock, ShoppingCart } from "lucide-react";
 import { cn, apiRequestWithStatus } from "@/lib/utils";
 import { ORDER_STATUS, getStatusLabel } from "@/constants/orderStatus";
 import type { OrderStatus } from "@/constants/orderStatus";
@@ -78,6 +78,73 @@ export type DeliveryPartner = {
   id: string;
   fullName: string;
   phoneNumber?: string;
+};
+
+export type GroceryOrder = {
+  id: string;
+  customerId: string;
+  storeId: string;
+  deliveryPartnerId: string | null;
+  storeNameSnapshot: string;
+  storeImage: string | null;
+  totalItemsAmount: string;
+  deliveryCharge: string;
+  handlingCharge: string;
+  platformCommission: string;
+  gstAmount: string;
+  discountAmount: string;
+  totalPaymentAmount: string;
+  deliveryAddressSnapshot: string | null;
+  orderStatus: string;
+  paymentMethod: string | null;
+  paymentStatus: string;
+  customerName: string | null;
+  customerPhone: string | null;
+  createdAt: string;
+  updatedAt: string;
+  items: Array<{
+    id: string;
+    groceryItemId: string;
+    itemName: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  }>;
+};
+
+const GROCERY_STATUS_OPTIONS = [
+  "all",
+  "placed",
+  "confirmed",
+  "ready_for_pickup",
+  "out_for_delivery",
+  "delivered",
+  "cancelled_user",
+  "cancelled_store",
+] as const;
+
+type GroceryOrderStatus = (typeof GROCERY_STATUS_OPTIONS)[number];
+
+const groceryStatusLabel = (s: string) => {
+  const map: Record<string, string> = {
+    placed: "Placed",
+    confirmed: "Confirmed",
+    ready_for_pickup: "Ready for Pickup",
+    out_for_delivery: "Out for Delivery",
+    delivered: "Delivered",
+    cancelled_user: "Cancelled by User",
+    cancelled_store: "Cancelled by Store",
+    all: "All Statuses",
+  };
+  return map[s] ?? s;
+};
+
+const groceryStatusVariant = (s: string) => {
+  if (!s) return "outline" as const;
+  if (s === "delivered") return "default" as const;
+  if (s.startsWith("cancelled")) return "destructive" as const;
+  if (["out_for_delivery", "ready_for_pickup", "confirmed", "placed"].includes(s)) return "secondary" as const;
+  return "outline" as const;
 };
 
 // ------------------ Utils ------------------
@@ -155,6 +222,9 @@ function useDebounced<T>(value: T, delay = 300) {
 
 // ------------------ Main Component ------------------
 export function Orders() {
+  const [activeTab, setActiveTab] = useState<"restaurant" | "grocery">("restaurant");
+
+  // ── Restaurant orders state ──
   const [status, setStatus] = useState<(typeof STATUS_OPTIONS)[number]>("all");
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -162,6 +232,16 @@ export function Orders() {
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounced(query);
   const [selected, setSelected] = useState<Order | null>(null);
+
+  // ── Grocery orders state ──
+  const [groceryStatus, setGroceryStatus] = useState<GroceryOrderStatus>("all");
+  const [groceryOrders, setGroceryOrders] = useState<GroceryOrder[]>([]);
+  const [groceryLoading, setGroceryLoading] = useState(true);
+  const [groceryError, setGroceryError] = useState<string | null>(null);
+  const [groceryQuery, setGroceryQuery] = useState("");
+  const debouncedGroceryQuery = useDebounced(groceryQuery);
+  const [selectedGrocery, setSelectedGrocery] = useState<GroceryOrder | null>(null);
+  const [updatingGroceryStatusId, setUpdatingGroceryStatusId] = useState<string | null>(null);
 
   // Delivery partners for assignment when moving to out_for_delivery
   const [assignOpen, setAssignOpen] = useState(false);
@@ -215,6 +295,52 @@ export function Orders() {
       if (unsubscribe) {
         unsubscribe();
       }
+    };
+  }, []);
+
+  // Fetch grocery orders
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const data = await adminApi.getAllGroceryOrders();
+        if (!isMounted) return;
+        const sorted = [...(data?.orders ?? [])].sort(
+          (a: GroceryOrder, b: GroceryOrder) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setGroceryOrders(sorted);
+      } catch (e: any) {
+        if (!isMounted) return;
+        setGroceryError("Failed to load grocery orders.");
+      } finally {
+        if (isMounted) setGroceryLoading(false);
+      }
+    })();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Listen for new / updated grocery orders via socket
+  useEffect(() => {
+    const unsubNew = subscribeToEvent<GroceryOrder>(SOCKET_EVENTS.NEW_GROCERY_ORDER, () => {
+      adminApi.getAllGroceryOrders()
+        .then((data) => {
+          const sorted = [...(data?.orders ?? [])].sort(
+            (a: GroceryOrder, b: GroceryOrder) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          setGroceryOrders(sorted);
+        })
+        .catch((err) => console.error('Error refetching grocery orders after socket event:', err));
+    });
+
+    const unsubUpdated = subscribeToEvent<GroceryOrder>(SOCKET_EVENTS.GROCERY_ORDER_UPDATED, (updated) => {
+      setGroceryOrders((prev) =>
+        prev.map((o) => (o.id === updated.id ? { ...o, orderStatus: (updated as any).order_status ?? o.orderStatus } : o))
+      );
+    });
+
+    return () => {
+      unsubNew?.();
+      unsubUpdated?.();
     };
   }, []);
 
@@ -454,8 +580,320 @@ export function Orders() {
     }
   };
 
+  // Grocery filtered list
+  const filteredGrocery = useMemo(() => {
+    let out = groceryOrders;
+    if (groceryStatus !== "all") out = out.filter((o) => o.orderStatus === groceryStatus);
+    if (debouncedGroceryQuery.trim()) {
+      const q = debouncedGroceryQuery.trim().toLowerCase();
+      out = out.filter((o) =>
+        o.id.toLowerCase().includes(q) ||
+        (o.customerName?.toLowerCase() ?? "").includes(q) ||
+        (o.customerPhone?.toLowerCase() ?? "").includes(q) ||
+        (o.storeNameSnapshot?.toLowerCase() ?? "").includes(q)
+      );
+    }
+    return out;
+  }, [groceryOrders, groceryStatus, debouncedGroceryQuery]);
+
+  // Grocery status update handler
+  const handleGroceryStatusChange = async (order: GroceryOrder, newStatus: string) => {
+    const prev = order.orderStatus;
+    setUpdatingGroceryStatusId(order.id);
+    setGroceryOrders((os) => os.map((o) => o.id === order.id ? { ...o, orderStatus: newStatus } : o));
+    try {
+      await adminApi.updateGroceryOrderStatus(order.id, newStatus);
+      setSelectedGrocery((sel) => sel && sel.id === order.id ? { ...sel, orderStatus: newStatus } : sel);
+      toast.success(`Status updated to ${groceryStatusLabel(newStatus)}`, { position: "top-right", autoClose: 3000 });
+    } catch (e: any) {
+      setGroceryOrders((os) => os.map((o) => o.id === order.id ? { ...o, orderStatus: prev } : o));
+      setSelectedGrocery((sel) => sel && sel.id === order.id ? { ...sel, orderStatus: prev } : sel);
+      toast.error(e?.message || "Failed to update status", { position: "top-right", autoClose: 3000 });
+    } finally {
+      setUpdatingGroceryStatusId(null);
+    }
+  };
+
   return (
     <div className="grid gap-4">
+      {/* Tab switcher */}
+      <div className="flex gap-2">
+        <Button
+          variant={activeTab === "restaurant" ? "default" : "outline"}
+          className="gap-2"
+          onClick={() => setActiveTab("restaurant")}
+        >
+          <Truck className="h-4 w-4" /> Restaurant Orders
+          <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+            {orders.length}
+          </span>
+        </Button>
+        <Button
+          variant={activeTab === "grocery" ? "default" : "outline"}
+          className="gap-2"
+          onClick={() => setActiveTab("grocery")}
+        >
+          <ShoppingCart className="h-4 w-4" /> Grocery Orders
+          <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+            {groceryOrders.length}
+          </span>
+        </Button>
+      </div>
+
+      {activeTab === "grocery" ? (
+        /* ────── GROCERY ORDERS PANEL ────── */
+        <div className="grid gap-4">
+          <Card className="rounded-2xl">
+            <CardContent className="pt-6 grid grid-cols-1 xl:grid-cols-3 gap-3">
+              <div className="flex items-center gap-2 col-span-2">
+                <Input
+                  value={groceryQuery}
+                  onChange={(e) => setGroceryQuery(e.target.value)}
+                  placeholder="Search by ID, customer, store, phone"
+                  aria-label="Search grocery orders"
+                />
+                <Select value={groceryStatus} onValueChange={(v) => setGroceryStatus(v as GroceryOrderStatus)}>
+                  <SelectTrigger className="w-[220px]"><SelectValue placeholder="Status" /></SelectTrigger>
+                  <SelectContent>
+                    {GROCERY_STATUS_OPTIONS.map((s) => (
+                      <SelectItem key={s} value={s}>{groceryStatusLabel(s)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-xl border p-3 text-center">
+                  <div className="text-xs text-muted-foreground">Total</div>
+                  <div className="text-lg font-semibold">{groceryOrders.length}</div>
+                </div>
+                <div className="rounded-xl border p-3 text-center">
+                  <div className="text-xs text-muted-foreground">Revenue</div>
+                  <div className="text-lg font-semibold">
+                    {formatINR(groceryOrders.reduce((s, o) => s + Number(o.totalPaymentAmount || 0), 0))}
+                  </div>
+                </div>
+                <div className="rounded-xl border p-3 text-center">
+                  <div className="text-xs text-muted-foreground">Delivered</div>
+                  <div className="text-lg font-semibold">
+                    {groceryOrders.filter((o) => o.orderStatus === "delivered").length}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl">
+            <CardHeader className="pb-0"><CardTitle>Grocery Orders</CardTitle></CardHeader>
+            <CardContent>
+              {groceryLoading ? (
+                <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Loading grocery orders…
+                </div>
+              ) : groceryError ? (
+                <div className="text-center py-8 text-destructive">{groceryError}</div>
+              ) : filteredGrocery.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">No grocery orders found</div>
+              ) : (
+                <div className="rounded-md border overflow-x-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-background">
+                      <TableRow>
+                        <TableHead>Order</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Store</TableHead>
+                        <TableHead>Items</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Created</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredGrocery.map((o) => (
+                        <TableRow
+                          key={o.id}
+                          className="cursor-pointer hover:bg-muted/40"
+                          onClick={() => setSelectedGrocery(o)}
+                          tabIndex={0}
+                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setSelectedGrocery(o); }}
+                        >
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <span>{o.id.substring(0, 8)}</span>
+                              <Button variant="ghost" size="icon" className="h-6 w-6"
+                                onClick={(e) => { e.stopPropagation(); copy(o.id); }} aria-label="Copy order id">
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <User2 className="h-4 w-4" />
+                              <div>
+                                <div className="font-medium truncate max-w-[160px]">{o.customerName || "N/A"}</div>
+                                <div className="text-xs text-muted-foreground">{o.customerPhone || "-"}</div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="truncate max-w-[180px]">{o.storeNameSnapshot || "N/A"}</div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm">{o.items?.length ?? 0} item{(o.items?.length ?? 0) !== 1 ? "s" : ""}</span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <IndianRupee className="h-3 w-3" />
+                              {Number(o.totalPaymentAmount || 0).toFixed(2)}
+                            </div>
+                          </TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <Select
+                              value={o.orderStatus}
+                              onValueChange={(v) => handleGroceryStatusChange(o, v)}
+                              disabled={updatingGroceryStatusId === o.id}
+                            >
+                              <SelectTrigger className="h-7 w-[170px] text-xs px-2">
+                                {updatingGroceryStatusId === o.id ? (
+                                  <span className="flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Updating…</span>
+                                ) : (
+                                  <Badge variant={groceryStatusVariant(o.orderStatus)} className="capitalize whitespace-nowrap text-xs">
+                                    {groceryStatusLabel(o.orderStatus)}
+                                  </Badge>
+                                )}
+                              </SelectTrigger>
+                              <SelectContent>
+                                {GROCERY_STATUS_OPTIONS.filter((s) => s !== "all").map((s) => (
+                                  <SelectItem key={s} value={s}>{groceryStatusLabel(s)}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">{timeAgo(o.createdAt)}</div>
+                            <div className="text-xs text-muted-foreground">{formatDateTime(o.createdAt)}</div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                    <TableCaption>{filteredGrocery.length} grocery orders listed</TableCaption>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Grocery Order Detail Sheet */}
+          <Sheet open={!!selectedGrocery} onOpenChange={(open) => !open && setSelectedGrocery(null)}>
+            <SheetContent side="right" className="w-full px-2 sm:max-w-xl lg:max-w-2xl overflow-y-auto">
+              {selectedGrocery && (
+                <div className="space-y-4">
+                  <SheetHeader>
+                    <SheetTitle>Grocery Order #{selectedGrocery.id}</SheetTitle>
+                  </SheetHeader>
+
+                  {/* Status update */}
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={selectedGrocery.orderStatus}
+                      onValueChange={(v) => handleGroceryStatusChange(selectedGrocery, v)}
+                    >
+                      <SelectTrigger className="w-[240px]"><SelectValue placeholder="Update status" /></SelectTrigger>
+                      <SelectContent>
+                        {GROCERY_STATUS_OPTIONS.filter((s) => s !== "all").map((s) => (
+                          <SelectItem key={s} value={s}>{groceryStatusLabel(s)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {updatingGroceryStatusId === selectedGrocery.id && (
+                      <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                        <Loader2 className="h-3 w-3 animate-spin" /> Updating…
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Overview */}
+                  <Card className="rounded-xl">
+                    <CardHeader className="pb-2"><CardTitle className="text-base">Overview</CardTitle></CardHeader>
+                    <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <InfoRow label="Order ID" value={selectedGrocery.id} copyable />
+                      <InfoRow label="Created" value={formatDateTime(selectedGrocery.createdAt)} />
+                      <InfoRow label="Payment Method" value={selectedGrocery.paymentMethod || "-"} />
+                      <InfoRow label="Payment Status" value={selectedGrocery.paymentStatus}
+                        icon={selectedGrocery.paymentStatus === "paid"
+                          ? <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                          : selectedGrocery.paymentStatus === "failed"
+                          ? <XCircle className="h-4 w-4 text-destructive" />
+                          : <Clock className="h-4 w-4" />} />
+                    </CardContent>
+                  </Card>
+
+                  {/* Amounts */}
+                  <Card className="rounded-xl">
+                    <CardHeader className="pb-2"><CardTitle className="text-base">Amounts</CardTitle></CardHeader>
+                    <CardContent className="grid grid-cols-2 gap-3">
+                      <MoneyRow label="Items" value={selectedGrocery.totalItemsAmount} />
+                      <MoneyRow label="Delivery" value={selectedGrocery.deliveryCharge} />
+                      <MoneyRow label="Handling" value={selectedGrocery.handlingCharge} />
+                      <MoneyRow label="Discount" value={selectedGrocery.discountAmount} />
+                      <Separator className="col-span-2" />
+                      <MoneyRow label="Total Collected" value={selectedGrocery.totalPaymentAmount} bold />
+                    </CardContent>
+                  </Card>
+
+                  {/* Items */}
+                  <Card className="rounded-xl">
+                    <CardHeader className="pb-2"><CardTitle className="text-base">Items</CardTitle></CardHeader>
+                    <CardContent className="space-y-2">
+                      {selectedGrocery.items?.length > 0 ? selectedGrocery.items.map((item, idx) => (
+                        <div key={item.id || idx} className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2">
+                          <div>
+                            <div className="text-sm font-medium">{item.itemName}</div>
+                            <div className="text-xs text-muted-foreground">Qty: {item.quantity}</div>
+                          </div>
+                          <div className="text-right text-sm">
+                            <div className="flex items-center gap-1">
+                              <IndianRupee className="h-3 w-3" />{Number(item.totalPrice).toFixed(2)}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              @ {formatINR(item.unitPrice)} each
+                            </div>
+                          </div>
+                        </div>
+                      )) : (
+                        <div className="text-sm text-muted-foreground">No items found.</div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* People & Places */}
+                  <Card className="rounded-xl">
+                    <CardHeader className="pb-2"><CardTitle className="text-base">People & Places</CardTitle></CardHeader>
+                    <CardContent className="grid gap-4">
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium flex items-center gap-2"><User2 className="h-4 w-4" />Customer</div>
+                          <div className="text-sm">{selectedGrocery.customerName || "-"}</div>
+                          <div className="text-xs text-muted-foreground">{selectedGrocery.customerPhone || "-"}</div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium flex items-center gap-2"><ShoppingCart className="h-4 w-4" />Store</div>
+                          <div className="text-sm">{selectedGrocery.storeNameSnapshot || "-"}</div>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium flex items-center gap-2"><MapPin className="h-4 w-4" />Delivery Address</div>
+                        <div className="text-sm leading-5 whitespace-pre-wrap">{selectedGrocery.deliveryAddressSnapshot || "-"}</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </SheetContent>
+          </Sheet>
+        </div>
+      ) : (
+      /* ────── RESTAURANT ORDERS PANEL ────── */
+      <div className="grid gap-4">
       {/* Filters & KPIs */}
       <Card className="rounded-2xl">
         <CardContent className="pt-6 grid grid-cols-1 xl:grid-cols-3 gap-3">
@@ -827,6 +1265,8 @@ export function Orders() {
           )}
         </SheetContent>
       </Sheet>
+    </div>
+    )}
     </div>
   );
 }
