@@ -20,6 +20,9 @@ type Coupon = {
   discountValue: number;
   restaurantId: string | null;
   restaurantName?: string | null;
+  groceryStoreId: string | null;
+  groceryStoreName?: string | null;
+  applicableTo: "restaurant" | "grocery" | "both";
   minOrderValue: number;
   maxDiscountAmount: number | null;
   usageLimit: number;
@@ -39,6 +42,12 @@ type RestaurantLite = {
   phoneNumber?: string;
 };
 
+type GroceryStoreLite = {
+  id: string;
+  storeName: string;
+  status?: string;
+};
+
 const formatDate = (iso: string | null) => {
   if (!iso) return "—";
   try {
@@ -55,11 +64,17 @@ export function Coupons() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [search, setSearch] = useState("");
 
-  // Restaurant dropdown states (reused pattern from SurpriseBags)
+  // Restaurant dropdown states
   const [allRestaurants, setAllRestaurants] = useState<RestaurantLite[]>([]);
   const [restaurantDropdownOpen, setRestaurantDropdownOpen] = useState(false);
   const [restaurantSearchFilter, setRestaurantSearchFilter] = useState("");
   const [selectedRestaurant, setSelectedRestaurant] = useState<RestaurantLite | null>(null);
+
+  // Grocery store dropdown states
+  const [allGroceryStores, setAllGroceryStores] = useState<GroceryStoreLite[]>([]);
+  const [groceryDropdownOpen, setGroceryDropdownOpen] = useState(false);
+  const [grocerySearchFilter, setGrocerySearchFilter] = useState("");
+  const [selectedGroceryStore, setSelectedGroceryStore] = useState<GroceryStoreLite | null>(null);
 
   const [openCreate, setOpenCreate] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -72,11 +87,13 @@ export function Coupons() {
     code: "",
     discountType: "flat" as "flat" | "percentage",
     discountValue: "",
-    restaurantId: "", // internal: filled when restaurant selected
+    applicableTo: "restaurant" as "restaurant" | "grocery" | "both",
+    restaurantId: "",
+    groceryStoreId: "",
     minOrderValue: "0",
     maxDiscountAmount: "",
     usageLimit: "100000",
-    expiresAt: "", // datetime-local string
+    expiresAt: "",
     isActive: true,
     visibility: true,
   });
@@ -103,14 +120,22 @@ export function Coupons() {
           try {
             const restaurants = await adminApi.getAllRestaurants();
             if (!mounted) return;
-            // Prefer approved restaurants for selection, but keep list if status missing.
             const approved = Array.isArray(restaurants)
               ? restaurants.filter((r: any) => !r.status || r.status === "approved")
               : [];
             setAllRestaurants(approved);
           } catch (e) {
-            // Non-blocking: coupons page still works without restaurant lookup.
             console.warn("Failed to load restaurants for coupons:", e);
+          }
+        })(),
+        (async () => {
+          try {
+            const stores = await adminApi.getAllGroceryStores();
+            if (!mounted) return;
+            const storeList = Array.isArray(stores) ? stores : [];
+            setAllGroceryStores(storeList.map((s: any) => ({ id: s.id, storeName: s.storeName || s.store_name, status: s.status })));
+          } catch (e) {
+            console.warn("Failed to load grocery stores for coupons:", e);
           }
         })(),
       ]);
@@ -120,19 +145,21 @@ export function Coupons() {
     };
   }, []);
 
-  // Click outside handler to close dropdown (same UX as SurpriseBags)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (restaurantDropdownOpen && !target.closest(".restaurant-dropdown-container")) {
         setRestaurantDropdownOpen(false);
       }
+      if (groceryDropdownOpen && !target.closest(".grocery-dropdown-container")) {
+        setGroceryDropdownOpen(false);
+      }
     };
-    if (restaurantDropdownOpen) {
+    if (restaurantDropdownOpen || groceryDropdownOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
-  }, [restaurantDropdownOpen]);
+  }, [restaurantDropdownOpen, groceryDropdownOpen]);
 
   const filteredRestaurants = useMemo(() => {
     const q = restaurantSearchFilter.trim().toLowerCase();
@@ -144,6 +171,12 @@ export function Coupons() {
       return name.includes(q) || email.includes(q) || phone.includes(q);
     });
   }, [allRestaurants, restaurantSearchFilter]);
+
+  const filteredGroceryStores = useMemo(() => {
+    const q = grocerySearchFilter.trim().toLowerCase();
+    if (!q) return allGroceryStores;
+    return allGroceryStores.filter((s) => (s.storeName || "").toLowerCase().includes(q));
+  }, [allGroceryStores, grocerySearchFilter]);
 
   const selectRestaurant = (restaurant: RestaurantLite) => {
     setSelectedRestaurant(restaurant);
@@ -157,6 +190,19 @@ export function Coupons() {
     setSelectedRestaurant(null);
     setForm((s) => ({ ...s, restaurantId: "" }));
     setRestaurantSearchFilter("");
+  };
+
+  const selectGroceryStore = (store: GroceryStoreLite) => {
+    setSelectedGroceryStore(store);
+    setForm((s) => ({ ...s, groceryStoreId: store.id }));
+    setGroceryDropdownOpen(false);
+    setGrocerySearchFilter("");
+  };
+
+  const clearSelectedGroceryStore = () => {
+    setSelectedGroceryStore(null);
+    setForm((s) => ({ ...s, groceryStoreId: "" }));
+    setGrocerySearchFilter("");
   };
 
   const filtered = useMemo(() => {
@@ -186,7 +232,9 @@ export function Coupons() {
         code,
         discountType: form.discountType,
         discountValue,
+        applicableTo: form.applicableTo,
         restaurantId: form.restaurantId?.trim() ? form.restaurantId.trim() : null,
+        groceryStoreId: form.groceryStoreId?.trim() ? form.groceryStoreId.trim() : null,
         minOrderValue,
         maxDiscountAmount: maxDiscountAmount && Number.isFinite(maxDiscountAmount) ? maxDiscountAmount : null,
         usageLimit,
@@ -200,7 +248,9 @@ export function Coupons() {
         code: "",
         discountType: "flat",
         discountValue: "",
+        applicableTo: "restaurant",
         restaurantId: "",
+        groceryStoreId: "",
         minOrderValue: "0",
         maxDiscountAmount: "",
         usageLimit: "100000",
@@ -209,8 +259,11 @@ export function Coupons() {
         visibility: true,
       });
       setSelectedRestaurant(null);
+      setSelectedGroceryStore(null);
       setRestaurantSearchFilter("");
+      setGrocerySearchFilter("");
       setRestaurantDropdownOpen(false);
+      setGroceryDropdownOpen(false);
       await loadCoupons(true);
     } catch (e: any) {
       toast.error(e?.message || "Failed to create coupon");
@@ -225,7 +278,9 @@ export function Coupons() {
       code: coupon.code || "",
       discountType: coupon.discountType,
       discountValue: String(coupon.discountValue ?? ""),
+      applicableTo: coupon.applicableTo || "restaurant",
       restaurantId: coupon.restaurantId ?? "",
+      groceryStoreId: coupon.groceryStoreId ?? "",
       minOrderValue: String(coupon.minOrderValue ?? 0),
       maxDiscountAmount: coupon.maxDiscountAmount === null || coupon.maxDiscountAmount === undefined ? "" : String(coupon.maxDiscountAmount),
       usageLimit: String(coupon.usageLimit ?? 100000),
@@ -241,8 +296,17 @@ export function Coupons() {
       setSelectedRestaurant(null);
     }
 
+    if (coupon.groceryStoreId) {
+      const match = allGroceryStores.find((s) => s.id === coupon.groceryStoreId);
+      setSelectedGroceryStore(match || { id: coupon.groceryStoreId, storeName: coupon.groceryStoreName || "Grocery Store" });
+    } else {
+      setSelectedGroceryStore(null);
+    }
+
     setRestaurantSearchFilter("");
+    setGrocerySearchFilter("");
     setRestaurantDropdownOpen(false);
+    setGroceryDropdownOpen(false);
     setOpenEdit(true);
   };
 
@@ -267,7 +331,9 @@ export function Coupons() {
         code,
         discountType: form.discountType,
         discountValue,
+        applicableTo: form.applicableTo,
         restaurantId: form.restaurantId?.trim() ? form.restaurantId.trim() : null,
+        groceryStoreId: form.groceryStoreId?.trim() ? form.groceryStoreId.trim() : null,
         minOrderValue,
         maxDiscountAmount: maxDiscountAmount && Number.isFinite(maxDiscountAmount) ? maxDiscountAmount : null,
         usageLimit,
@@ -279,6 +345,7 @@ export function Coupons() {
       setOpenEdit(false);
       setSelectedCoupon(null);
       setSelectedRestaurant(null);
+      setSelectedGroceryStore(null);
       await loadCoupons(true);
     } catch (e: any) {
       toast.error(e?.message || "Failed to update coupon");
@@ -369,6 +436,26 @@ export function Coupons() {
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label>Applies To</Label>
+                    <Select
+                      value={form.applicableTo}
+                      onValueChange={(v) => {
+                        setForm((s) => ({ ...s, applicableTo: v as any, restaurantId: "", groceryStoreId: "" }));
+                        setSelectedRestaurant(null);
+                        setSelectedGroceryStore(null);
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select applicability" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="restaurant">Restaurant</SelectItem>
+                        <SelectItem value="grocery">Grocery</SelectItem>
+                        <SelectItem value="both">Both</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
                     <Label>Discount Type</Label>
                     <Select
                       value={form.discountType}
@@ -431,81 +518,104 @@ export function Coupons() {
                     />
                   </div>
 
-                  {/* Restaurant Selection Dropdown (reused from SurpriseBags UX) */}
-                  <div className="space-y-2 md:col-span-2">
-                    <Label>Restaurant (optional)</Label>
-                    {selectedRestaurant ? (
-                      <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30 border-border">
-                        <div>
-                          <div className="font-medium">{selectedRestaurant.restaurantName || "Selected Restaurant"}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {selectedRestaurant.userEmail || selectedRestaurant.phoneNumber || ""}
-                          </div>
-                        </div>
-                        <Button size="sm" variant="ghost" onClick={clearSelectedRestaurant}>
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="relative restaurant-dropdown-container">
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setRestaurantDropdownOpen(!restaurantDropdownOpen);
-                          }}
-                          className="min-h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm cursor-pointer hover:border-ring flex items-center justify-between"
-                        >
-                          <div className="flex items-center flex-1">
-                            <span className="text-muted-foreground">Global coupon (click to pick a restaurant)</span>
-                          </div>
-                          <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${restaurantDropdownOpen ? "rotate-180" : ""}`} />
-                        </div>
-
-                        {restaurantDropdownOpen && (
-                          <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg">
-                            <div className="p-2 border-b">
-                              <Input
-                                placeholder="Search restaurants..."
-                                value={restaurantSearchFilter}
-                                onChange={(e) => setRestaurantSearchFilter(e.target.value)}
-                                onClick={(e) => e.stopPropagation()}
-                                className="h-8"
-                                autoFocus
-                              />
+                  {/* Restaurant Dropdown — shown when applicableTo is restaurant or both */}
+                  {(form.applicableTo === "restaurant" || form.applicableTo === "both") && (
+                    <div className="space-y-2 md:col-span-2">
+                      <Label>Restaurant (optional)</Label>
+                      {selectedRestaurant ? (
+                        <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30 border-border">
+                          <div>
+                            <div className="font-medium">{selectedRestaurant.restaurantName || "Selected Restaurant"}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {selectedRestaurant.userEmail || selectedRestaurant.phoneNumber || ""}
                             </div>
-                            <div className="max-h-64 overflow-auto p-1" onClick={(e) => e.stopPropagation()}>
-                              {filteredRestaurants.length === 0 ? (
-                                <div className="px-2 py-4 text-sm text-center text-muted-foreground">
-                                  No restaurants found
-                                </div>
-                              ) : (
-                                filteredRestaurants.map((restaurant) => {
-                                  const rid = (restaurant.restaurantId || restaurant.id || "").toString();
-                                  return (
-                                    <div
-                                      key={rid}
-                                      onClick={() => selectRestaurant(restaurant)}
-                                      className="flex items-center px-2 py-1.5 text-sm rounded cursor-pointer hover:bg-accent"
-                                    >
-                                      <div className="flex-1">
-                                        <div className="font-medium">{restaurant.restaurantName}</div>
-                                        <div className="text-xs text-muted-foreground">
-                                          {restaurant.userEmail || restaurant.phoneNumber || ""}
+                          </div>
+                          <Button size="sm" variant="ghost" onClick={clearSelectedRestaurant}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="relative restaurant-dropdown-container">
+                          <div
+                            onClick={(e) => { e.stopPropagation(); setRestaurantDropdownOpen(!restaurantDropdownOpen); }}
+                            className="min-h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm cursor-pointer hover:border-ring flex items-center justify-between"
+                          >
+                            <span className="text-muted-foreground">All restaurants (click to pick one)</span>
+                            <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${restaurantDropdownOpen ? "rotate-180" : ""}`} />
+                          </div>
+                          {restaurantDropdownOpen && (
+                            <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg">
+                              <div className="p-2 border-b">
+                                <Input placeholder="Search restaurants..." value={restaurantSearchFilter} onChange={(e) => setRestaurantSearchFilter(e.target.value)} onClick={(e) => e.stopPropagation()} className="h-8" autoFocus />
+                              </div>
+                              <div className="max-h-64 overflow-auto p-1" onClick={(e) => e.stopPropagation()}>
+                                {filteredRestaurants.length === 0 ? (
+                                  <div className="px-2 py-4 text-sm text-center text-muted-foreground">No restaurants found</div>
+                                ) : (
+                                  filteredRestaurants.map((restaurant) => {
+                                    const rid = (restaurant.restaurantId || restaurant.id || "").toString();
+                                    return (
+                                      <div key={rid} onClick={() => selectRestaurant(restaurant)} className="flex items-center px-2 py-1.5 text-sm rounded cursor-pointer hover:bg-accent">
+                                        <div className="flex-1">
+                                          <div className="font-medium">{restaurant.restaurantName}</div>
+                                          <div className="text-xs text-muted-foreground">{restaurant.userEmail || restaurant.phoneNumber || ""}</div>
                                         </div>
                                       </div>
-                                    </div>
-                                  );
-                                })
-                              )}
+                                    );
+                                  })
+                                )}
+                              </div>
                             </div>
+                          )}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">Leave empty to apply to all restaurants.</p>
+                    </div>
+                  )}
+
+                  {/* Grocery Store Dropdown — shown when applicableTo is grocery or both */}
+                  {(form.applicableTo === "grocery" || form.applicableTo === "both") && (
+                    <div className="space-y-2 md:col-span-2">
+                      <Label>Grocery Store (optional)</Label>
+                      {selectedGroceryStore ? (
+                        <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30 border-border">
+                          <div className="font-medium">{selectedGroceryStore.storeName}</div>
+                          <Button size="sm" variant="ghost" onClick={clearSelectedGroceryStore}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="relative grocery-dropdown-container">
+                          <div
+                            onClick={(e) => { e.stopPropagation(); setGroceryDropdownOpen(!groceryDropdownOpen); }}
+                            className="min-h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm cursor-pointer hover:border-ring flex items-center justify-between"
+                          >
+                            <span className="text-muted-foreground">All grocery stores (click to pick one)</span>
+                            <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${groceryDropdownOpen ? "rotate-180" : ""}`} />
                           </div>
-                        )}
-                      </div>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      Leave empty for a global coupon. Restaurant-specific coupons only apply to that restaurant.
-                    </p>
-                  </div>
+                          {groceryDropdownOpen && (
+                            <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg">
+                              <div className="p-2 border-b">
+                                <Input placeholder="Search grocery stores..." value={grocerySearchFilter} onChange={(e) => setGrocerySearchFilter(e.target.value)} onClick={(e) => e.stopPropagation()} className="h-8" autoFocus />
+                              </div>
+                              <div className="max-h-64 overflow-auto p-1" onClick={(e) => e.stopPropagation()}>
+                                {filteredGroceryStores.length === 0 ? (
+                                  <div className="px-2 py-4 text-sm text-center text-muted-foreground">No grocery stores found</div>
+                                ) : (
+                                  filteredGroceryStores.map((store) => (
+                                    <div key={store.id} onClick={() => selectGroceryStore(store)} className="px-2 py-1.5 text-sm rounded cursor-pointer hover:bg-accent">
+                                      <div className="font-medium">{store.storeName}</div>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">Leave empty to apply to all grocery stores.</p>
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between md:col-span-2 p-3 rounded-lg border">
                     <div>
@@ -518,7 +628,7 @@ export function Coupons() {
                   <div className="flex items-center justify-between md:col-span-2 p-3 rounded-lg border">
                     <div>
                       <div className="font-medium">Visibility</div>
-                      <div className="text-xs text-muted-foreground">Hidden coupons won't appear in customer app but are still usable if code is known.</div>
+                      <div className="text-xs text-muted-foreground">Hidden coupons won’t appear in customer app but are still usable if code is known.</div>
                     </div>
                     <Switch checked={form.visibility} onCheckedChange={(v) => setForm((s) => ({ ...s, visibility: v }))} />
                   </div>
@@ -553,7 +663,8 @@ export function Coupons() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Code</TableHead>
-                  <TableHead>Restaurant</TableHead>
+                  <TableHead>Applies To</TableHead>
+                  <TableHead>Store</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Value</TableHead>
                   <TableHead>Min Order</TableHead>
@@ -569,23 +680,28 @@ export function Coupons() {
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={12} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={13} className="text-center text-muted-foreground py-8">
                       No coupons found.
                     </TableCell>
                   </TableRow>
                 ) : (
                   filtered.map((c) => {
                     const expired = !!c.expiresAt && new Date(c.expiresAt) <= new Date();
-                    const restaurantLabel =
-                      c.restaurantId === null || c.restaurantId === "" ? "Global" : (c.restaurantName || "Restaurant");
+                    const applicableToLabel = c.applicableTo === "both" ? "Both" : c.applicableTo === "grocery" ? "Grocery" : "Restaurant";
+                    const storeLabel = c.applicableTo === "grocery" || c.applicableTo === "both"
+                      ? (c.groceryStoreName || (c.groceryStoreId ? "Grocery Store" : null))
+                      : (c.restaurantName || (c.restaurantId ? "Restaurant" : null));
                     return (
                       <TableRow key={c.id}>
                         <TableCell className="font-medium">{c.code}</TableCell>
                         <TableCell>
-                          {restaurantLabel === "Global" ? (
-                            <Badge variant="secondary">Global</Badge>
+                          <Badge variant={c.applicableTo === "both" ? "outline" : "secondary"}>{applicableToLabel}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {storeLabel ? (
+                            <span className="text-sm">{storeLabel}</span>
                           ) : (
-                            <span className="text-sm">{restaurantLabel}</span>
+                            <Badge variant="secondary">All</Badge>
                           )}
                         </TableCell>
                         <TableCell>
@@ -662,8 +778,11 @@ export function Coupons() {
           if (!open) {
             setSelectedCoupon(null);
             setSelectedRestaurant(null);
+            setSelectedGroceryStore(null);
             setRestaurantSearchFilter("");
+            setGrocerySearchFilter("");
             setRestaurantDropdownOpen(false);
+            setGroceryDropdownOpen(false);
           }
         }}
       >
@@ -677,6 +796,24 @@ export function Coupons() {
             <div className="space-y-2">
               <Label>Code</Label>
               <Input value={form.code} onChange={(e) => setForm((s) => ({ ...s, code: e.target.value }))} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Applies To</Label>
+              <Select value={form.applicableTo} onValueChange={(v) => {
+                setForm((s) => ({ ...s, applicableTo: v as any, restaurantId: "", groceryStoreId: "" }));
+                setSelectedRestaurant(null);
+                setSelectedGroceryStore(null);
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select applicability" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="restaurant">Restaurant</SelectItem>
+                  <SelectItem value="grocery">Grocery</SelectItem>
+                  <SelectItem value="both">Both</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -733,76 +870,92 @@ export function Coupons() {
               <Input type="datetime-local" value={form.expiresAt} onChange={(e) => setForm((s) => ({ ...s, expiresAt: e.target.value }))} />
             </div>
 
-            {/* Restaurant Selection Dropdown (same as create) */}
-            <div className="space-y-2 md:col-span-2">
-              <Label>Restaurant (optional)</Label>
-              {selectedRestaurant ? (
-                <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30 border-border">
-                  <div>
-                    <div className="font-medium">{selectedRestaurant.restaurantName || "Selected Restaurant"}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {selectedRestaurant.userEmail || selectedRestaurant.phoneNumber || ""}
+            {/* Restaurant Dropdown — conditional on applicableTo */}
+            {(form.applicableTo === "restaurant" || form.applicableTo === "both") && (
+              <div className="space-y-2 md:col-span-2">
+                <Label>Restaurant (optional)</Label>
+                {selectedRestaurant ? (
+                  <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30 border-border">
+                    <div>
+                      <div className="font-medium">{selectedRestaurant.restaurantName || "Selected Restaurant"}</div>
+                      <div className="text-xs text-muted-foreground">{selectedRestaurant.userEmail || selectedRestaurant.phoneNumber || ""}</div>
                     </div>
+                    <Button size="sm" variant="ghost" onClick={clearSelectedRestaurant}><X className="h-4 w-4" /></Button>
                   </div>
-                  <Button size="sm" variant="ghost" onClick={clearSelectedRestaurant}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="relative restaurant-dropdown-container">
-                  <div
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setRestaurantDropdownOpen(!restaurantDropdownOpen);
-                    }}
-                    className="min-h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm cursor-pointer hover:border-ring flex items-center justify-between"
-                  >
-                    <div className="flex items-center flex-1">
-                      <span className="text-muted-foreground">Global coupon (click to pick a restaurant)</span>
+                ) : (
+                  <div className="relative restaurant-dropdown-container">
+                    <div onClick={(e) => { e.stopPropagation(); setRestaurantDropdownOpen(!restaurantDropdownOpen); }} className="min-h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm cursor-pointer hover:border-ring flex items-center justify-between">
+                      <span className="text-muted-foreground">All restaurants (click to pick one)</span>
+                      <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${restaurantDropdownOpen ? "rotate-180" : ""}`} />
                     </div>
-                    <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${restaurantDropdownOpen ? "rotate-180" : ""}`} />
-                  </div>
-
-                  {restaurantDropdownOpen && (
-                    <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg">
-                      <div className="p-2 border-b">
-                        <Input
-                          placeholder="Search restaurants..."
-                          value={restaurantSearchFilter}
-                          onChange={(e) => setRestaurantSearchFilter(e.target.value)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="h-8"
-                          autoFocus
-                        />
-                      </div>
-                      <div className="max-h-64 overflow-auto p-1" onClick={(e) => e.stopPropagation()}>
-                        {filteredRestaurants.length === 0 ? (
-                          <div className="px-2 py-4 text-sm text-center text-muted-foreground">No restaurants found</div>
-                        ) : (
-                          filteredRestaurants.map((restaurant) => {
-                            const rid = (restaurant.restaurantId || restaurant.id || "").toString();
-                            return (
-                              <div
-                                key={rid}
-                                onClick={() => selectRestaurant(restaurant)}
-                                className="flex items-center px-2 py-1.5 text-sm rounded cursor-pointer hover:bg-accent"
-                              >
-                                <div className="flex-1">
-                                  <div className="font-medium">{restaurant.restaurantName}</div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {restaurant.userEmail || restaurant.phoneNumber || ""}
+                    {restaurantDropdownOpen && (
+                      <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg">
+                        <div className="p-2 border-b">
+                          <Input placeholder="Search restaurants..." value={restaurantSearchFilter} onChange={(e) => setRestaurantSearchFilter(e.target.value)} onClick={(e) => e.stopPropagation()} className="h-8" autoFocus />
+                        </div>
+                        <div className="max-h-64 overflow-auto p-1" onClick={(e) => e.stopPropagation()}>
+                          {filteredRestaurants.length === 0 ? (
+                            <div className="px-2 py-4 text-sm text-center text-muted-foreground">No restaurants found</div>
+                          ) : (
+                            filteredRestaurants.map((restaurant) => {
+                              const rid = (restaurant.restaurantId || restaurant.id || "").toString();
+                              return (
+                                <div key={rid} onClick={() => selectRestaurant(restaurant)} className="flex items-center px-2 py-1.5 text-sm rounded cursor-pointer hover:bg-accent">
+                                  <div className="flex-1">
+                                    <div className="font-medium">{restaurant.restaurantName}</div>
+                                    <div className="text-xs text-muted-foreground">{restaurant.userEmail || restaurant.phoneNumber || ""}</div>
                                   </div>
                                 </div>
-                              </div>
-                            );
-                          })
-                        )}
+                              );
+                            })
+                          )}
+                        </div>
                       </div>
+                    )}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">Leave empty to apply to all restaurants.</p>
+              </div>
+            )}
+
+            {/* Grocery Store Dropdown — conditional on applicableTo */}
+            {(form.applicableTo === "grocery" || form.applicableTo === "both") && (
+              <div className="space-y-2 md:col-span-2">
+                <Label>Grocery Store (optional)</Label>
+                {selectedGroceryStore ? (
+                  <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30 border-border">
+                    <div className="font-medium">{selectedGroceryStore.storeName}</div>
+                    <Button size="sm" variant="ghost" onClick={clearSelectedGroceryStore}><X className="h-4 w-4" /></Button>
+                  </div>
+                ) : (
+                  <div className="relative grocery-dropdown-container">
+                    <div onClick={(e) => { e.stopPropagation(); setGroceryDropdownOpen(!groceryDropdownOpen); }} className="min-h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm cursor-pointer hover:border-ring flex items-center justify-between">
+                      <span className="text-muted-foreground">All grocery stores (click to pick one)</span>
+                      <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${groceryDropdownOpen ? "rotate-180" : ""}`} />
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
+                    {groceryDropdownOpen && (
+                      <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg">
+                        <div className="p-2 border-b">
+                          <Input placeholder="Search grocery stores..." value={grocerySearchFilter} onChange={(e) => setGrocerySearchFilter(e.target.value)} onClick={(e) => e.stopPropagation()} className="h-8" autoFocus />
+                        </div>
+                        <div className="max-h-64 overflow-auto p-1" onClick={(e) => e.stopPropagation()}>
+                          {filteredGroceryStores.length === 0 ? (
+                            <div className="px-2 py-4 text-sm text-center text-muted-foreground">No grocery stores found</div>
+                          ) : (
+                            filteredGroceryStores.map((store) => (
+                              <div key={store.id} onClick={() => selectGroceryStore(store)} className="px-2 py-1.5 text-sm rounded cursor-pointer hover:bg-accent">
+                                <div className="font-medium">{store.storeName}</div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">Leave empty to apply to all grocery stores.</p>
+              </div>
+            )}
 
             <div className="flex items-center justify-between md:col-span-2 p-3 rounded-lg border">
               <div>
