@@ -17,6 +17,7 @@ interface SettingsData extends Record<string, string> {
   deliveryFee: string;
   gstRate: string;
   referralAmount: string;
+  groceryReferralAmount: string;
 
   // Operational & Logistics
   customerSearchRadiusKm: string;
@@ -271,7 +272,7 @@ export function Settings() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="referralAmount">
-                    Referral Amount (INR)
+                    Restaurant Referral Amount (INR)
                   </Label>
                   <Input
                     id="referralAmount"
@@ -279,6 +280,18 @@ export function Settings() {
                     min="0"
                     value={settings.referralAmount || "0"}
                     onChange={(e) => updateSetting('referralAmount', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="groceryReferralAmount">
+                    Grocery Referral Amount (INR)
+                  </Label>
+                  <Input
+                    id="groceryReferralAmount"
+                    type="number"
+                    min="0"
+                    value={settings.groceryReferralAmount || "0"}
+                    onChange={(e) => updateSetting('groceryReferralAmount', e.target.value)}
                   />
                 </div>
               </div>
