@@ -36,6 +36,10 @@ export type Order = {
   deliveryFee: string; // "0.00"
   platformCommission: string; // "10.00"
   totalPaymentAmount: string; // "59.00"
+  discountAmount: string; // "0.00"
+  couponCode: string | null;
+  walletAmountUsed: string; // "0.00"
+  finalAmountPaid: string | null; // actual amount collected after discounts
   deliveryAddressSnapshot: string;
   deliveryLatitude: string; // "12.929507"
   deliveryLongitude: string; // "77.677976"
@@ -381,7 +385,7 @@ export function Orders() {
     let revenue = 0;
     for (const o of orders) {
       counts[o.orderStatus] = (counts[o.orderStatus] ?? 0) + 1;
-      revenue += Number(o.totalPaymentAmount || 0);
+      revenue += Number(o.finalAmountPaid ?? o.totalPaymentAmount ?? 0);
     }
     return {
       counts,
@@ -829,14 +833,21 @@ export function Orders() {
 
                   {/* Amounts */}
                   <Card className="rounded-xl">
-                    <CardHeader className="pb-2"><CardTitle className="text-base">Amounts</CardTitle></CardHeader>
+                    <CardHeader className="pb-2"><CardTitle className="text-base">Bill Details</CardTitle></CardHeader>
                     <CardContent className="grid grid-cols-2 gap-3">
                       <MoneyRow label="Items" value={selectedGrocery.totalItemsAmount} />
                       <MoneyRow label="Delivery" value={selectedGrocery.deliveryCharge} />
                       <MoneyRow label="Handling" value={selectedGrocery.handlingCharge} />
-                      <MoneyRow label="Discount" value={selectedGrocery.discountAmount} />
+                      <MoneyRow label="Platform Commission" value={selectedGrocery.platformCommission} />
+                      <MoneyRow label="GST" value={selectedGrocery.gstAmount} />
+                      {Number(selectedGrocery.discountAmount || 0) > 0 && (
+                        <div className="col-span-2 flex justify-between items-center text-emerald-600 text-sm">
+                          <span>Discount</span>
+                          <span className="font-medium">-{formatINR(selectedGrocery.discountAmount)}</span>
+                        </div>
+                      )}
                       <Separator className="col-span-2" />
-                      <MoneyRow label="Total Collected" value={selectedGrocery.totalPaymentAmount} bold />
+                      <MoneyRow label="Total Collected from Customer" value={selectedGrocery.totalPaymentAmount} bold />
                     </CardContent>
                   </Card>
 
@@ -1020,7 +1031,7 @@ export function Orders() {
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <IndianRupee className="h-3 w-3" />
-                          {Number(o.totalPaymentAmount || 0).toFixed(2)}
+                          {Number(o.finalAmountPaid ?? o.totalPaymentAmount ?? 0).toFixed(2)}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -1124,13 +1135,31 @@ export function Orders() {
 
               {/* Money */}
               <Card className="rounded-xl">
-                <CardHeader className="pb-2"><CardTitle className="text-base">Amounts</CardTitle></CardHeader>
+                <CardHeader className="pb-2"><CardTitle className="text-base">Bill Details</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-2 gap-3">
-                  <MoneyRow label="Bag" value={selected.totalBagAmount} />
+                  <MoneyRow label="Bag Amount" value={selected.totalBagAmount} />
                   <MoneyRow label="Delivery Fee" value={selected.deliveryFee} />
                   <MoneyRow label="Platform Commission" value={selected.platformCommission} />
+                  <div className="col-span-2 text-xs text-muted-foreground">Subtotal incl. GST & handling</div>
+                  <MoneyRow label="Subtotal" value={selected.totalPaymentAmount} />
+                  {Number(selected.discountAmount || 0) > 0 && (
+                    <div className="col-span-2 flex justify-between items-center text-emerald-600 text-sm">
+                      <span>Discount{selected.couponCode ? ` (${selected.couponCode})` : ''}</span>
+                      <span className="font-medium">-{formatINR(selected.discountAmount)}</span>
+                    </div>
+                  )}
+                  {Number(selected.walletAmountUsed || 0) > 0 && (
+                    <div className="col-span-2 flex justify-between items-center text-emerald-600 text-sm">
+                      <span>Wallet Used</span>
+                      <span className="font-medium">-{formatINR(selected.walletAmountUsed)}</span>
+                    </div>
+                  )}
                   <Separator className="col-span-2"/>
-                  <MoneyRow label="Total Collected" value={selected.totalPaymentAmount} bold />
+                  <MoneyRow
+                    label="Total Collected from Customer"
+                    value={selected.finalAmountPaid ?? selected.totalPaymentAmount}
+                    bold
+                  />
                 </CardContent>
               </Card>
 
