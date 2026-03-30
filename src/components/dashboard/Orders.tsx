@@ -43,6 +43,7 @@ export type Order = {
   deliveryAddressSnapshot: string;
   deliveryLatitude: string; // "12.929507"
   deliveryLongitude: string; // "77.677976"
+  customerNameSnapshot: string | null;
   customerPhoneSnapshot: string;
   customerEmailSnapshot: string | null;
   notesToRestaurant: string | null;
@@ -102,6 +103,7 @@ export type GroceryOrder = {
   orderStatus: string;
   paymentMethod: string | null;
   paymentStatus: string;
+  customerNameSnapshot: string | null;
   customerName: string | null;
   customerPhone: string | null;
   createdAt: string;
@@ -883,7 +885,7 @@ export function Orders() {
                       <div className="grid sm:grid-cols-2 gap-4">
                         <div className="space-y-1">
                           <div className="text-sm font-medium flex items-center gap-2"><User2 className="h-4 w-4" />Customer</div>
-                          <div className="text-sm">{selectedGrocery.customerName || "-"}</div>
+                          <div className="text-sm">{selectedGrocery.customerNameSnapshot || selectedGrocery.customerName || "-"}</div>
                           <div className="text-xs text-muted-foreground">{selectedGrocery.customerPhone || "-"}</div>
                         </div>
                         <div className="space-y-1">
@@ -1225,9 +1227,9 @@ export function Orders() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <div className="text-sm font-medium flex items-center gap-2"><User2 className="h-4 w-4"/>Customer</div>
-                      <div className="text-sm">{selected.customerName || "-"}</div>
-                      <a className="text-xs text-muted-foreground inline-flex items-center gap-1" href={selected.customerPhone ? `tel:${selected.customerPhone}` : undefined} onClick={(e) => e.stopPropagation()}>
-                        <Phone className="h-3 w-3"/>{selected.customerPhone || "-"}
+                      <div className="text-sm">{selected.customerNameSnapshot || selected.customerName || "-"}</div>
+                      <a className="text-xs text-muted-foreground inline-flex items-center gap-1" href={selected.customerPhoneSnapshot ? `tel:${selected.customerPhoneSnapshot}` : undefined} onClick={(e) => e.stopPropagation()}>
+                        <Phone className="h-3 w-3"/>{selected.customerPhoneSnapshot || selected.customerPhone || "-"}
                       </a>
                       <div className="text-xs text-muted-foreground">{selected.customerEmailSnapshot || ""}</div>
                     </div>
