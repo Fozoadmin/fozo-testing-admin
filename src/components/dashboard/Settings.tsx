@@ -31,6 +31,7 @@ interface SettingsData extends Record<string, string> {
   isPaymentGatewayDown: string;
   appUnderMaintenance: string;
   allowNewRegistrations: string;
+  isGroceryEnabled: string;
   forceUpdateMinVersionIos: string;
   forceUpdateMinVersionAndroid: string;
   textForceUpdateMessage: string;
@@ -422,6 +423,19 @@ export function Settings() {
                     id="allowNewRegistrations"
                     checked={settings.allowNewRegistrations === 'true'}
                     onCheckedChange={() => toggleBooleanSetting('allowNewRegistrations')}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="isGroceryEnabled">Grocery Feature</Label>
+                    <p className="text-sm text-muted-foreground">
+                      When disabled, the grocery tab and all grocery pages are hidden from users
+                    </p>
+                  </div>
+                  <Switch
+                    id="isGroceryEnabled"
+                    checked={settings.isGroceryEnabled === 'true'}
+                    onCheckedChange={() => toggleBooleanSetting('isGroceryEnabled')}
                   />
                 </div>
                 <div className="flex items-center justify-between">
