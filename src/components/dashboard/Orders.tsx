@@ -315,7 +315,7 @@ export function Orders() {
           (a: GroceryOrder, b: GroceryOrder) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         setGroceryOrders(sorted);
-      } catch (e: any) {
+      } catch {
         if (!isMounted) return;
         setGroceryError("Failed to load grocery orders.");
       } finally {
