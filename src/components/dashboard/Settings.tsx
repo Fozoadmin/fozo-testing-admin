@@ -18,6 +18,7 @@ interface SettingsData extends Record<string, string> {
   gstRate: string;
   referralAmount: string;
   groceryReferralAmount: string;
+  freeDeliveryAovThreshold: string;
 
   // Operational & Logistics
   customerSearchRadiusKm: string;
@@ -294,6 +295,21 @@ export function Settings() {
                     value={settings.groceryReferralAmount || "0"}
                     onChange={(e) => updateSetting('groceryReferralAmount', e.target.value)}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="freeDeliveryAovThreshold">
+                    Average Order Value (AOV) for Free Delivery (INR)
+                  </Label>
+                  <Input
+                    id="freeDeliveryAovThreshold"
+                    type="number"
+                    min="0"
+                    value={settings.freeDeliveryAovThreshold || "0"}
+                    onChange={(e) => updateSetting('freeDeliveryAovThreshold', e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Orders with item total exceeding this amount (excluding all charges) get free delivery.
+                  </p>
                 </div>
               </div>
             </div>
