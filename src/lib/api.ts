@@ -12,7 +12,7 @@ interface RequestOptions extends RequestInit {
 }
 
 // Cache to prevent duplicate requests
-const requestCache = new Map<string, Promise<any>>();
+const requestCache = new Map<string, Promise<unknown>>();
 
 // Function to get auth token from localStorage
 function getAuthToken(): string | null {
@@ -38,7 +38,7 @@ export async function apiRequest<T>(
 
   // Check if request is already in progress
   if (requestCache.has(cacheKey)) {
-    return requestCache.get(cacheKey)!;
+    return requestCache.get(cacheKey) as Promise<T>;
   }
 
   const headers: HeadersInit = {

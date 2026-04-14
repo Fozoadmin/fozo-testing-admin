@@ -1,11 +1,25 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useAuth } from "@/contexts/AuthContext"
+import { useAuth, type User } from "@/contexts/AuthContext"
 import { apiRequest } from "@/lib/api"
+import type { ApiError } from "@/types"
+
+interface LoginResponse {
+  user: {
+    id: string;
+    fullName: string;
+    email: string;
+    phoneNumber: string;
+    userType: string;
+    isVerified: boolean;
+    isActive: boolean;
+    createdAt: string;
+  };
+  accessToken: string;
+}
 
 export default function Login() {
   const nav = useNavigate()
@@ -21,23 +35,24 @@ export default function Login() {
     setLoading(true)
 
     try {
-      const data = await apiRequest<{ user: any; accessToken: string }>(
+      const data = await apiRequest<LoginResponse>(
         '/auth/login-password',
         {
           method: 'POST',
           requireAuth: false,
           body: JSON.stringify({
             identifier: username,
-            password: password
+            password
           })
         }
       )
 
       // Use context to store auth data
-      login(data.user, data.accessToken)
+      login(data.user as User, data.accessToken)
       nav("/dashboard")
-    } catch (err: any) {
-      setError(err.message || "Invalid username or password. Please try again.")
+    } catch (err) {
+      const error = err as ApiError;
+      setError(error.message || "Invalid username or password. Please try again.")
     } finally {
       setLoading(false)
     }

@@ -1,11 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { adminApi } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -15,18 +14,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Search, User, Trash2 } from "lucide-react";
-import { DialogDescription } from "@/components/ui/dialog";
 import { toast } from "react-toastify";
 import { apiRequestWithStatus } from "@/lib/utils";
+import type { Customer as CustomerType, ApiError } from "@/types";
 
 export function Customers() {
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [allCustomers, setAllCustomers] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<CustomerType[]>([]);
+  const [allCustomers, setAllCustomers] = useState<CustomerType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   
   // Detail popup
-  const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerType | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
   
   // Delete confirmation
@@ -71,12 +70,12 @@ export function Customers() {
   //   setCustomers(allCustomers);
   // };
 
-  const openCustomerDetail = (customer: any) => {
+  const openCustomerDetail = (customer: CustomerType) => {
     setSelectedCustomer(customer);
     setOpenDetail(true);
   };
 
-  const openDeleteDialog = (customer: any) => {
+  const openDeleteDialog = (customer: CustomerType) => {
     setSelectedCustomer(customer);
     setDeleteConfirm(true);
   };
@@ -108,7 +107,8 @@ export function Customers() {
           autoClose: 3000,
         });
       }
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as ApiError;
       console.error('Delete failed', error);
       // Show error toast for unexpected errors
       const errorMessage = error?.message || "Failed to delete customer";

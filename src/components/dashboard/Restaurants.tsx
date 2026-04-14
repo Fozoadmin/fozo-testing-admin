@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { adminApi } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,24 +19,25 @@ import { MultiSelect } from "@/components/ui/multi-select";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { isTenDigitPhone, normalizePhoneDigits, apiRequestWithStatus } from "@/lib/utils";
 import { toast } from "react-toastify";
+import type { Restaurant, ApiError, Cuisine } from "@/types";
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
 const DAYS_OF_WEEK = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 export function Restaurants() {
-  const [restaurants, setRestaurants] = useState<any[]>([]);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [openAdd, setOpenAdd] = useState(false);
   const [creating, setCreating] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
 
   // Search states
-  const [allRestaurants, setAllRestaurants] = useState<any[]>([]);
+  const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
   const [restaurantSearchFilter, setRestaurantSearchFilter] = useState("");
 
   // Detail popup
-  const [selectedRestaurant, setSelectedRestaurant] = useState<any | null>(null);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
 
   // Edit mode
@@ -49,7 +49,7 @@ export function Restaurants() {
   const [deleting, setDeleting] = useState(false);
 
   // Cuisines
-  const [cuisines, setCuisines] = useState<Array<{ id: number; name: string }>>([]);
+  const [cuisines, setCuisines] = useState<Cuisine[]>([]);
   const [selectedCuisineIds, setSelectedCuisineIds] = useState<number[]>([]);
 
   // Basic Info
@@ -168,7 +168,8 @@ export function Restaurants() {
       const result = await adminApi.uploadCuisineImage(file);
       setNewCuisineImageUrl(result.imageUrl);
       toast.success("Image uploaded successfully!", { position: "top-right", autoClose: 2000 });
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as ApiError;
       console.error('Image upload failed:', error);
       toast.error(error.message || "Failed to upload image");
     } finally {
@@ -192,7 +193,8 @@ export function Restaurants() {
       setNewCuisineName("");
       setNewCuisineImageUrl("");
       toast.success(`Cuisine "${newCuisine.name}" added successfully`);
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as ApiError;
       console.error('Error creating cuisine:', error);
       toast.error(error?.message || `Failed to create cuisine "${newCuisineName}"`);
     }
@@ -212,7 +214,8 @@ export function Restaurants() {
         position: "top-right",
         autoClose: 2000,
       });
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as ApiError;
       console.error('Image upload failed:', error);
       toast.error(error.message || "Failed to upload image", {
         position: "top-right",
@@ -223,7 +226,7 @@ export function Restaurants() {
     }
   };
 
-  const openRestaurantDetail = (restaurant: any) => {
+  const openRestaurantDetail = (restaurant: Restaurant) => {
     setSelectedRestaurant(restaurant);
     setOpenDetail(true);
   };
@@ -368,8 +371,8 @@ export function Restaurants() {
       // Build operating hours array
       const hoursArray = DAYS_OF_WEEK.map(day => ({
         dayOfWeek: day,
-        openTime: operatingHours[day].isClosed ? null : operatingHours[day].open + ':00',
-        closeTime: operatingHours[day].isClosed ? null : operatingHours[day].close + ':00',
+        openTime: operatingHours[day].isClosed ? null : `${operatingHours[day].open}:00`,
+        closeTime: operatingHours[day].isClosed ? null : `${operatingHours[day].close}:00`,
         isClosed: operatingHours[day].isClosed
       }));
 
@@ -423,10 +426,11 @@ export function Restaurants() {
           autoClose: 3000,
         });
       }
-    } catch (err: any) {
-      console.error('Create restaurant failed', err);
+    } catch (err) {
+      const error = err as ApiError;
+      console.error('Create restaurant failed', error);
       // Show error toast for unexpected errors
-      const errorMessage = err?.message || "Failed to add restaurant";
+      const errorMessage = error?.message || "Failed to add restaurant";
       toast.error(errorMessage, {
         position: "top-right",
         autoClose: 3000,
@@ -446,7 +450,7 @@ export function Restaurants() {
     }));
   };
 
-  const openEditDialog = async (restaurant: any) => {
+  const openEditDialog = async (restaurant: Restaurant) => {
     try {
       // Fetch full restaurant details including location and operating hours
       const fullDetails = await adminApi.getRestaurantById(restaurant.restaurantId);
@@ -507,7 +511,7 @@ export function Restaurants() {
       }
 
       // Pre-fill cuisines
-      setSelectedCuisineIds(fullDetails.cuisines ? fullDetails.cuisines.map((c: any) => c.id || c.cuisineId) : []);
+      setSelectedCuisineIds(fullDetails.cuisines ? fullDetails.cuisines.map((c: Cuisine) => c.id || (c as unknown as { cuisineId: number }).cuisineId) : []);
 
       // Pre-fill image URL
       setRestaurantImageUrl(fullDetails.imageUrl || "");
@@ -542,8 +546,8 @@ export function Restaurants() {
       // Build operating hours array
       const hoursArray = DAYS_OF_WEEK.map(day => ({
         dayOfWeek: day,
-        openTime: operatingHours[day].isClosed ? null : operatingHours[day].open + ':00',
-        closeTime: operatingHours[day].isClosed ? null : operatingHours[day].close + ':00',
+        openTime: operatingHours[day].isClosed ? null : `${operatingHours[day].open}:00`,
+        closeTime: operatingHours[day].isClosed ? null : `${operatingHours[day].close}:00`,
         isClosed: operatingHours[day].isClosed
       }));
 
@@ -601,7 +605,7 @@ export function Restaurants() {
     }
   };
 
-  const openDeleteDialog = (restaurant: any) => {
+  const openDeleteDialog = (restaurant: Restaurant) => {
     setSelectedRestaurant(restaurant);
     setDeleteConfirm(true);
   };
@@ -654,7 +658,8 @@ export function Restaurants() {
           autoClose: 3000,
         });
       }
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as ApiError;
       console.error('Status update failed', error);
       // Show error toast for unexpected errors
       const errorMessage = error?.message || "Failed to update status";
@@ -1184,7 +1189,7 @@ export function Restaurants() {
                 <div>
                   <h3 className="font-semibold mb-3">Cuisines</h3>
                   <div className="flex flex-wrap gap-2">
-                    {selectedRestaurant.cuisines.map((cuisine: any) => (
+                    {selectedRestaurant.cuisines.map((cuisine: Cuisine) => (
                       <Badge key={cuisine.id} variant="secondary">
                         {cuisine.name}
                       </Badge>

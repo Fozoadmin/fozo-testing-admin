@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { io, Socket } from 'socket.io-client';
+import { io, type Socket } from 'socket.io-client';
 
 /**
  * Socket Event Types
@@ -64,7 +63,7 @@ export function getSocket(): Socket | null {
   
   socketInstance = io(socketUrl, {
     auth: {
-      token: token,
+      token,
     },
     transports: ['websocket', 'polling'],
     reconnection: true,
@@ -105,7 +104,7 @@ export function disconnectSocket(): void {
  * @param callback - Callback function to handle the event
  * @returns Unsubscribe function
  */
-export function subscribeToEvent<T = any>(
+export function subscribeToEvent<T = unknown>(
   eventType: SocketEventType,
   callback: (data: T) => void
 ): (() => void) | null {
@@ -132,7 +131,7 @@ export function subscribeToEvent<T = any>(
  */
 export function unsubscribeFromEvent(
   eventType: SocketEventType,
-  callback?: (...args: any[]) => void
+  callback?: (...args: unknown[]) => void
 ): void {
   if (socketInstance) {
     if (callback) {

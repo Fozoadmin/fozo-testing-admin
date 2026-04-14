@@ -22,8 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Copy, ExternalLink, Loader2, MapPin, Phone, User2, Truck, IndianRupee, CheckCircle2, XCircle, Clock, ShoppingCart } from "lucide-react";
 import { cn, apiRequestWithStatus } from "@/lib/utils";
-import { ORDER_STATUS, getStatusLabel } from "@/constants/orderStatus";
-import type { OrderStatus } from "@/constants/orderStatus";
+import { ORDER_STATUS, getStatusLabel, type OrderStatus } from "@/constants/orderStatus";
 import { toast } from "react-toastify";
 
 // ------------------ Types ------------------

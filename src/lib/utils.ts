@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -22,7 +22,7 @@ export function getAuthToken(): string | null {
 export async function apiRequestWithStatus(
   endpoint: string,
   options: { method?: string; body?: string } = {}
-): Promise<{ status: number; message: string; data?: any }> {
+): Promise<{ status: number; message: string; data?: unknown }> {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
   const API_KEY = import.meta.env.VITE_API_KEY || '';
 

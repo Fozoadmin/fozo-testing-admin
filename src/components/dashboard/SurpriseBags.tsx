@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { adminApi } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,30 +16,35 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, X, ChevronDown, ChevronRight, Edit, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
 import { apiRequestWithStatus } from "@/lib/utils";
+import type { SurpriseBag, GroupedRestaurant, Restaurant, ApiError } from "@/types";
+
+interface BagWithRestaurant extends SurpriseBag {
+  restaurant: GroupedRestaurant;
+}
 
 export function SurpriseBags() {
-  const [groupedRestaurants, setGroupedRestaurants] = useState<any[]>([]);
+  const [groupedRestaurants, setGroupedRestaurants] = useState<GroupedRestaurant[]>([]);
   const [expandedRestaurants, setExpandedRestaurants] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [openAdd, setOpenAdd] = useState(false);
   const [creating, setCreating] = useState(false);
   
   // Detail and Edit dialogs
-  const [selectedBag, setSelectedBag] = useState<any | null>(null);
+  const [selectedBag, setSelectedBag] = useState<BagWithRestaurant | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [editing, setEditing] = useState(false);
   
   // Delete confirmation
   const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [bagToDelete, setBagToDelete] = useState<{ bag: any; restaurant: any } | null>(null);
+  const [bagToDelete, setBagToDelete] = useState<{ bag: SurpriseBag; restaurant: GroupedRestaurant } | null>(null);
   const [deleting, setDeleting] = useState(false);
   
   // Restaurant dropdown states
-  const [allRestaurants, setAllRestaurants] = useState<any[]>([]);
+  const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
   const [restaurantDropdownOpen, setRestaurantDropdownOpen] = useState(false);
   const [restaurantSearchFilter, setRestaurantSearchFilter] = useState("");
-  const [selectedRestaurant, setSelectedRestaurant] = useState<any | null>(null);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | GroupedRestaurant | null>(null);
   
   const [formB, setFormB] = useState({
     bagName: "",
@@ -129,7 +133,7 @@ export function SurpriseBags() {
     return name.includes(searchTerm) || email.includes(searchTerm) || phone.includes(searchTerm);
   });
 
-  const selectRestaurant = (restaurant: any) => {
+  const selectRestaurant = (restaurant: Restaurant | GroupedRestaurant) => {
     setSelectedRestaurant(restaurant);
     setRestaurantDropdownOpen(false);
     setRestaurantSearchFilter("");
@@ -170,7 +174,8 @@ export function SurpriseBags() {
         position: "top-right",
         autoClose: 2000,
       });
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as ApiError;
       console.error('Image upload failed:', error);
       toast.error(error.message || "Failed to upload image", {
         position: "top-right",
@@ -211,8 +216,8 @@ export function SurpriseBags() {
           description: formB.description || undefined,
           imageUrl: bagImageUrl || formB.imageUrl || undefined,
           quantityAvailable: parseInt(formB.quantityAvailable),
-          pickupStartTime: formB.pickupStartTime ? formB.pickupStartTime + ':00' : undefined,
-          pickupEndTime: formB.pickupEndTime ? formB.pickupEndTime + ':00' : undefined,
+          pickupStartTime: formB.pickupStartTime ? `${formB.pickupStartTime}:00` : undefined,
+          pickupEndTime: formB.pickupEndTime ? `${formB.pickupEndTime}:00` : undefined,
           availableDate: formB.availableDate || undefined,
           isActive: formB.isActive,
           isVegetarian: formB.isVegetarian
@@ -235,10 +240,11 @@ export function SurpriseBags() {
           autoClose: 3000,
         });
       }
-    } catch (err: any) {
-      console.error('Create surprise bag failed', err);
+    } catch (err) {
+      const error = err as ApiError;
+      console.error('Create surprise bag failed', error);
       // Show error toast for unexpected errors
-      const errorMessage = err?.message || "Failed to create surprise bag";
+      const errorMessage = error?.message || "Failed to create surprise bag";
       toast.error(errorMessage, {
         position: "top-right",
         autoClose: 3000,
@@ -248,12 +254,12 @@ export function SurpriseBags() {
     }
   };
 
-  const openBagDetail = (bag: any, restaurant: any) => {
+  const openBagDetail = (bag: SurpriseBag, restaurant: GroupedRestaurant) => {
     setSelectedBag({ ...bag, restaurant });
     setOpenDetail(true);
   };
 
-  const openEditDialog = (bag: any, restaurant: any) => {
+  const openEditDialog = (bag: SurpriseBag, restaurant: GroupedRestaurant) => {
     setSelectedBag({ ...bag, restaurant });
     
     // Pre-fill form with existing bag data
@@ -301,8 +307,8 @@ export function SurpriseBags() {
           description: formB.description || undefined,
           imageUrl: bagImageUrl || formB.imageUrl || undefined,
           quantityAvailable: parseInt(formB.quantityAvailable),
-          pickupStartTime: formB.pickupStartTime ? formB.pickupStartTime + ':00' : undefined,
-          pickupEndTime: formB.pickupEndTime ? formB.pickupEndTime + ':00' : undefined,
+          pickupStartTime: formB.pickupStartTime ? `${formB.pickupStartTime}:00` : undefined,
+          pickupEndTime: formB.pickupEndTime ? `${formB.pickupEndTime}:00` : undefined,
           availableDate: formB.availableDate || undefined,
           isActive: formB.isActive,
           isVegetarian: formB.isVegetarian
@@ -324,9 +330,10 @@ export function SurpriseBags() {
           autoClose: 3000,
         });
       }
-    } catch (err: any) {
-      console.error('Update surprise bag failed', err);
-      const errorMessage = err?.message || "Failed to update surprise bag";
+    } catch (err) {
+      const error = err as ApiError;
+      console.error('Update surprise bag failed', error);
+      const errorMessage = error?.message || "Failed to update surprise bag";
       toast.error(errorMessage, {
         position: "top-right",
         autoClose: 3000,
@@ -336,7 +343,7 @@ export function SurpriseBags() {
     }
   };
 
-  const openDeleteDialog = (bag: any, restaurant: any) => {
+  const openDeleteDialog = (bag: SurpriseBag, restaurant: GroupedRestaurant) => {
     setBagToDelete({ bag, restaurant });
     setDeleteConfirm(true);
   };
@@ -357,7 +364,8 @@ export function SurpriseBags() {
         position: "top-right",
         autoClose: 3000,
       });
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as ApiError;
       console.error('Delete failed', error);
       toast.error(error?.message || "Failed to delete surprise bag", {
         position: "top-right",
@@ -687,7 +695,7 @@ export function SurpriseBags() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {restaurant.bags.map((bag: any) => (
+                          {restaurant.bags.map((bag: SurpriseBag) => (
                             <TableRow key={bag.bagId} className="hover:bg-muted/30 font-light">
                               <TableCell 
                                 className="font-medium cursor-pointer hover:underline" 
