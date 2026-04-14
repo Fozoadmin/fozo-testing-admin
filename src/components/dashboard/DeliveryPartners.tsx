@@ -1,15 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
-import { adminApi } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Switch } from "@/components/ui/switch";
+import { useState, useEffect } from 'react';
+import { adminApi } from '@/lib/api';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Switch } from '@/components/ui/switch';
 import {
   Table,
   TableBody,
@@ -17,55 +30,68 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Plus, Bike, Trash2, Edit, CheckCircle2, XCircle, Ban, Loader2, Copy, User2, IndianRupee, Eye } from "lucide-react";
-import { cn, isTenDigitPhone, normalizePhoneDigits, apiRequestWithStatus } from "@/lib/utils";
-import { ORDER_STATUS } from "@/constants/orderStatus";
-import { toast } from "react-toastify";
+} from '@/components/ui/table';
+import {
+  Plus,
+  Bike,
+  Trash2,
+  Edit,
+  CheckCircle2,
+  XCircle,
+  Ban,
+  Loader2,
+  Copy,
+  User2,
+  IndianRupee,
+  Eye,
+} from 'lucide-react';
+import { cn, isTenDigitPhone, normalizePhoneDigits, apiRequestWithStatus } from '@/lib/utils';
+import { ORDER_STATUS } from '@/constants/orderStatus';
+import { toast } from 'react-toastify';
 
 export function DeliveryPartners() {
   const [deliveryPartners, setDeliveryPartners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [openAdd, setOpenAdd] = useState(false);
   const [creating, setCreating] = useState(false);
-  
+
   // Detail popup
   const [selectedDP, setSelectedDP] = useState<any | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
-  
+
   // Delete confirmation
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  
+
   // Edit mode
   const [openEdit, setOpenEdit] = useState(false);
   const [editing, setEditing] = useState(false);
-  
+
   // Orders sheet
   const [selectedDPForOrders, setSelectedDPForOrders] = useState<any | null>(null);
   const [dpOrders, setDpOrders] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [togglingOnline, setTogglingOnline] = useState<string | null>(null);
-  
+
   const [formD, setFormD] = useState({
-    fullName: "",
-    email: "",
-    phoneNumber: "",
-    password: "",
-    vehicleType: "bicycle" as 'bicycle' | 'scooter' | 'motorcycle' | 'car',
-    licenseNumber: ""
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    password: '',
+    vehicleType: 'bicycle' as 'bicycle' | 'scooter' | 'motorcycle' | 'car',
+    licenseNumber: '',
   });
 
   const [bankDetails, setBankDetails] = useState({
-    accountNumber: "",
-    ifscCode: "",
-    accountHolderName: "",
-    bankName: ""
+    accountNumber: '',
+    ifscCode: '',
+    accountHolderName: '',
+    bankName: '',
   });
 
   useEffect(() => {
     let isMounted = true;
-    
+
     const fetchDeliveryPartners = async () => {
       try {
         const data = await adminApi.getAllDeliveryPartners();
@@ -80,9 +106,9 @@ export function DeliveryPartners() {
         }
       }
     };
-    
+
     fetchDeliveryPartners();
-    
+
     return () => {
       isMounted = false;
     };
@@ -90,18 +116,18 @@ export function DeliveryPartners() {
 
   const resetForm = () => {
     setFormD({
-      fullName: "",
-      email: "",
-      phoneNumber: "",
-      password: "",
-      vehicleType: "bicycle",
-      licenseNumber: ""
+      fullName: '',
+      email: '',
+      phoneNumber: '',
+      password: '',
+      vehicleType: 'bicycle',
+      licenseNumber: '',
     });
     setBankDetails({
-      accountNumber: "",
-      ifscCode: "",
-      accountHolderName: "",
-      bankName: ""
+      accountNumber: '',
+      ifscCode: '',
+      accountHolderName: '',
+      bankName: '',
     });
   };
 
@@ -114,32 +140,35 @@ export function DeliveryPartners() {
   const handleCreate = async () => {
     try {
       setCreating(true);
-      
+
       // Validate required fields - only phoneNumber, fullName, and vehicleType are required
       if (!formD.fullName || !formD.vehicleType) {
-        alert("Please fill in all required fields (Name and Vehicle Type)");
+        alert('Please fill in all required fields (Name and Vehicle Type)');
         return;
       }
-      
+
       if (!formD.phoneNumber) {
-        alert("Phone number is required for delivery partners (used for OTP login)");
+        alert('Phone number is required for delivery partners (used for OTP login)');
         return;
       }
 
       if (!isTenDigitPhone(formD.phoneNumber)) {
-        alert("Mobile number must be exactly 10 digits");
+        alert('Mobile number must be exactly 10 digits');
         return;
       }
       const phoneDigits = normalizePhoneDigits(formD.phoneNumber);
-      
+
       // Build bank details object if any field is provided
-      const bankAccountDetails = (bankDetails.accountNumber || bankDetails.ifscCode) ? {
-        accountNumber: bankDetails.accountNumber,
-        ifscCode: bankDetails.ifscCode,
-        accountHolderName: bankDetails.accountHolderName,
-        bankName: bankDetails.bankName
-      } : undefined;
-      
+      const bankAccountDetails =
+        bankDetails.accountNumber || bankDetails.ifscCode
+          ? {
+              accountNumber: bankDetails.accountNumber,
+              ifscCode: bankDetails.ifscCode,
+              accountHolderName: bankDetails.accountHolderName,
+              bankName: bankDetails.bankName,
+            }
+          : undefined;
+
       // Single API call to onboard delivery partner with all details - using helper to get status
       const result = await apiRequestWithStatus('/admin/delivery-partners', {
         method: 'POST',
@@ -151,14 +180,14 @@ export function DeliveryPartners() {
           userType: 'delivery_partner',
           vehicleType: formD.vehicleType,
           licenseNumber: formD.licenseNumber || undefined,
-          bankAccountDetails
-        })
+          bankAccountDetails,
+        }),
       });
-      
+
       // Show toast based on status
       if (result.status < 300) {
         toast.success(result.message, {
-          position: "top-right",
+          position: 'top-right',
           autoClose: 3000,
         });
         // Refresh the list
@@ -168,16 +197,16 @@ export function DeliveryPartners() {
       } else {
         // Show red toast for any error status (status >= 400)
         toast.error(result.message, {
-          position: "top-right",
+          position: 'top-right',
           autoClose: 3000,
         });
       }
     } catch (err: any) {
       console.error('Create delivery partner failed', err);
       // Show error toast for unexpected errors
-      const errorMessage = err?.message || "Failed to create delivery partner";
+      const errorMessage = err?.message || 'Failed to create delivery partner';
       toast.error(errorMessage, {
-        position: "top-right",
+        position: 'top-right',
         autoClose: 3000,
       });
     } finally {
@@ -187,70 +216,73 @@ export function DeliveryPartners() {
 
   const openEditDialog = (dp: any) => {
     setSelectedDP(dp);
-    
+
     // Pre-fill form with existing data
     setFormD({
-      fullName: dp.fullName || "",
-      email: dp.email || "",
-      phoneNumber: dp.phoneNumber?.replace('+91', '') || "",
-      password: "", // Don't pre-fill password
-      vehicleType: dp.vehicleType || "bicycle",
-      licenseNumber: dp.licenseNumber || ""
+      fullName: dp.fullName || '',
+      email: dp.email || '',
+      phoneNumber: dp.phoneNumber?.replace('+91', '') || '',
+      password: '', // Don't pre-fill password
+      vehicleType: dp.vehicleType || 'bicycle',
+      licenseNumber: dp.licenseNumber || '',
     });
-    
+
     // Pre-fill bank details
     if (dp.bankAccountDetails) {
       setBankDetails({
-        accountNumber: dp.bankAccountDetails.accountNumber || "",
-        ifscCode: dp.bankAccountDetails.ifscCode || "",
-        accountHolderName: dp.bankAccountDetails.accountHolderName || "",
-        bankName: dp.bankAccountDetails.bankName || ""
+        accountNumber: dp.bankAccountDetails.accountNumber || '',
+        ifscCode: dp.bankAccountDetails.ifscCode || '',
+        accountHolderName: dp.bankAccountDetails.accountHolderName || '',
+        bankName: dp.bankAccountDetails.bankName || '',
       });
     } else {
       setBankDetails({
-        accountNumber: "",
-        ifscCode: "",
-        accountHolderName: "",
-        bankName: ""
+        accountNumber: '',
+        ifscCode: '',
+        accountHolderName: '',
+        bankName: '',
       });
     }
-    
+
     setOpenEdit(true);
   };
 
   const handleUpdate = async () => {
     if (!selectedDP) return;
-    
+
     try {
       setEditing(true);
-      
+
       if (!formD.fullName || !formD.vehicleType) {
-        alert("Please fill in all required fields (Name and Vehicle Type)");
+        alert('Please fill in all required fields (Name and Vehicle Type)');
         return;
       }
-      
+
       // Build bank details object if any field is provided
-      const bankAccountDetails = (bankDetails.accountNumber || bankDetails.ifscCode) ? {
-        accountNumber: bankDetails.accountNumber,
-        ifscCode: bankDetails.ifscCode,
-        accountHolderName: bankDetails.accountHolderName,
-        bankName: bankDetails.bankName
-      } : undefined;
-      
+      const bankAccountDetails =
+        bankDetails.accountNumber || bankDetails.ifscCode
+          ? {
+              accountNumber: bankDetails.accountNumber,
+              ifscCode: bankDetails.ifscCode,
+              accountHolderName: bankDetails.accountHolderName,
+              bankName: bankDetails.bankName,
+            }
+          : undefined;
+
       // Update delivery partner
       await adminApi.updateDeliveryPartner(selectedDP.userId, {
         fullName: formD.fullName,
         vehicleType: formD.vehicleType,
         licenseNumber: formD.licenseNumber || undefined,
-        bankAccountDetails
+        bankAccountDetails,
       });
-      
+
       // Refresh list
       const updatedDPs = await adminApi.getAllDeliveryPartners();
       setDeliveryPartners(updatedDPs);
       setOpenEdit(false);
       resetForm();
-      alert("Delivery Partner updated successfully!");
+      alert('Delivery Partner updated successfully!');
     } catch (error) {
       console.error('Update failed', error);
       alert(`Failed to update delivery partner: ${error}`);
@@ -266,29 +298,29 @@ export function DeliveryPartners() {
 
   const handleDelete = async () => {
     if (!selectedDP) return;
-    
+
     try {
       setDeleting(true);
       await adminApi.deleteUser(selectedDP.userId);
-      
+
       // Refresh list
       const updatedDPs = await adminApi.getAllDeliveryPartners();
       setDeliveryPartners(updatedDPs);
       setDeleteConfirm(false);
       setSelectedDP(null);
-      toast.success("Delivery Partner deleted successfully!", {
-        position: "top-right",
+      toast.success('Delivery Partner deleted successfully!', {
+        position: 'top-right',
         autoClose: 3000,
       });
     } catch (error: any) {
       console.error('Delete failed', error);
       const rawMessage = error?.message || String(error);
-      const friendlyMessage = rawMessage.includes("foreign key constraint")
-        ? "Cannot delete this delivery partner because there are related records (e.g., orders) linked to this user."
-        : rawMessage || "Failed to delete delivery partner";
+      const friendlyMessage = rawMessage.includes('foreign key constraint')
+        ? 'Cannot delete this delivery partner because there are related records (e.g., orders) linked to this user.'
+        : rawMessage || 'Failed to delete delivery partner';
 
       toast.error(friendlyMessage, {
-        position: "top-right",
+        position: 'top-right',
         autoClose: 4000,
       });
     } finally {
@@ -303,11 +335,11 @@ export function DeliveryPartners() {
         method: 'PUT',
         body: JSON.stringify({ status: newStatus }),
       });
-      
+
       // Show toast based on status
       if (result.status < 300) {
         toast.success(result.message, {
-          position: "top-right",
+          position: 'top-right',
           autoClose: 3000,
         });
         // Refresh list
@@ -316,16 +348,16 @@ export function DeliveryPartners() {
       } else {
         // Show red toast for any error status (status >= 400)
         toast.error(result.message, {
-          position: "top-right",
+          position: 'top-right',
           autoClose: 3000,
         });
       }
     } catch (error: any) {
       console.error('Status update failed', error);
       // Show error toast for unexpected errors
-      const errorMessage = error?.message || "Failed to update status";
+      const errorMessage = error?.message || 'Failed to update status';
       toast.error(errorMessage, {
-        position: "top-right",
+        position: 'top-right',
         autoClose: 3000,
       });
     }
@@ -336,15 +368,15 @@ export function DeliveryPartners() {
       alert('Delivery partner ID not found');
       return;
     }
-    
+
     setTogglingOnline(dp.id);
     try {
       await adminApi.updateDeliveryPartnerOnlineStatus(dp.id, newStatus);
-      
+
       // Refresh list
       const updatedDPs = await adminApi.getAllDeliveryPartners();
       setDeliveryPartners(updatedDPs);
-      
+
       // Update selected DP if it's the same one
       if (selectedDPForOrders?.id === dp.id) {
         setSelectedDPForOrders(updatedDPs.find((d: any) => d.id === dp.id));
@@ -373,11 +405,11 @@ export function DeliveryPartners() {
   };
 
   const timeAgo = (iso?: string | null) => {
-    if (!iso) return "-";
+    if (!iso) return '-';
     const d = new Date(iso);
     const diff = Date.now() - d.getTime();
     const minutes = Math.floor(diff / (1000 * 60));
-    if (minutes < 1) return "just now";
+    if (minutes < 1) return 'just now';
     if (minutes < 60) return `${minutes}m ago`;
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `${hours}h ago`;
@@ -386,14 +418,14 @@ export function DeliveryPartners() {
   };
 
   const formatDateTime = (iso?: string | null) => {
-    if (!iso) return "-";
+    if (!iso) return '-';
     const d = new Date(iso);
-    return d.toLocaleString("en-IN", {
-      year: "numeric",
-      month: "short",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
+    return d.toLocaleString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
       hour12: true,
     });
   };
@@ -401,141 +433,213 @@ export function DeliveryPartners() {
   const statusVariant = (s: string) => {
     switch (s) {
       case ORDER_STATUS.DELIVERED:
-        return "default" as const;
+        return 'default' as const;
       case ORDER_STATUS.CANCELLED_BY_USER:
       case ORDER_STATUS.CANCELLED_BY_RESTAURANT:
       case ORDER_STATUS.CANCELLED_BY_ADMIN:
       case ORDER_STATUS.REFUNDED:
-        return "destructive" as const;
+        return 'destructive' as const;
       case ORDER_STATUS.OUT_FOR_DELIVERY:
       case ORDER_STATUS.READY_FOR_PICKUP:
       case ORDER_STATUS.CONFIRMED:
       case ORDER_STATUS.PLACED:
-        return "secondary" as const;
+        return 'secondary' as const;
       default:
-        return "outline" as const;
+        return 'outline' as const;
     }
   };
 
   return (
-    <div className="grid gap-4">
-      <Card className="rounded-2xl">
-        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+    <div className='grid gap-4'>
+      <Card className='rounded-2xl'>
+        <CardHeader className='flex flex-row items-center justify-between pb-2'>
           <CardTitle>Delivery Partners</CardTitle>
-          <Dialog open={openAdd} onOpenChange={(open) => { setOpenAdd(open); if (!open) resetForm(); }}>
+          <Dialog
+            open={openAdd}
+            onOpenChange={open => {
+              setOpenAdd(open);
+              if (!open) resetForm();
+            }}
+          >
             <DialogTrigger asChild>
-              <Button className="gap-2"><Plus className="h-4 w-4"/>Add Delivery Partner</Button>
+              <Button className='gap-2'>
+                <Plus className='h-4 w-4' />
+                Add Delivery Partner
+              </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-3xl'>
               <DialogHeader>
                 <DialogTitle>Add Delivery Partner</DialogTitle>
-                <DialogDescription>Complete delivery partner onboarding with all details</DialogDescription>
+                <DialogDescription>
+                  Complete delivery partner onboarding with all details
+                </DialogDescription>
               </DialogHeader>
-              
-              <Tabs defaultValue="basic" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="basic">Basic Info & Vehicle</TabsTrigger>
-                  <TabsTrigger value="bank">Bank Details</TabsTrigger>
+
+              <Tabs defaultValue='basic' className='w-full'>
+                <TabsList className='grid w-full grid-cols-2'>
+                  <TabsTrigger value='basic'>Basic Info & Vehicle</TabsTrigger>
+                  <TabsTrigger value='bank'>Bank Details</TabsTrigger>
                 </TabsList>
-                
+
                 {/* Basic Info Tab */}
-                <TabsContent value="basic" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <TabsContent value='basic' className='space-y-4'>
+                  <div className='grid grid-cols-2 gap-4'>
                     <div>
-                      <label className="text-sm font-medium">Full Name *</label>
-                      <Input value={formD.fullName} onChange={e => setFormD({...formD, fullName: e.target.value})} placeholder="John Doe" />
+                      <label className='text-sm font-medium'>Full Name *</label>
+                      <Input
+                        value={formD.fullName}
+                        onChange={e => setFormD({ ...formD, fullName: e.target.value })}
+                        placeholder='John Doe'
+                      />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Phone Number *</label>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium px-3 py-2 bg-muted rounded-md">+91</span>
-                        <Input 
-                          value={formD.phoneNumber} 
+                      <label className='text-sm font-medium'>Phone Number *</label>
+                      <div className='flex items-center gap-2'>
+                        <span className='bg-muted rounded-md px-3 py-2 text-sm font-medium'>
+                          +91
+                        </span>
+                        <Input
+                          value={formD.phoneNumber}
                           onChange={e => {
                             const value = e.target.value.replace(/\D/g, '');
                             if (value.length <= 10) {
-                              setFormD({...formD, phoneNumber: value});
+                              setFormD({ ...formD, phoneNumber: value });
                             }
                           }}
-                          placeholder="9876543210"
+                          placeholder='9876543210'
                           maxLength={10}
                         />
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">Used for OTP-based login (10 digits)</p>
+                      <p className='text-muted-foreground mt-1 text-xs'>
+                        Used for OTP-based login (10 digits)
+                      </p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Email (Optional)</label>
-                      <Input type="email" value={formD.email} onChange={e => setFormD({...formD, email: e.target.value})} placeholder="john@example.com" />
-                      <p className="text-xs text-muted-foreground mt-1">Optional - DPs use OTP login</p>
+                      <label className='text-sm font-medium'>Email (Optional)</label>
+                      <Input
+                        type='email'
+                        value={formD.email}
+                        onChange={e => setFormD({ ...formD, email: e.target.value })}
+                        placeholder='john@example.com'
+                      />
+                      <p className='text-muted-foreground mt-1 text-xs'>
+                        Optional - DPs use OTP login
+                      </p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Password (Optional)</label>
-                      <Input type="password" value={formD.password} onChange={e => setFormD({...formD, password: e.target.value})} placeholder="Optional password" />
-                      <p className="text-xs text-muted-foreground mt-1">Optional - DPs typically use OTP</p>
+                      <label className='text-sm font-medium'>Password (Optional)</label>
+                      <Input
+                        type='password'
+                        value={formD.password}
+                        onChange={e => setFormD({ ...formD, password: e.target.value })}
+                        placeholder='Optional password'
+                      />
+                      <p className='text-muted-foreground mt-1 text-xs'>
+                        Optional - DPs typically use OTP
+                      </p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Vehicle Type *</label>
-                      <Select value={formD.vehicleType} onValueChange={(v) => setFormD({...formD, vehicleType: v as any})}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                      <label className='text-sm font-medium'>Vehicle Type *</label>
+                      <Select
+                        value={formD.vehicleType}
+                        onValueChange={v => setFormD({ ...formD, vehicleType: v as any })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="bicycle">Bicycle</SelectItem>
-                          <SelectItem value="scooter">Scooter</SelectItem>
-                          <SelectItem value="motorcycle">Motorcycle</SelectItem>
-                          <SelectItem value="car">Car</SelectItem>
+                          <SelectItem value='bicycle'>Bicycle</SelectItem>
+                          <SelectItem value='scooter'>Scooter</SelectItem>
+                          <SelectItem value='motorcycle'>Motorcycle</SelectItem>
+                          <SelectItem value='car'>Car</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <label className="text-sm font-medium">License Number</label>
-                      <Input value={formD.licenseNumber} onChange={e => setFormD({...formD, licenseNumber: e.target.value})} placeholder="DL1234567890" />
+                      <label className='text-sm font-medium'>License Number</label>
+                      <Input
+                        value={formD.licenseNumber}
+                        onChange={e => setFormD({ ...formD, licenseNumber: e.target.value })}
+                        placeholder='DL1234567890'
+                      />
                     </div>
                   </div>
-                  <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm text-blue-800">
-                      <strong>Authentication:</strong> Delivery partners use OTP-based login via phone number. Email and password are optional and can be left blank.
+                  <div className='mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3'>
+                    <p className='text-sm text-blue-800'>
+                      <strong>Authentication:</strong> Delivery partners use OTP-based login via
+                      phone number. Email and password are optional and can be left blank.
                     </p>
                   </div>
-                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-sm text-green-800">
-                      <strong>Auto-Approval:</strong> Delivery partners onboarded by admins are automatically approved and verified.
+                  <div className='mt-3 rounded-lg border border-green-200 bg-green-50 p-3'>
+                    <p className='text-sm text-green-800'>
+                      <strong>Auto-Approval:</strong> Delivery partners onboarded by admins are
+                      automatically approved and verified.
                     </p>
                   </div>
                 </TabsContent>
-                
+
                 {/* Bank Details Tab */}
-                <TabsContent value="bank" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <TabsContent value='bank' className='space-y-4'>
+                  <div className='grid grid-cols-2 gap-4'>
                     <div>
-                      <label className="text-sm font-medium">Account Holder Name</label>
-                      <Input value={bankDetails.accountHolderName} onChange={e => setBankDetails({...bankDetails, accountHolderName: e.target.value})} placeholder="John Doe" />
+                      <label className='text-sm font-medium'>Account Holder Name</label>
+                      <Input
+                        value={bankDetails.accountHolderName}
+                        onChange={e =>
+                          setBankDetails({ ...bankDetails, accountHolderName: e.target.value })
+                        }
+                        placeholder='John Doe'
+                      />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Bank Name</label>
-                      <Input value={bankDetails.bankName} onChange={e => setBankDetails({...bankDetails, bankName: e.target.value})} placeholder="HDFC Bank" />
+                      <label className='text-sm font-medium'>Bank Name</label>
+                      <Input
+                        value={bankDetails.bankName}
+                        onChange={e => setBankDetails({ ...bankDetails, bankName: e.target.value })}
+                        placeholder='HDFC Bank'
+                      />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Account Number</label>
-                      <Input value={bankDetails.accountNumber} onChange={e => setBankDetails({...bankDetails, accountNumber: e.target.value})} placeholder="1234567890" />
+                      <label className='text-sm font-medium'>Account Number</label>
+                      <Input
+                        value={bankDetails.accountNumber}
+                        onChange={e =>
+                          setBankDetails({ ...bankDetails, accountNumber: e.target.value })
+                        }
+                        placeholder='1234567890'
+                      />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">IFSC Code</label>
-                      <Input value={bankDetails.ifscCode} onChange={e => setBankDetails({...bankDetails, ifscCode: e.target.value})} placeholder="HDFC0001234" />
+                      <label className='text-sm font-medium'>IFSC Code</label>
+                      <Input
+                        value={bankDetails.ifscCode}
+                        onChange={e => setBankDetails({ ...bankDetails, ifscCode: e.target.value })}
+                        placeholder='HDFC0001234'
+                      />
                     </div>
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className='text-muted-foreground text-sm'>
                     Bank details will be used for payment settlements
                   </div>
                 </TabsContent>
               </Tabs>
-              
-              <div className="flex justify-end gap-2 mt-4">
-                <Button variant="outline" onClick={() => { setOpenAdd(false); resetForm(); }}>Cancel</Button>
+
+              <div className='mt-4 flex justify-end gap-2'>
+                <Button
+                  variant='outline'
+                  onClick={() => {
+                    setOpenAdd(false);
+                    resetForm();
+                  }}
+                >
+                  Cancel
+                </Button>
                 <Button disabled={creating || !isFormValid()} onClick={handleCreate}>
                   {creating ? 'Creating...' : 'Create Delivery Partner'}
                 </Button>
               </div>
               {!isFormValid() && (
-                <p className="text-xs text-amber-600 text-right mt-2">
+                <p className='mt-2 text-right text-xs text-amber-600'>
                   Please fill all required fields (Name, Phone Number, Vehicle Type)
                 </p>
               )}
@@ -544,9 +648,9 @@ export function DeliveryPartners() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8">Loading delivery partners...</div>
+            <div className='py-8 text-center'>Loading delivery partners...</div>
           ) : deliveryPartners.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">No delivery partners found</div>
+            <div className='text-muted-foreground py-8 text-center'>No delivery partners found</div>
           ) : (
             <Table>
               <TableHeader>
@@ -558,108 +662,114 @@ export function DeliveryPartners() {
                   <TableHead>Status</TableHead>
                   <TableHead>Online</TableHead>
                   <TableHead>Verified</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className='text-right'>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {deliveryPartners.map((d) => (
-                  <TableRow 
+                {deliveryPartners.map(d => (
+                  <TableRow
                     key={d.userId}
-                    className="cursor-pointer hover:bg-muted/40"
+                    className='hover:bg-muted/40 cursor-pointer'
                     onClick={() => openOrdersSheet(d)}
                     tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") openOrdersSheet(d);
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') openOrdersSheet(d);
                     }}
                     aria-label={`Open orders for ${d.fullName || 'delivery partner'}`}
                   >
-                    <TableCell className="font-medium">{d.fullName || 'N/A'}</TableCell>
+                    <TableCell className='font-medium'>{d.fullName || 'N/A'}</TableCell>
                     <TableCell>{d.email || 'N/A'}</TableCell>
                     <TableCell>{d.phoneNumber || 'N/A'}</TableCell>
-                    <TableCell className="capitalize">{d.vehicleType || 'N/A'}</TableCell>
+                    <TableCell className='capitalize'>{d.vehicleType || 'N/A'}</TableCell>
                     <TableCell>
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <Select value={d.status || 'pending'} onValueChange={(value) => handleStatusChange(d.userId, value)}>
-                          <SelectTrigger className="w-[130px] h-8">
+                      <div onClick={e => e.stopPropagation()}>
+                        <Select
+                          value={d.status || 'pending'}
+                          onValueChange={value => handleStatusChange(d.userId, value)}
+                        >
+                          <SelectTrigger className='h-8 w-[130px]'>
                             <SelectValue />
                           </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">
-                            <div className="flex items-center gap-2">
-                              <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
-                              Pending
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="approved">
-                            <div className="flex items-center gap-2">
-                              <CheckCircle2 className="h-3 w-3 text-green-600" />
-                              Approved
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="rejected">
-                            <div className="flex items-center gap-2">
-                              <XCircle className="h-3 w-3 text-red-600" />
-                              Rejected
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="suspended">
-                            <div className="flex items-center gap-2">
-                              <Ban className="h-3 w-3 text-orange-600" />
-                              Suspended
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
+                          <SelectContent>
+                            <SelectItem value='pending'>
+                              <div className='flex items-center gap-2'>
+                                <div className='h-2 w-2 rounded-full bg-yellow-500'></div>
+                                Pending
+                              </div>
+                            </SelectItem>
+                            <SelectItem value='approved'>
+                              <div className='flex items-center gap-2'>
+                                <CheckCircle2 className='h-3 w-3 text-green-600' />
+                                Approved
+                              </div>
+                            </SelectItem>
+                            <SelectItem value='rejected'>
+                              <div className='flex items-center gap-2'>
+                                <XCircle className='h-3 w-3 text-red-600' />
+                                Rejected
+                              </div>
+                            </SelectItem>
+                            <SelectItem value='suspended'>
+                              <div className='flex items-center gap-2'>
+                                <Ban className='h-3 w-3 text-orange-600' />
+                                Suspended
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
                         </Select>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                      <div className='flex items-center gap-2' onClick={e => e.stopPropagation()}>
                         {togglingOnline === d.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <Loader2 className='h-4 w-4 animate-spin' />
                         ) : (
                           <Switch
                             checked={d.isOnline || false}
-                            onCheckedChange={(checked) => handleOnlineStatusToggle(d, checked)}
+                            onCheckedChange={checked => handleOnlineStatusToggle(d, checked)}
                           />
                         )}
-                        <span className="text-xs text-muted-foreground">
-                          {d.isOnline ? "Online" : "Offline"}
+                        <span className='text-muted-foreground text-xs'>
+                          {d.isOnline ? 'Online' : 'Offline'}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={d.documentsVerified ? "default" : "secondary"}>
-                        {d.documentsVerified ? "Yes" : "No"}
+                      <Badge variant={d.documentsVerified ? 'default' : 'secondary'}>
+                        {d.documentsVerified ? 'Yes' : 'No'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => { setSelectedDP(d); setOpenDetail(true); }}
-                          className="h-8 w-8 p-0"
-                          title="View details"
+                    <TableCell className='text-right'>
+                      <div className='flex justify-end gap-2' onClick={e => e.stopPropagation()}>
+                        <Button
+                          variant='ghost'
+                          size='sm'
+                          onClick={() => {
+                            setSelectedDP(d);
+                            setOpenDetail(true);
+                          }}
+                          className='h-8 w-8 p-0'
+                          title='View details'
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className='h-4 w-4' />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
+                        <Button
+                          variant='ghost'
+                          size='sm'
                           onClick={() => openEditDialog(d)}
-                          className="h-8 w-8 p-0"
-                          title="Edit"
+                          className='h-8 w-8 p-0'
+                          title='Edit'
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className='h-4 w-4' />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
+                        <Button
+                          variant='ghost'
+                          size='sm'
                           onClick={() => openDeleteDialog(d)}
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                          title="Delete"
+                          className='text-destructive hover:text-destructive h-8 w-8 p-0'
+                          title='Delete'
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className='h-4 w-4' />
                         </Button>
                       </div>
                     </TableCell>
@@ -673,81 +783,93 @@ export function DeliveryPartners() {
 
       {/* Delivery Partner Detail Dialog */}
       <Dialog open={openDetail} onOpenChange={setOpenDetail}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className='sm:max-w-2xl'>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Bike className="h-5 w-5" />
+            <DialogTitle className='flex items-center gap-2'>
+              <Bike className='h-5 w-5' />
               Delivery Partner Details
             </DialogTitle>
           </DialogHeader>
           {selectedDP && (
-            <div className="grid gap-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className='grid gap-4'>
+              <div className='grid grid-cols-2 gap-4'>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Full Name</label>
-                  <div className="text-sm mt-1">{selectedDP.fullName || '—'}</div>
+                  <label className='text-muted-foreground text-sm font-medium'>Full Name</label>
+                  <div className='mt-1 text-sm'>{selectedDP.fullName || '—'}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Email</label>
-                  <div className="text-sm mt-1">{selectedDP.email || '—'}</div>
+                  <label className='text-muted-foreground text-sm font-medium'>Email</label>
+                  <div className='mt-1 text-sm'>{selectedDP.email || '—'}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Phone Number</label>
-                  <div className="text-sm mt-1">{selectedDP.phoneNumber || '—'}</div>
+                  <label className='text-muted-foreground text-sm font-medium'>Phone Number</label>
+                  <div className='mt-1 text-sm'>{selectedDP.phoneNumber || '—'}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Vehicle Type</label>
-                  <div className="text-sm mt-1 capitalize">{selectedDP.vehicleType || '—'}</div>
+                  <label className='text-muted-foreground text-sm font-medium'>Vehicle Type</label>
+                  <div className='mt-1 text-sm capitalize'>{selectedDP.vehicleType || '—'}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">License Number</label>
-                  <div className="text-sm mt-1">{selectedDP.licenseNumber || '—'}</div>
+                  <label className='text-muted-foreground text-sm font-medium'>
+                    License Number
+                  </label>
+                  <div className='mt-1 text-sm'>{selectedDP.licenseNumber || '—'}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Status</label>
-                  <div className="text-sm mt-1">
-                    <Badge variant={
-                      selectedDP.status === "approved" ? "default" :
-                      selectedDP.status === "rejected" ? "destructive" :
-                      "secondary"
-                    }>
+                  <label className='text-muted-foreground text-sm font-medium'>Status</label>
+                  <div className='mt-1 text-sm'>
+                    <Badge
+                      variant={
+                        selectedDP.status === 'approved'
+                          ? 'default'
+                          : selectedDP.status === 'rejected'
+                            ? 'destructive'
+                            : 'secondary'
+                      }
+                    >
                       {selectedDP.status || 'pending'}
                     </Badge>
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Online Status</label>
-                  <div className="text-sm mt-1">
-                    <Badge variant={selectedDP.isOnline ? "default" : "secondary"}>
-                      {selectedDP.isOnline ? "Online" : "Offline"}
+                  <label className='text-muted-foreground text-sm font-medium'>Online Status</label>
+                  <div className='mt-1 text-sm'>
+                    <Badge variant={selectedDP.isOnline ? 'default' : 'secondary'}>
+                      {selectedDP.isOnline ? 'Online' : 'Offline'}
                     </Badge>
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Documents Verified</label>
-                  <div className="text-sm mt-1">
-                    <Badge variant={selectedDP.documentsVerified ? "default" : "secondary"}>
-                      {selectedDP.documentsVerified ? "Yes" : "No"}
+                  <label className='text-muted-foreground text-sm font-medium'>
+                    Documents Verified
+                  </label>
+                  <div className='mt-1 text-sm'>
+                    <Badge variant={selectedDP.documentsVerified ? 'default' : 'secondary'}>
+                      {selectedDP.documentsVerified ? 'Yes' : 'No'}
                     </Badge>
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Total Deliveries</label>
-                  <div className="text-sm mt-1">{selectedDP.totalDeliveries || 0}</div>
+                  <label className='text-muted-foreground text-sm font-medium'>
+                    Total Deliveries
+                  </label>
+                  <div className='mt-1 text-sm'>{selectedDP.totalDeliveries || 0}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Average Rating</label>
-                  <div className="text-sm mt-1">{selectedDP.averageRating || '0.0'} ⭐</div>
+                  <label className='text-muted-foreground text-sm font-medium'>
+                    Average Rating
+                  </label>
+                  <div className='mt-1 text-sm'>{selectedDP.averageRating || '0.0'} ⭐</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Created At</label>
-                  <div className="text-sm mt-1">
+                  <label className='text-muted-foreground text-sm font-medium'>Created At</label>
+                  <div className='mt-1 text-sm'>
                     {selectedDP.createdAt ? new Date(selectedDP.createdAt).toLocaleString() : '—'}
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">User ID</label>
-                  <div className="text-xs mt-1 font-mono">{selectedDP.userId}</div>
+                  <label className='text-muted-foreground text-sm font-medium'>User ID</label>
+                  <div className='mt-1 font-mono text-xs'>{selectedDP.userId}</div>
                 </div>
               </div>
             </div>
@@ -756,92 +878,141 @@ export function DeliveryPartners() {
       </Dialog>
 
       {/* Edit Delivery Partner Dialog */}
-      <Dialog open={openEdit} onOpenChange={(open) => { 
-        setOpenEdit(open); 
-        if (!open) resetForm(); 
-      }}>
-        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+      <Dialog
+        open={openEdit}
+        onOpenChange={open => {
+          setOpenEdit(open);
+          if (!open) resetForm();
+        }}
+      >
+        <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-3xl'>
           <DialogHeader>
             <DialogTitle>Edit Delivery Partner</DialogTitle>
-            <DialogDescription>
-              Update details for {selectedDP?.fullName}
-            </DialogDescription>
+            <DialogDescription>Update details for {selectedDP?.fullName}</DialogDescription>
           </DialogHeader>
-          
-          <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="basic">Basic Info & Vehicle</TabsTrigger>
-              <TabsTrigger value="bank">Bank Details</TabsTrigger>
+
+          <Tabs defaultValue='basic' className='w-full'>
+            <TabsList className='grid w-full grid-cols-2'>
+              <TabsTrigger value='basic'>Basic Info & Vehicle</TabsTrigger>
+              <TabsTrigger value='bank'>Bank Details</TabsTrigger>
             </TabsList>
-            
+
             {/* Basic Info Tab */}
-            <TabsContent value="basic" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <TabsContent value='basic' className='space-y-4'>
+              <div className='grid grid-cols-2 gap-4'>
                 <div>
-                  <label className="text-sm font-medium">Full Name *</label>
-                  <Input value={formD.fullName} onChange={e => setFormD({...formD, fullName: e.target.value})} placeholder="John Doe" />
+                  <label className='text-sm font-medium'>Full Name *</label>
+                  <Input
+                    value={formD.fullName}
+                    onChange={e => setFormD({ ...formD, fullName: e.target.value })}
+                    placeholder='John Doe'
+                  />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Vehicle Type *</label>
-                  <Select value={formD.vehicleType} onValueChange={(value: any) => setFormD({...formD, vehicleType: value})}>
+                  <label className='text-sm font-medium'>Vehicle Type *</label>
+                  <Select
+                    value={formD.vehicleType}
+                    onValueChange={(value: any) => setFormD({ ...formD, vehicleType: value })}
+                  >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select vehicle" />
+                      <SelectValue placeholder='Select vehicle' />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="bicycle">Bicycle</SelectItem>
-                      <SelectItem value="scooter">Scooter</SelectItem>
-                      <SelectItem value="motorcycle">Motorcycle</SelectItem>
-                      <SelectItem value="car">Car</SelectItem>
+                      <SelectItem value='bicycle'>Bicycle</SelectItem>
+                      <SelectItem value='scooter'>Scooter</SelectItem>
+                      <SelectItem value='motorcycle'>Motorcycle</SelectItem>
+                      <SelectItem value='car'>Car</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Email</label>
-                  <Input type="email" value={formD.email} disabled className="bg-muted cursor-not-allowed" />
-                  <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>
+                  <label className='text-sm font-medium'>Email</label>
+                  <Input
+                    type='email'
+                    value={formD.email}
+                    disabled
+                    className='bg-muted cursor-not-allowed'
+                  />
+                  <p className='text-muted-foreground mt-1 text-xs'>Email cannot be changed</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Phone Number</label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium px-3 py-2 bg-muted rounded-md">+91</span>
-                    <Input value={formD.phoneNumber} disabled className="bg-muted cursor-not-allowed" />
+                  <label className='text-sm font-medium'>Phone Number</label>
+                  <div className='flex items-center gap-2'>
+                    <span className='bg-muted rounded-md px-3 py-2 text-sm font-medium'>+91</span>
+                    <Input
+                      value={formD.phoneNumber}
+                      disabled
+                      className='bg-muted cursor-not-allowed'
+                    />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">Phone cannot be changed</p>
+                  <p className='text-muted-foreground mt-1 text-xs'>Phone cannot be changed</p>
                 </div>
-                <div className="col-span-2">
-                  <label className="text-sm font-medium">License Number</label>
-                  <Input value={formD.licenseNumber} onChange={e => setFormD({...formD, licenseNumber: e.target.value})} placeholder="DL12345678" />
+                <div className='col-span-2'>
+                  <label className='text-sm font-medium'>License Number</label>
+                  <Input
+                    value={formD.licenseNumber}
+                    onChange={e => setFormD({ ...formD, licenseNumber: e.target.value })}
+                    placeholder='DL12345678'
+                  />
                 </div>
               </div>
             </TabsContent>
-            
+
             {/* Bank Details Tab */}
-            <TabsContent value="bank" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <TabsContent value='bank' className='space-y-4'>
+              <div className='grid grid-cols-2 gap-4'>
                 <div>
-                  <label className="text-sm font-medium">Account Holder Name</label>
-                  <Input value={bankDetails.accountHolderName} onChange={e => setBankDetails({...bankDetails, accountHolderName: e.target.value})} placeholder="John Doe" />
+                  <label className='text-sm font-medium'>Account Holder Name</label>
+                  <Input
+                    value={bankDetails.accountHolderName}
+                    onChange={e =>
+                      setBankDetails({ ...bankDetails, accountHolderName: e.target.value })
+                    }
+                    placeholder='John Doe'
+                  />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Bank Name</label>
-                  <Input value={bankDetails.bankName} onChange={e => setBankDetails({...bankDetails, bankName: e.target.value})} placeholder="HDFC Bank" />
+                  <label className='text-sm font-medium'>Bank Name</label>
+                  <Input
+                    value={bankDetails.bankName}
+                    onChange={e => setBankDetails({ ...bankDetails, bankName: e.target.value })}
+                    placeholder='HDFC Bank'
+                  />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Account Number</label>
-                  <Input value={bankDetails.accountNumber} onChange={e => setBankDetails({...bankDetails, accountNumber: e.target.value})} placeholder="1234567890" />
+                  <label className='text-sm font-medium'>Account Number</label>
+                  <Input
+                    value={bankDetails.accountNumber}
+                    onChange={e =>
+                      setBankDetails({ ...bankDetails, accountNumber: e.target.value })
+                    }
+                    placeholder='1234567890'
+                  />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">IFSC Code</label>
-                  <Input value={bankDetails.ifscCode} onChange={e => setBankDetails({...bankDetails, ifscCode: e.target.value})} placeholder="HDFC0001234" />
+                  <label className='text-sm font-medium'>IFSC Code</label>
+                  <Input
+                    value={bankDetails.ifscCode}
+                    onChange={e => setBankDetails({ ...bankDetails, ifscCode: e.target.value })}
+                    placeholder='HDFC0001234'
+                  />
                 </div>
               </div>
             </TabsContent>
           </Tabs>
-          
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => { setOpenEdit(false); resetForm(); }}>Cancel</Button>
-            <Button 
-              disabled={editing || !formD.fullName || !formD.vehicleType} 
+
+          <div className='mt-4 flex justify-end gap-2'>
+            <Button
+              variant='outline'
+              onClick={() => {
+                setOpenEdit(false);
+                resetForm();
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={editing || !formD.fullName || !formD.vehicleType}
               onClick={handleUpdate}
             >
               {editing ? 'Updating...' : 'Update Partner'}
@@ -852,27 +1023,29 @@ export function DeliveryPartners() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteConfirm} onOpenChange={setDeleteConfirm}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className='sm:max-w-md'>
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete <strong>{selectedDP?.fullName || selectedDP?.email || 'this delivery partner'}</strong>?
+              Are you sure you want to delete{' '}
+              <strong>
+                {selectedDP?.fullName || selectedDP?.email || 'this delivery partner'}
+              </strong>
+              ?
             </DialogDescription>
           </DialogHeader>
-          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-            <p className="text-sm text-destructive font-medium">⚠️ Warning</p>
-            <p className="text-sm text-muted-foreground mt-1">
+          <div className='bg-destructive/10 border-destructive/20 rounded-lg border p-4'>
+            <p className='text-destructive text-sm font-medium'>⚠️ Warning</p>
+            <p className='text-muted-foreground mt-1 text-sm'>
               This action cannot be undone. This will permanently delete the delivery partner
               account and all associated data.
             </p>
           </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setDeleteConfirm(false)}>Cancel</Button>
-            <Button 
-              variant="destructive"
-              disabled={deleting} 
-              onClick={handleDelete}
-            >
+          <div className='mt-4 flex justify-end gap-2'>
+            <Button variant='outline' onClick={() => setDeleteConfirm(false)}>
+              Cancel
+            </Button>
+            <Button variant='destructive' disabled={deleting} onClick={handleDelete}>
               {deleting ? 'Deleting...' : 'Delete Delivery Partner'}
             </Button>
           </div>
@@ -880,40 +1053,50 @@ export function DeliveryPartners() {
       </Dialog>
 
       {/* Orders Sheet */}
-      <Sheet open={!!selectedDPForOrders} onOpenChange={(open: boolean) => !open && setSelectedDPForOrders(null)}>
-        <SheetContent side="right" className="w-full px-2 sm:max-w-xl lg:max-w-2xl xl:max-w-3xl 2xl:max-w-[1200px] overflow-y-auto">
+      <Sheet
+        open={!!selectedDPForOrders}
+        onOpenChange={(open: boolean) => !open && setSelectedDPForOrders(null)}
+      >
+        <SheetContent
+          side='right'
+          className='w-full overflow-y-auto px-2 sm:max-w-xl lg:max-w-2xl xl:max-w-3xl 2xl:max-w-[1200px]'
+        >
           {selectedDPForOrders && (
-            <div className="space-y-4">
+            <div className='space-y-4'>
               <SheetHeader>
-                <SheetTitle className="flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-2">
-                    <Bike className="h-5 w-5" />
+                <SheetTitle className='flex items-center justify-between gap-2'>
+                  <span className='flex items-center gap-2'>
+                    <Bike className='h-5 w-5' />
                     Orders for {selectedDPForOrders.fullName || 'Delivery Partner'}
                   </span>
                 </SheetTitle>
               </SheetHeader>
 
               {/* Delivery Partner Info */}
-              <Card className="rounded-xl">
-                <CardHeader className="pb-2"><CardTitle className="text-base">Delivery Partner Info</CardTitle></CardHeader>
-                <CardContent className="grid grid-cols-2 gap-3">
+              <Card className='rounded-xl'>
+                <CardHeader className='pb-2'>
+                  <CardTitle className='text-base'>Delivery Partner Info</CardTitle>
+                </CardHeader>
+                <CardContent className='grid grid-cols-2 gap-3'>
                   <div>
-                    <div className="text-xs text-muted-foreground">Name</div>
-                    <div className="text-sm">{selectedDPForOrders.fullName || '-'}</div>
+                    <div className='text-muted-foreground text-xs'>Name</div>
+                    <div className='text-sm'>{selectedDPForOrders.fullName || '-'}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-muted-foreground">Phone</div>
-                    <div className="text-sm">{selectedDPForOrders.phoneNumber || '-'}</div>
+                    <div className='text-muted-foreground text-xs'>Phone</div>
+                    <div className='text-sm'>{selectedDPForOrders.phoneNumber || '-'}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-muted-foreground">Vehicle</div>
-                    <div className="text-sm capitalize">{selectedDPForOrders.vehicleType || '-'}</div>
+                    <div className='text-muted-foreground text-xs'>Vehicle</div>
+                    <div className='text-sm capitalize'>
+                      {selectedDPForOrders.vehicleType || '-'}
+                    </div>
                   </div>
                   <div>
-                    <div className="text-xs text-muted-foreground">Status</div>
-                    <div className="text-sm">
-                      <Badge variant={selectedDPForOrders.isOnline ? "default" : "secondary"}>
-                        {selectedDPForOrders.isOnline ? "Online" : "Offline"}
+                    <div className='text-muted-foreground text-xs'>Status</div>
+                    <div className='text-sm'>
+                      <Badge variant={selectedDPForOrders.isOnline ? 'default' : 'secondary'}>
+                        {selectedDPForOrders.isOnline ? 'Online' : 'Offline'}
                       </Badge>
                     </div>
                   </div>
@@ -921,17 +1104,21 @@ export function DeliveryPartners() {
               </Card>
 
               {/* Orders List */}
-              <Card className="rounded-xl">
-                <CardHeader className="pb-2"><CardTitle className="text-base">Orders ({dpOrders.length})</CardTitle></CardHeader>
+              <Card className='rounded-xl'>
+                <CardHeader className='pb-2'>
+                  <CardTitle className='text-base'>Orders ({dpOrders.length})</CardTitle>
+                </CardHeader>
                 <CardContent>
                   {ordersLoading ? (
-                    <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Loading orders...
+                    <div className='text-muted-foreground flex items-center justify-center gap-2 py-8'>
+                      <Loader2 className='h-4 w-4 animate-spin' /> Loading orders...
                     </div>
                   ) : dpOrders.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">No orders found for this delivery partner</div>
+                    <div className='text-muted-foreground py-8 text-center'>
+                      No orders found for this delivery partner
+                    </div>
                   ) : (
-                    <div className="rounded-md border overflow-x-auto">
+                    <div className='overflow-x-auto rounded-md border'>
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -944,55 +1131,75 @@ export function DeliveryPartners() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {dpOrders.map((order) => (
+                          {dpOrders.map(order => (
                             <TableRow key={order.id}>
-                              <TableCell className="font-medium">
-                                <div className="flex items-center gap-2">
+                              <TableCell className='font-medium'>
+                                <div className='flex items-center gap-2'>
                                   <span>{order.id.substring(0, 8)}</span>
                                   <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6"
+                                    variant='ghost'
+                                    size='icon'
+                                    className='h-6 w-6'
                                     onClick={async () => {
-                                      try { await navigator.clipboard.writeText(order.id); } catch { /* clipboard not available */ }
+                                      try {
+                                        await navigator.clipboard.writeText(order.id);
+                                      } catch {
+                                        /* clipboard not available */
+                                      }
                                     }}
-                                    aria-label="Copy order id"
+                                    aria-label='Copy order id'
                                   >
-                                    <Copy className="h-3 w-3" />
+                                    <Copy className='h-3 w-3' />
                                   </Button>
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <User2 className="h-4 w-4" />
-                                  <div className="truncate">
-                                    <div className="font-medium truncate max-w-[180px]">{order.customerName || "N/A"}</div>
+                                <div className='flex items-center gap-2'>
+                                  <User2 className='h-4 w-4' />
+                                  <div className='truncate'>
+                                    <div className='max-w-[180px] truncate font-medium'>
+                                      {order.customerName || 'N/A'}
+                                    </div>
                                     <a
-                                      href={order.customerPhone ? `tel:${order.customerPhone}` : undefined}
-                                      className={cn("text-xs text-muted-foreground", !order.customerPhone && "pointer-events-none")}
+                                      href={
+                                        order.customerPhone
+                                          ? `tel:${order.customerPhone}`
+                                          : undefined
+                                      }
+                                      className={cn(
+                                        'text-muted-foreground text-xs',
+                                        !order.customerPhone && 'pointer-events-none'
+                                      )}
                                     >
-                                      {order.customerPhone || "-"}
+                                      {order.customerPhone || '-'}
                                     </a>
                                   </div>
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div className="truncate max-w-[220px]">{order.restaurantName || "N/A"}</div>
+                                <div className='max-w-[220px] truncate'>
+                                  {order.restaurantName || 'N/A'}
+                                </div>
                               </TableCell>
                               <TableCell>
-                                <div className="flex items-center gap-1">
-                                  <IndianRupee className="h-3 w-3" />
+                                <div className='flex items-center gap-1'>
+                                  <IndianRupee className='h-3 w-3' />
                                   {Number(order.totalPaymentAmount || 0).toFixed(2)}
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <Badge variant={statusVariant(order.orderStatus)} className="capitalize">
-                                  {order.orderStatus.replaceAll("_", " ")}
+                                <Badge
+                                  variant={statusVariant(order.orderStatus)}
+                                  className='capitalize'
+                                >
+                                  {order.orderStatus.replaceAll('_', ' ')}
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                <div className="text-sm">{timeAgo(order.createdAt)}</div>
-                                <div className="text-xs text-muted-foreground">{formatDateTime(order.createdAt)}</div>
+                                <div className='text-sm'>{timeAgo(order.createdAt)}</div>
+                                <div className='text-muted-foreground text-xs'>
+                                  {formatDateTime(order.createdAt)}
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))}

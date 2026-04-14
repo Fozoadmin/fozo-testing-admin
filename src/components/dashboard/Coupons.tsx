@@ -1,28 +1,49 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useMemo, useState } from "react";
-import { adminApi } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, RefreshCw, X, ChevronDown, Edit, Trash2 } from "lucide-react";
-import { toast } from "react-toastify";
+import { useEffect, useMemo, useState } from 'react';
+import { adminApi } from '@/lib/api';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Plus, RefreshCw, X, ChevronDown, Edit, Trash2 } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 type Coupon = {
   id: string;
   code: string;
-  discountType: "flat" | "percentage";
+  discountType: 'flat' | 'percentage';
   discountValue: number;
   restaurantId: string | null;
   restaurantName?: string | null;
   groceryStoreId: string | null;
   groceryStoreName?: string | null;
-  applicableTo: "restaurant" | "grocery" | "both";
+  applicableTo: 'restaurant' | 'grocery' | 'both';
   minOrderValue: number;
   maxDiscountAmount: number | null;
   usageLimit: number;
@@ -49,7 +70,7 @@ type GroceryStoreLite = {
 };
 
 const formatDate = (iso: string | null) => {
-  if (!iso) return "—";
+  if (!iso) return '—';
   try {
     const d = new Date(iso);
     return d.toLocaleString();
@@ -62,18 +83,18 @@ export function Coupons() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
 
   // Restaurant dropdown states
   const [allRestaurants, setAllRestaurants] = useState<RestaurantLite[]>([]);
   const [restaurantDropdownOpen, setRestaurantDropdownOpen] = useState(false);
-  const [restaurantSearchFilter, setRestaurantSearchFilter] = useState("");
+  const [restaurantSearchFilter, setRestaurantSearchFilter] = useState('');
   const [selectedRestaurant, setSelectedRestaurant] = useState<RestaurantLite | null>(null);
 
   // Grocery store dropdown states
   const [allGroceryStores, setAllGroceryStores] = useState<GroceryStoreLite[]>([]);
   const [groceryDropdownOpen, setGroceryDropdownOpen] = useState(false);
-  const [grocerySearchFilter, setGrocerySearchFilter] = useState("");
+  const [grocerySearchFilter, setGrocerySearchFilter] = useState('');
   const [selectedGroceryStore, setSelectedGroceryStore] = useState<GroceryStoreLite | null>(null);
 
   const [openCreate, setOpenCreate] = useState(false);
@@ -84,16 +105,16 @@ export function Coupons() {
   const [deleting, setDeleting] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
   const [form, setForm] = useState({
-    code: "",
-    discountType: "flat" as "flat" | "percentage",
-    discountValue: "",
-    applicableTo: "restaurant" as "restaurant" | "grocery" | "both",
-    restaurantId: "",
-    groceryStoreId: "",
-    minOrderValue: "0",
-    maxDiscountAmount: "",
-    usageLimit: "100000",
-    expiresAt: "",
+    code: '',
+    discountType: 'flat' as 'flat' | 'percentage',
+    discountValue: '',
+    applicableTo: 'restaurant' as 'restaurant' | 'grocery' | 'both',
+    restaurantId: '',
+    groceryStoreId: '',
+    minOrderValue: '0',
+    maxDiscountAmount: '',
+    usageLimit: '100000',
+    expiresAt: '',
     isActive: true,
     visibility: true,
   });
@@ -104,7 +125,7 @@ export function Coupons() {
       const data = await adminApi.getAllCoupons();
       setCoupons((data.coupons || []) as Coupon[]);
     } catch (e: any) {
-      toast.error(e?.message || "Failed to load coupons");
+      toast.error(e?.message || 'Failed to load coupons');
     } finally {
       if (!silent) setLoading(false);
     }
@@ -121,11 +142,11 @@ export function Coupons() {
             const restaurants = await adminApi.getAllRestaurants();
             if (!mounted) return;
             const approved = Array.isArray(restaurants)
-              ? restaurants.filter((r: any) => !r.status || r.status === "approved")
+              ? restaurants.filter((r: any) => !r.status || r.status === 'approved')
               : [];
             setAllRestaurants(approved);
           } catch (e) {
-            console.warn("Failed to load restaurants for coupons:", e);
+            console.warn('Failed to load restaurants for coupons:', e);
           }
         })(),
         (async () => {
@@ -133,9 +154,15 @@ export function Coupons() {
             const stores = await adminApi.getAllGroceryStores();
             if (!mounted) return;
             const storeList = Array.isArray(stores) ? stores : [];
-            setAllGroceryStores(storeList.map((s: any) => ({ id: s.id, storeName: s.storeName || s.store_name, status: s.status })));
+            setAllGroceryStores(
+              storeList.map((s: any) => ({
+                id: s.id,
+                storeName: s.storeName || s.store_name,
+                status: s.status,
+              }))
+            );
           } catch (e) {
-            console.warn("Failed to load grocery stores for coupons:", e);
+            console.warn('Failed to load grocery stores for coupons:', e);
           }
         })(),
       ]);
@@ -148,26 +175,26 @@ export function Coupons() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (restaurantDropdownOpen && !target.closest(".restaurant-dropdown-container")) {
+      if (restaurantDropdownOpen && !target.closest('.restaurant-dropdown-container')) {
         setRestaurantDropdownOpen(false);
       }
-      if (groceryDropdownOpen && !target.closest(".grocery-dropdown-container")) {
+      if (groceryDropdownOpen && !target.closest('.grocery-dropdown-container')) {
         setGroceryDropdownOpen(false);
       }
     };
     if (restaurantDropdownOpen || groceryDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [restaurantDropdownOpen, groceryDropdownOpen]);
 
   const filteredRestaurants = useMemo(() => {
     const q = restaurantSearchFilter.trim().toLowerCase();
     if (!q) return allRestaurants;
-    return allRestaurants.filter((r) => {
-      const name = (r.restaurantName || "").toLowerCase();
-      const email = (r.userEmail || "").toLowerCase();
-      const phone = (r.phoneNumber || "").toLowerCase();
+    return allRestaurants.filter(r => {
+      const name = (r.restaurantName || '').toLowerCase();
+      const email = (r.userEmail || '').toLowerCase();
+      const phone = (r.phoneNumber || '').toLowerCase();
       return name.includes(q) || email.includes(q) || phone.includes(q);
     });
   }, [allRestaurants, restaurantSearchFilter]);
@@ -175,53 +202,55 @@ export function Coupons() {
   const filteredGroceryStores = useMemo(() => {
     const q = grocerySearchFilter.trim().toLowerCase();
     if (!q) return allGroceryStores;
-    return allGroceryStores.filter((s) => (s.storeName || "").toLowerCase().includes(q));
+    return allGroceryStores.filter(s => (s.storeName || '').toLowerCase().includes(q));
   }, [allGroceryStores, grocerySearchFilter]);
 
   const selectRestaurant = (restaurant: RestaurantLite) => {
     setSelectedRestaurant(restaurant);
-    const rid = (restaurant.restaurantId || restaurant.id || "").toString();
-    setForm((s) => ({ ...s, restaurantId: rid }));
+    const rid = (restaurant.restaurantId || restaurant.id || '').toString();
+    setForm(s => ({ ...s, restaurantId: rid }));
     setRestaurantDropdownOpen(false);
-    setRestaurantSearchFilter("");
+    setRestaurantSearchFilter('');
   };
 
   const clearSelectedRestaurant = () => {
     setSelectedRestaurant(null);
-    setForm((s) => ({ ...s, restaurantId: "" }));
-    setRestaurantSearchFilter("");
+    setForm(s => ({ ...s, restaurantId: '' }));
+    setRestaurantSearchFilter('');
   };
 
   const selectGroceryStore = (store: GroceryStoreLite) => {
     setSelectedGroceryStore(store);
-    setForm((s) => ({ ...s, groceryStoreId: store.id }));
+    setForm(s => ({ ...s, groceryStoreId: store.id }));
     setGroceryDropdownOpen(false);
-    setGrocerySearchFilter("");
+    setGrocerySearchFilter('');
   };
 
   const clearSelectedGroceryStore = () => {
     setSelectedGroceryStore(null);
-    setForm((s) => ({ ...s, groceryStoreId: "" }));
-    setGrocerySearchFilter("");
+    setForm(s => ({ ...s, groceryStoreId: '' }));
+    setGrocerySearchFilter('');
   };
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return coupons;
-    return coupons.filter((c) => c.code.toLowerCase().includes(q));
+    return coupons.filter(c => c.code.toLowerCase().includes(q));
   }, [coupons, search]);
 
   const onCreate = async () => {
     const code = form.code.trim().toUpperCase();
-    if (!code) return toast.error("Coupon code is required");
-    if (!form.discountValue) return toast.error("Discount value is required");
+    if (!code) return toast.error('Coupon code is required');
+    if (!form.discountValue) return toast.error('Discount value is required');
 
     const discountValue = Number(form.discountValue);
-    if (!Number.isFinite(discountValue) || discountValue <= 0) return toast.error("Discount value must be > 0");
-    if (form.discountType === "percentage" && discountValue > 100) return toast.error("Percentage cannot exceed 100");
+    if (!Number.isFinite(discountValue) || discountValue <= 0)
+      return toast.error('Discount value must be > 0');
+    if (form.discountType === 'percentage' && discountValue > 100)
+      return toast.error('Percentage cannot exceed 100');
 
-    const minOrderValue = Number(form.minOrderValue || "0");
-    const usageLimit = Number(form.usageLimit || "100000");
+    const minOrderValue = Number(form.minOrderValue || '0');
+    const usageLimit = Number(form.usageLimit || '100000');
     const maxDiscountAmount = form.maxDiscountAmount ? Number(form.maxDiscountAmount) : null;
 
     const expiresAt = form.expiresAt ? new Date(form.expiresAt).toISOString() : null;
@@ -236,37 +265,38 @@ export function Coupons() {
         restaurantId: form.restaurantId?.trim() ? form.restaurantId.trim() : null,
         groceryStoreId: form.groceryStoreId?.trim() ? form.groceryStoreId.trim() : null,
         minOrderValue,
-        maxDiscountAmount: maxDiscountAmount && Number.isFinite(maxDiscountAmount) ? maxDiscountAmount : null,
+        maxDiscountAmount:
+          maxDiscountAmount && Number.isFinite(maxDiscountAmount) ? maxDiscountAmount : null,
         usageLimit,
         expiresAt,
         isActive: form.isActive,
         visibility: form.visibility,
       });
-      toast.success("Coupon created");
+      toast.success('Coupon created');
       setOpenCreate(false);
       setForm({
-        code: "",
-        discountType: "flat",
-        discountValue: "",
-        applicableTo: "restaurant",
-        restaurantId: "",
-        groceryStoreId: "",
-        minOrderValue: "0",
-        maxDiscountAmount: "",
-        usageLimit: "100000",
-        expiresAt: "",
+        code: '',
+        discountType: 'flat',
+        discountValue: '',
+        applicableTo: 'restaurant',
+        restaurantId: '',
+        groceryStoreId: '',
+        minOrderValue: '0',
+        maxDiscountAmount: '',
+        usageLimit: '100000',
+        expiresAt: '',
         isActive: true,
         visibility: true,
       });
       setSelectedRestaurant(null);
       setSelectedGroceryStore(null);
-      setRestaurantSearchFilter("");
-      setGrocerySearchFilter("");
+      setRestaurantSearchFilter('');
+      setGrocerySearchFilter('');
       setRestaurantDropdownOpen(false);
       setGroceryDropdownOpen(false);
       await loadCoupons(true);
     } catch (e: any) {
-      toast.error(e?.message || "Failed to create coupon");
+      toast.error(e?.message || 'Failed to create coupon');
     } finally {
       setCreating(false);
     }
@@ -275,36 +305,49 @@ export function Coupons() {
   const openEditDialog = (coupon: Coupon) => {
     setSelectedCoupon(coupon);
     setForm({
-      code: coupon.code || "",
+      code: coupon.code || '',
       discountType: coupon.discountType,
-      discountValue: String(coupon.discountValue ?? ""),
-      applicableTo: coupon.applicableTo || "restaurant",
-      restaurantId: coupon.restaurantId ?? "",
-      groceryStoreId: coupon.groceryStoreId ?? "",
+      discountValue: String(coupon.discountValue ?? ''),
+      applicableTo: coupon.applicableTo || 'restaurant',
+      restaurantId: coupon.restaurantId ?? '',
+      groceryStoreId: coupon.groceryStoreId ?? '',
       minOrderValue: String(coupon.minOrderValue ?? 0),
-      maxDiscountAmount: coupon.maxDiscountAmount === null || coupon.maxDiscountAmount === undefined ? "" : String(coupon.maxDiscountAmount),
+      maxDiscountAmount:
+        coupon.maxDiscountAmount === null || coupon.maxDiscountAmount === undefined
+          ? ''
+          : String(coupon.maxDiscountAmount),
       usageLimit: String(coupon.usageLimit ?? 100000),
-      expiresAt: coupon.expiresAt ? new Date(coupon.expiresAt).toISOString().slice(0, 16) : "",
+      expiresAt: coupon.expiresAt ? new Date(coupon.expiresAt).toISOString().slice(0, 16) : '',
       isActive: coupon.isActive,
       visibility: coupon.visibility ?? true,
     });
 
     if (coupon.restaurantId) {
-      const match = allRestaurants.find((r) => (r.restaurantId || r.id) === coupon.restaurantId);
-      setSelectedRestaurant(match || { restaurantId: coupon.restaurantId, restaurantName: coupon.restaurantName || "Restaurant" });
+      const match = allRestaurants.find(r => (r.restaurantId || r.id) === coupon.restaurantId);
+      setSelectedRestaurant(
+        match || {
+          restaurantId: coupon.restaurantId,
+          restaurantName: coupon.restaurantName || 'Restaurant',
+        }
+      );
     } else {
       setSelectedRestaurant(null);
     }
 
     if (coupon.groceryStoreId) {
-      const match = allGroceryStores.find((s) => s.id === coupon.groceryStoreId);
-      setSelectedGroceryStore(match || { id: coupon.groceryStoreId, storeName: coupon.groceryStoreName || "Grocery Store" });
+      const match = allGroceryStores.find(s => s.id === coupon.groceryStoreId);
+      setSelectedGroceryStore(
+        match || {
+          id: coupon.groceryStoreId,
+          storeName: coupon.groceryStoreName || 'Grocery Store',
+        }
+      );
     } else {
       setSelectedGroceryStore(null);
     }
 
-    setRestaurantSearchFilter("");
-    setGrocerySearchFilter("");
+    setRestaurantSearchFilter('');
+    setGrocerySearchFilter('');
     setRestaurantDropdownOpen(false);
     setGroceryDropdownOpen(false);
     setOpenEdit(true);
@@ -313,15 +356,17 @@ export function Coupons() {
   const onUpdate = async () => {
     if (!selectedCoupon) return;
     const code = form.code.trim().toUpperCase();
-    if (!code) return toast.error("Coupon code is required");
-    if (!form.discountValue) return toast.error("Discount value is required");
+    if (!code) return toast.error('Coupon code is required');
+    if (!form.discountValue) return toast.error('Discount value is required');
 
     const discountValue = Number(form.discountValue);
-    if (!Number.isFinite(discountValue) || discountValue <= 0) return toast.error("Discount value must be > 0");
-    if (form.discountType === "percentage" && discountValue > 100) return toast.error("Percentage cannot exceed 100");
+    if (!Number.isFinite(discountValue) || discountValue <= 0)
+      return toast.error('Discount value must be > 0');
+    if (form.discountType === 'percentage' && discountValue > 100)
+      return toast.error('Percentage cannot exceed 100');
 
-    const minOrderValue = Number(form.minOrderValue || "0");
-    const usageLimit = Number(form.usageLimit || "100000");
+    const minOrderValue = Number(form.minOrderValue || '0');
+    const usageLimit = Number(form.usageLimit || '100000');
     const maxDiscountAmount = form.maxDiscountAmount ? Number(form.maxDiscountAmount) : null;
     const expiresAt = form.expiresAt ? new Date(form.expiresAt).toISOString() : null;
 
@@ -335,20 +380,21 @@ export function Coupons() {
         restaurantId: form.restaurantId?.trim() ? form.restaurantId.trim() : null,
         groceryStoreId: form.groceryStoreId?.trim() ? form.groceryStoreId.trim() : null,
         minOrderValue,
-        maxDiscountAmount: maxDiscountAmount && Number.isFinite(maxDiscountAmount) ? maxDiscountAmount : null,
+        maxDiscountAmount:
+          maxDiscountAmount && Number.isFinite(maxDiscountAmount) ? maxDiscountAmount : null,
         usageLimit,
         expiresAt,
         isActive: form.isActive,
         visibility: form.visibility,
       });
-      toast.success("Coupon updated");
+      toast.success('Coupon updated');
       setOpenEdit(false);
       setSelectedCoupon(null);
       setSelectedRestaurant(null);
       setSelectedGroceryStore(null);
       await loadCoupons(true);
     } catch (e: any) {
-      toast.error(e?.message || "Failed to update coupon");
+      toast.error(e?.message || 'Failed to update coupon');
     } finally {
       setEditing(false);
     }
@@ -364,43 +410,43 @@ export function Coupons() {
     setDeleting(true);
     try {
       await adminApi.deleteCoupon(selectedCoupon.id);
-      toast.success("Coupon deleted");
+      toast.success('Coupon deleted');
       setOpenDelete(false);
       setSelectedCoupon(null);
       await loadCoupons(true);
     } catch (e: any) {
-      toast.error(e?.message || "Failed to delete coupon");
+      toast.error(e?.message || 'Failed to delete coupon');
     } finally {
       setDeleting(false);
     }
   };
 
   const toggleActive = async (coupon: Coupon, next: boolean) => {
-    const optimistic = coupons.map((c) => (c.id === coupon.id ? { ...c, isActive: next } : c));
+    const optimistic = coupons.map(c => (c.id === coupon.id ? { ...c, isActive: next } : c));
     setCoupons(optimistic);
     try {
       await adminApi.setCouponActive(coupon.id, next);
-      toast.success(`Coupon ${next ? "enabled" : "disabled"}`);
+      toast.success(`Coupon ${next ? 'enabled' : 'disabled'}`);
     } catch (e: any) {
-      toast.error(e?.message || "Failed to update coupon");
+      toast.error(e?.message || 'Failed to update coupon');
       // rollback
       setCoupons(coupons);
     }
   };
 
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className='flex flex-row items-center justify-between'>
           <div>
             <CardTitle>Coupons</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className='text-muted-foreground mt-1 text-sm'>
               Create and manage coupons used across customer checkout and validation APIs.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className='flex items-center gap-2'>
             <Button
-              variant="outline"
+              variant='outline'
               onClick={async () => {
                 setRefreshing(true);
                 await loadCoupons(true);
@@ -408,157 +454,196 @@ export function Coupons() {
               }}
               disabled={refreshing}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
+              <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
             <Dialog open={openCreate} onOpenChange={setOpenCreate}>
               <DialogTrigger asChild>
                 <Button>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className='mr-2 h-4 w-4' />
                   Add Coupon
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-3xl'>
                 <DialogHeader>
                   <DialogTitle>Create Coupon</DialogTitle>
                   <DialogDescription>
-                    Coupons can be global (no restaurantId) or restaurant-specific. Customers can apply one discount per order.
+                    Coupons can be global (no restaurantId) or restaurant-specific. Customers can
+                    apply one discount per order.
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+                  <div className='space-y-2'>
                     <Label>Code</Label>
                     <Input
                       value={form.code}
-                      onChange={(e) => setForm((s) => ({ ...s, code: e.target.value }))}
-                      placeholder="DEMO50"
+                      onChange={e => setForm(s => ({ ...s, code: e.target.value }))}
+                      placeholder='DEMO50'
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className='space-y-2'>
                     <Label>Applies To</Label>
                     <Select
                       value={form.applicableTo}
-                      onValueChange={(v) => {
-                        setForm((s) => ({ ...s, applicableTo: v as any, restaurantId: "", groceryStoreId: "" }));
+                      onValueChange={v => {
+                        setForm(s => ({
+                          ...s,
+                          applicableTo: v as any,
+                          restaurantId: '',
+                          groceryStoreId: '',
+                        }));
                         setSelectedRestaurant(null);
                         setSelectedGroceryStore(null);
                       }}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select applicability" />
+                        <SelectValue placeholder='Select applicability' />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="restaurant">Restaurant</SelectItem>
-                        <SelectItem value="grocery">Grocery</SelectItem>
-                        <SelectItem value="both">Both</SelectItem>
+                        <SelectItem value='restaurant'>Restaurant</SelectItem>
+                        <SelectItem value='grocery'>Grocery</SelectItem>
+                        <SelectItem value='both'>Both</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
+                  <div className='space-y-2'>
                     <Label>Discount Type</Label>
                     <Select
                       value={form.discountType}
-                      onValueChange={(v) => setForm((s) => ({ ...s, discountType: v as any }))}
+                      onValueChange={v => setForm(s => ({ ...s, discountType: v as any }))}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
+                        <SelectValue placeholder='Select type' />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="flat">Flat</SelectItem>
-                        <SelectItem value="percentage">Percentage</SelectItem>
+                        <SelectItem value='flat'>Flat</SelectItem>
+                        <SelectItem value='percentage'>Percentage</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className='space-y-2'>
                     <Label>
-                      Discount Value {form.discountType === "percentage" ? "(%)" : "(₹)"}
+                      Discount Value {form.discountType === 'percentage' ? '(%)' : '(₹)'}
                     </Label>
                     <Input
                       value={form.discountValue}
-                      onChange={(e) => setForm((s) => ({ ...s, discountValue: e.target.value }))}
-                      placeholder={form.discountType === "percentage" ? "10" : "50"}
-                      inputMode="decimal"
+                      onChange={e => setForm(s => ({ ...s, discountValue: e.target.value }))}
+                      placeholder={form.discountType === 'percentage' ? '10' : '50'}
+                      inputMode='decimal'
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className='space-y-2'>
                     <Label>Minimum Order Value (₹)</Label>
                     <Input
                       value={form.minOrderValue}
-                      onChange={(e) => setForm((s) => ({ ...s, minOrderValue: e.target.value }))}
-                      inputMode="decimal"
+                      onChange={e => setForm(s => ({ ...s, minOrderValue: e.target.value }))}
+                      inputMode='decimal'
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className='space-y-2'>
                     <Label>Max Discount Amount (₹) (optional)</Label>
                     <Input
                       value={form.maxDiscountAmount}
-                      onChange={(e) => setForm((s) => ({ ...s, maxDiscountAmount: e.target.value }))}
-                      placeholder="200"
-                      inputMode="decimal"
+                      onChange={e => setForm(s => ({ ...s, maxDiscountAmount: e.target.value }))}
+                      placeholder='200'
+                      inputMode='decimal'
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className='space-y-2'>
                     <Label>Usage Limit</Label>
                     <Input
                       value={form.usageLimit}
-                      onChange={(e) => setForm((s) => ({ ...s, usageLimit: e.target.value }))}
-                      inputMode="numeric"
+                      onChange={e => setForm(s => ({ ...s, usageLimit: e.target.value }))}
+                      inputMode='numeric'
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className='space-y-2'>
                     <Label>Expires At (optional)</Label>
                     <Input
-                      type="datetime-local"
+                      type='datetime-local'
                       value={form.expiresAt}
-                      onChange={(e) => setForm((s) => ({ ...s, expiresAt: e.target.value }))}
+                      onChange={e => setForm(s => ({ ...s, expiresAt: e.target.value }))}
                     />
                   </div>
 
                   {/* Restaurant Dropdown — shown when applicableTo is restaurant or both */}
-                  {(form.applicableTo === "restaurant" || form.applicableTo === "both") && (
-                    <div className="space-y-2 md:col-span-2">
+                  {(form.applicableTo === 'restaurant' || form.applicableTo === 'both') && (
+                    <div className='space-y-2 md:col-span-2'>
                       <Label>Restaurant (optional)</Label>
                       {selectedRestaurant ? (
-                        <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30 border-border">
+                        <div className='bg-muted/30 border-border flex items-center justify-between rounded-lg border p-3'>
                           <div>
-                            <div className="font-medium">{selectedRestaurant.restaurantName || "Selected Restaurant"}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {selectedRestaurant.userEmail || selectedRestaurant.phoneNumber || ""}
+                            <div className='font-medium'>
+                              {selectedRestaurant.restaurantName || 'Selected Restaurant'}
+                            </div>
+                            <div className='text-muted-foreground text-xs'>
+                              {selectedRestaurant.userEmail || selectedRestaurant.phoneNumber || ''}
                             </div>
                           </div>
-                          <Button size="sm" variant="ghost" onClick={clearSelectedRestaurant}>
-                            <X className="h-4 w-4" />
+                          <Button size='sm' variant='ghost' onClick={clearSelectedRestaurant}>
+                            <X className='h-4 w-4' />
                           </Button>
                         </div>
                       ) : (
-                        <div className="relative restaurant-dropdown-container">
+                        <div className='restaurant-dropdown-container relative'>
                           <div
-                            onClick={(e) => { e.stopPropagation(); setRestaurantDropdownOpen(!restaurantDropdownOpen); }}
-                            className="min-h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm cursor-pointer hover:border-ring flex items-center justify-between"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setRestaurantDropdownOpen(!restaurantDropdownOpen);
+                            }}
+                            className='border-input bg-background hover:border-ring flex min-h-10 w-full cursor-pointer items-center justify-between rounded-md border px-3 py-2 text-sm'
                           >
-                            <span className="text-muted-foreground">All restaurants (click to pick one)</span>
-                            <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${restaurantDropdownOpen ? "rotate-180" : ""}`} />
+                            <span className='text-muted-foreground'>
+                              All restaurants (click to pick one)
+                            </span>
+                            <ChevronDown
+                              className={`ml-2 h-4 w-4 transition-transform ${restaurantDropdownOpen ? 'rotate-180' : ''}`}
+                            />
                           </div>
                           {restaurantDropdownOpen && (
-                            <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg">
-                              <div className="p-2 border-b">
-                                <Input placeholder="Search restaurants..." value={restaurantSearchFilter} onChange={(e) => setRestaurantSearchFilter(e.target.value)} onClick={(e) => e.stopPropagation()} className="h-8" autoFocus />
+                            <div className='bg-background border-input absolute z-50 mt-1 w-full rounded-md border shadow-lg'>
+                              <div className='border-b p-2'>
+                                <Input
+                                  placeholder='Search restaurants...'
+                                  value={restaurantSearchFilter}
+                                  onChange={e => setRestaurantSearchFilter(e.target.value)}
+                                  onClick={e => e.stopPropagation()}
+                                  className='h-8'
+                                  autoFocus
+                                />
                               </div>
-                              <div className="max-h-64 overflow-auto p-1" onClick={(e) => e.stopPropagation()}>
+                              <div
+                                className='max-h-64 overflow-auto p-1'
+                                onClick={e => e.stopPropagation()}
+                              >
                                 {filteredRestaurants.length === 0 ? (
-                                  <div className="px-2 py-4 text-sm text-center text-muted-foreground">No restaurants found</div>
+                                  <div className='text-muted-foreground px-2 py-4 text-center text-sm'>
+                                    No restaurants found
+                                  </div>
                                 ) : (
-                                  filteredRestaurants.map((restaurant) => {
-                                    const rid = (restaurant.restaurantId || restaurant.id || "").toString();
+                                  filteredRestaurants.map(restaurant => {
+                                    const rid = (
+                                      restaurant.restaurantId ||
+                                      restaurant.id ||
+                                      ''
+                                    ).toString();
                                     return (
-                                      <div key={rid} onClick={() => selectRestaurant(restaurant)} className="flex items-center px-2 py-1.5 text-sm rounded cursor-pointer hover:bg-accent">
-                                        <div className="flex-1">
-                                          <div className="font-medium">{restaurant.restaurantName}</div>
-                                          <div className="text-xs text-muted-foreground">{restaurant.userEmail || restaurant.phoneNumber || ""}</div>
+                                      <div
+                                        key={rid}
+                                        onClick={() => selectRestaurant(restaurant)}
+                                        className='hover:bg-accent flex cursor-pointer items-center rounded px-2 py-1.5 text-sm'
+                                      >
+                                        <div className='flex-1'>
+                                          <div className='font-medium'>
+                                            {restaurant.restaurantName}
+                                          </div>
+                                          <div className='text-muted-foreground text-xs'>
+                                            {restaurant.userEmail || restaurant.phoneNumber || ''}
+                                          </div>
                                         </div>
                                       </div>
                                     );
@@ -569,42 +654,67 @@ export function Coupons() {
                           )}
                         </div>
                       )}
-                      <p className="text-xs text-muted-foreground">Leave empty to apply to all restaurants.</p>
+                      <p className='text-muted-foreground text-xs'>
+                        Leave empty to apply to all restaurants.
+                      </p>
                     </div>
                   )}
 
                   {/* Grocery Store Dropdown — shown when applicableTo is grocery or both */}
-                  {(form.applicableTo === "grocery" || form.applicableTo === "both") && (
-                    <div className="space-y-2 md:col-span-2">
+                  {(form.applicableTo === 'grocery' || form.applicableTo === 'both') && (
+                    <div className='space-y-2 md:col-span-2'>
                       <Label>Grocery Store (optional)</Label>
                       {selectedGroceryStore ? (
-                        <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30 border-border">
-                          <div className="font-medium">{selectedGroceryStore.storeName}</div>
-                          <Button size="sm" variant="ghost" onClick={clearSelectedGroceryStore}>
-                            <X className="h-4 w-4" />
+                        <div className='bg-muted/30 border-border flex items-center justify-between rounded-lg border p-3'>
+                          <div className='font-medium'>{selectedGroceryStore.storeName}</div>
+                          <Button size='sm' variant='ghost' onClick={clearSelectedGroceryStore}>
+                            <X className='h-4 w-4' />
                           </Button>
                         </div>
                       ) : (
-                        <div className="relative grocery-dropdown-container">
+                        <div className='grocery-dropdown-container relative'>
                           <div
-                            onClick={(e) => { e.stopPropagation(); setGroceryDropdownOpen(!groceryDropdownOpen); }}
-                            className="min-h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm cursor-pointer hover:border-ring flex items-center justify-between"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setGroceryDropdownOpen(!groceryDropdownOpen);
+                            }}
+                            className='border-input bg-background hover:border-ring flex min-h-10 w-full cursor-pointer items-center justify-between rounded-md border px-3 py-2 text-sm'
                           >
-                            <span className="text-muted-foreground">All grocery stores (click to pick one)</span>
-                            <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${groceryDropdownOpen ? "rotate-180" : ""}`} />
+                            <span className='text-muted-foreground'>
+                              All grocery stores (click to pick one)
+                            </span>
+                            <ChevronDown
+                              className={`ml-2 h-4 w-4 transition-transform ${groceryDropdownOpen ? 'rotate-180' : ''}`}
+                            />
                           </div>
                           {groceryDropdownOpen && (
-                            <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg">
-                              <div className="p-2 border-b">
-                                <Input placeholder="Search grocery stores..." value={grocerySearchFilter} onChange={(e) => setGrocerySearchFilter(e.target.value)} onClick={(e) => e.stopPropagation()} className="h-8" autoFocus />
+                            <div className='bg-background border-input absolute z-50 mt-1 w-full rounded-md border shadow-lg'>
+                              <div className='border-b p-2'>
+                                <Input
+                                  placeholder='Search grocery stores...'
+                                  value={grocerySearchFilter}
+                                  onChange={e => setGrocerySearchFilter(e.target.value)}
+                                  onClick={e => e.stopPropagation()}
+                                  className='h-8'
+                                  autoFocus
+                                />
                               </div>
-                              <div className="max-h-64 overflow-auto p-1" onClick={(e) => e.stopPropagation()}>
+                              <div
+                                className='max-h-64 overflow-auto p-1'
+                                onClick={e => e.stopPropagation()}
+                              >
                                 {filteredGroceryStores.length === 0 ? (
-                                  <div className="px-2 py-4 text-sm text-center text-muted-foreground">No grocery stores found</div>
+                                  <div className='text-muted-foreground px-2 py-4 text-center text-sm'>
+                                    No grocery stores found
+                                  </div>
                                 ) : (
-                                  filteredGroceryStores.map((store) => (
-                                    <div key={store.id} onClick={() => selectGroceryStore(store)} className="px-2 py-1.5 text-sm rounded cursor-pointer hover:bg-accent">
-                                      <div className="font-medium">{store.storeName}</div>
+                                  filteredGroceryStores.map(store => (
+                                    <div
+                                      key={store.id}
+                                      onClick={() => selectGroceryStore(store)}
+                                      className='hover:bg-accent cursor-pointer rounded px-2 py-1.5 text-sm'
+                                    >
+                                      <div className='font-medium'>{store.storeName}</div>
                                     </div>
                                   ))
                                 )}
@@ -613,33 +723,50 @@ export function Coupons() {
                           )}
                         </div>
                       )}
-                      <p className="text-xs text-muted-foreground">Leave empty to apply to all grocery stores.</p>
+                      <p className='text-muted-foreground text-xs'>
+                        Leave empty to apply to all grocery stores.
+                      </p>
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between md:col-span-2 p-3 rounded-lg border">
+                  <div className='flex items-center justify-between rounded-lg border p-3 md:col-span-2'>
                     <div>
-                      <div className="font-medium">Active</div>
-                      <div className="text-xs text-muted-foreground">Inactive coupons won’t validate in checkout.</div>
+                      <div className='font-medium'>Active</div>
+                      <div className='text-muted-foreground text-xs'>
+                        Inactive coupons won’t validate in checkout.
+                      </div>
                     </div>
-                    <Switch checked={form.isActive} onCheckedChange={(v) => setForm((s) => ({ ...s, isActive: v }))} />
+                    <Switch
+                      checked={form.isActive}
+                      onCheckedChange={v => setForm(s => ({ ...s, isActive: v }))}
+                    />
                   </div>
 
-                  <div className="flex items-center justify-between md:col-span-2 p-3 rounded-lg border">
+                  <div className='flex items-center justify-between rounded-lg border p-3 md:col-span-2'>
                     <div>
-                      <div className="font-medium">Visibility</div>
-                      <div className="text-xs text-muted-foreground">Hidden coupons won’t appear in customer app but are still usable if code is known.</div>
+                      <div className='font-medium'>Visibility</div>
+                      <div className='text-muted-foreground text-xs'>
+                        Hidden coupons won’t appear in customer app but are still usable if code is
+                        known.
+                      </div>
                     </div>
-                    <Switch checked={form.visibility} onCheckedChange={(v) => setForm((s) => ({ ...s, visibility: v }))} />
+                    <Switch
+                      checked={form.visibility}
+                      onCheckedChange={v => setForm(s => ({ ...s, visibility: v }))}
+                    />
                   </div>
                 </div>
 
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setOpenCreate(false)} disabled={creating}>
+                  <Button
+                    variant='outline'
+                    onClick={() => setOpenCreate(false)}
+                    disabled={creating}
+                  >
                     Cancel
                   </Button>
                   <Button onClick={onCreate} disabled={creating}>
-                    {creating ? "Creating..." : "Create"}
+                    {creating ? 'Creating...' : 'Create'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -647,17 +774,17 @@ export function Coupons() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-2 mb-4">
+          <div className='mb-4 flex items-center gap-2'>
             <Input
-              placeholder="Search by code..."
+              placeholder='Search by code...'
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="max-w-sm"
+              onChange={e => setSearch(e.target.value)}
+              className='max-w-sm'
             />
           </div>
 
           {loading ? (
-            <div className="text-sm text-muted-foreground">Loading coupons...</div>
+            <div className='text-muted-foreground text-sm'>Loading coupons...</div>
           ) : (
             <Table>
               <TableHeader>
@@ -674,91 +801,100 @@ export function Coupons() {
                   <TableHead>Status</TableHead>
                   <TableHead>Visibility</TableHead>
                   <TableHead>Actions</TableHead>
-                  <TableHead className="text-right">Active</TableHead>
+                  <TableHead className='text-right'>Active</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={13} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={13} className='text-muted-foreground py-8 text-center'>
                       No coupons found.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map((c) => {
+                  filtered.map(c => {
                     const expired = !!c.expiresAt && new Date(c.expiresAt) <= new Date();
-                    const applicableToLabel = c.applicableTo === "both" ? "Both" : c.applicableTo === "grocery" ? "Grocery" : "Restaurant";
-                    const storeLabel = c.applicableTo === "grocery" || c.applicableTo === "both"
-                      ? (c.groceryStoreName || (c.groceryStoreId ? "Grocery Store" : null))
-                      : (c.restaurantName || (c.restaurantId ? "Restaurant" : null));
+                    const applicableToLabel =
+                      c.applicableTo === 'both'
+                        ? 'Both'
+                        : c.applicableTo === 'grocery'
+                          ? 'Grocery'
+                          : 'Restaurant';
+                    const storeLabel =
+                      c.applicableTo === 'grocery' || c.applicableTo === 'both'
+                        ? c.groceryStoreName || (c.groceryStoreId ? 'Grocery Store' : null)
+                        : c.restaurantName || (c.restaurantId ? 'Restaurant' : null);
                     return (
                       <TableRow key={c.id}>
-                        <TableCell className="font-medium">{c.code}</TableCell>
+                        <TableCell className='font-medium'>{c.code}</TableCell>
                         <TableCell>
-                          <Badge variant={c.applicableTo === "both" ? "outline" : "secondary"}>{applicableToLabel}</Badge>
+                          <Badge variant={c.applicableTo === 'both' ? 'outline' : 'secondary'}>
+                            {applicableToLabel}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           {storeLabel ? (
-                            <span className="text-sm">{storeLabel}</span>
+                            <span className='text-sm'>{storeLabel}</span>
                           ) : (
-                            <Badge variant="secondary">All</Badge>
+                            <Badge variant='secondary'>All</Badge>
                           )}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="secondary">{c.discountType}</Badge>
+                          <Badge variant='secondary'>{c.discountType}</Badge>
                         </TableCell>
                         <TableCell>
-                          {c.discountType === "percentage" ? `${c.discountValue}%` : `₹${c.discountValue}`}
+                          {c.discountType === 'percentage'
+                            ? `${c.discountValue}%`
+                            : `₹${c.discountValue}`}
                         </TableCell>
                         <TableCell>₹{c.minOrderValue}</TableCell>
-                        <TableCell>{c.maxDiscountAmount ? `₹${c.maxDiscountAmount}` : "—"}</TableCell>
+                        <TableCell>
+                          {c.maxDiscountAmount ? `₹${c.maxDiscountAmount}` : '—'}
+                        </TableCell>
                         <TableCell>
                           {c.usageCount}/{c.usageLimit}
                         </TableCell>
                         <TableCell>{formatDate(c.expiresAt)}</TableCell>
                         <TableCell>
                           {expired ? (
-                            <Badge variant="destructive">Expired</Badge>
+                            <Badge variant='destructive'>Expired</Badge>
                           ) : c.isActive ? (
                             <Badge>Live</Badge>
                           ) : (
-                            <Badge variant="secondary">Inactive</Badge>
+                            <Badge variant='secondary'>Inactive</Badge>
                           )}
                         </TableCell>
                         <TableCell>
                           {c.visibility ? (
-                            <Badge variant="outline">Visible</Badge>
+                            <Badge variant='outline'>Visible</Badge>
                           ) : (
-                            <Badge variant="secondary">Hidden</Badge>
+                            <Badge variant='secondary'>Hidden</Badge>
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1">
+                          <div className='flex items-center gap-1'>
                             <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
+                              variant='ghost'
+                              size='sm'
+                              className='h-8 w-8 p-0'
                               onClick={() => openEditDialog(c)}
-                              title="Edit"
+                              title='Edit'
                             >
-                              <Edit className="h-4 w-4" />
+                              <Edit className='h-4 w-4' />
                             </Button>
                             <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                              variant='ghost'
+                              size='sm'
+                              className='text-destructive hover:text-destructive h-8 w-8 p-0'
                               onClick={() => openDeleteDialog(c)}
-                              title="Delete"
+                              title='Delete'
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className='h-4 w-4' />
                             </Button>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">
-                          <Switch
-                            checked={c.isActive}
-                            onCheckedChange={(v) => toggleActive(c, v)}
-                          />
+                        <TableCell className='text-right'>
+                          <Switch checked={c.isActive} onCheckedChange={v => toggleActive(c, v)} />
                         </TableCell>
                       </TableRow>
                     );
@@ -773,137 +909,195 @@ export function Coupons() {
       {/* Edit Coupon Dialog */}
       <Dialog
         open={openEdit}
-        onOpenChange={(open) => {
+        onOpenChange={open => {
           setOpenEdit(open);
           if (!open) {
             setSelectedCoupon(null);
             setSelectedRestaurant(null);
             setSelectedGroceryStore(null);
-            setRestaurantSearchFilter("");
-            setGrocerySearchFilter("");
+            setRestaurantSearchFilter('');
+            setGrocerySearchFilter('');
             setRestaurantDropdownOpen(false);
             setGroceryDropdownOpen(false);
           }
         }}
       >
-        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-3xl'>
           <DialogHeader>
             <DialogTitle>Edit Coupon</DialogTitle>
-            <DialogDescription>Update coupon fields. Deleting a used coupon is blocked; deactivate instead.</DialogDescription>
+            <DialogDescription>
+              Update coupon fields. Deleting a used coupon is blocked; deactivate instead.
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
+          <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+            <div className='space-y-2'>
               <Label>Code</Label>
-              <Input value={form.code} onChange={(e) => setForm((s) => ({ ...s, code: e.target.value }))} />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Applies To</Label>
-              <Select value={form.applicableTo} onValueChange={(v) => {
-                setForm((s) => ({ ...s, applicableTo: v as any, restaurantId: "", groceryStoreId: "" }));
-                setSelectedRestaurant(null);
-                setSelectedGroceryStore(null);
-              }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select applicability" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="restaurant">Restaurant</SelectItem>
-                  <SelectItem value="grocery">Grocery</SelectItem>
-                  <SelectItem value="both">Both</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Discount Type</Label>
-              <Select value={form.discountType} onValueChange={(v) => setForm((s) => ({ ...s, discountType: v as any }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="flat">Flat</SelectItem>
-                  <SelectItem value="percentage">Percentage</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Discount Value {form.discountType === "percentage" ? "(%)" : "(₹)"}</Label>
               <Input
-                value={form.discountValue}
-                onChange={(e) => setForm((s) => ({ ...s, discountValue: e.target.value }))}
-                inputMode="decimal"
+                value={form.code}
+                onChange={e => setForm(s => ({ ...s, code: e.target.value }))}
               />
             </div>
 
-            <div className="space-y-2">
+            <div className='space-y-2'>
+              <Label>Applies To</Label>
+              <Select
+                value={form.applicableTo}
+                onValueChange={v => {
+                  setForm(s => ({
+                    ...s,
+                    applicableTo: v as any,
+                    restaurantId: '',
+                    groceryStoreId: '',
+                  }));
+                  setSelectedRestaurant(null);
+                  setSelectedGroceryStore(null);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder='Select applicability' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='restaurant'>Restaurant</SelectItem>
+                  <SelectItem value='grocery'>Grocery</SelectItem>
+                  <SelectItem value='both'>Both</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className='space-y-2'>
+              <Label>Discount Type</Label>
+              <Select
+                value={form.discountType}
+                onValueChange={v => setForm(s => ({ ...s, discountType: v as any }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder='Select type' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='flat'>Flat</SelectItem>
+                  <SelectItem value='percentage'>Percentage</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className='space-y-2'>
+              <Label>Discount Value {form.discountType === 'percentage' ? '(%)' : '(₹)'}</Label>
+              <Input
+                value={form.discountValue}
+                onChange={e => setForm(s => ({ ...s, discountValue: e.target.value }))}
+                inputMode='decimal'
+              />
+            </div>
+
+            <div className='space-y-2'>
               <Label>Minimum Order Value (₹)</Label>
               <Input
                 value={form.minOrderValue}
-                onChange={(e) => setForm((s) => ({ ...s, minOrderValue: e.target.value }))}
-                inputMode="decimal"
+                onChange={e => setForm(s => ({ ...s, minOrderValue: e.target.value }))}
+                inputMode='decimal'
               />
             </div>
 
-            <div className="space-y-2">
+            <div className='space-y-2'>
               <Label>Max Discount Amount (₹) (optional)</Label>
               <Input
                 value={form.maxDiscountAmount}
-                onChange={(e) => setForm((s) => ({ ...s, maxDiscountAmount: e.target.value }))}
-                inputMode="decimal"
+                onChange={e => setForm(s => ({ ...s, maxDiscountAmount: e.target.value }))}
+                inputMode='decimal'
               />
             </div>
 
-            <div className="space-y-2">
+            <div className='space-y-2'>
               <Label>Usage Limit</Label>
               <Input
                 value={form.usageLimit}
-                onChange={(e) => setForm((s) => ({ ...s, usageLimit: e.target.value }))}
-                inputMode="numeric"
+                onChange={e => setForm(s => ({ ...s, usageLimit: e.target.value }))}
+                inputMode='numeric'
               />
             </div>
 
-            <div className="space-y-2">
+            <div className='space-y-2'>
               <Label>Expires At (optional)</Label>
-              <Input type="datetime-local" value={form.expiresAt} onChange={(e) => setForm((s) => ({ ...s, expiresAt: e.target.value }))} />
+              <Input
+                type='datetime-local'
+                value={form.expiresAt}
+                onChange={e => setForm(s => ({ ...s, expiresAt: e.target.value }))}
+              />
             </div>
 
             {/* Restaurant Dropdown — conditional on applicableTo */}
-            {(form.applicableTo === "restaurant" || form.applicableTo === "both") && (
-              <div className="space-y-2 md:col-span-2">
+            {(form.applicableTo === 'restaurant' || form.applicableTo === 'both') && (
+              <div className='space-y-2 md:col-span-2'>
                 <Label>Restaurant (optional)</Label>
                 {selectedRestaurant ? (
-                  <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30 border-border">
+                  <div className='bg-muted/30 border-border flex items-center justify-between rounded-lg border p-3'>
                     <div>
-                      <div className="font-medium">{selectedRestaurant.restaurantName || "Selected Restaurant"}</div>
-                      <div className="text-xs text-muted-foreground">{selectedRestaurant.userEmail || selectedRestaurant.phoneNumber || ""}</div>
+                      <div className='font-medium'>
+                        {selectedRestaurant.restaurantName || 'Selected Restaurant'}
+                      </div>
+                      <div className='text-muted-foreground text-xs'>
+                        {selectedRestaurant.userEmail || selectedRestaurant.phoneNumber || ''}
+                      </div>
                     </div>
-                    <Button size="sm" variant="ghost" onClick={clearSelectedRestaurant}><X className="h-4 w-4" /></Button>
+                    <Button size='sm' variant='ghost' onClick={clearSelectedRestaurant}>
+                      <X className='h-4 w-4' />
+                    </Button>
                   </div>
                 ) : (
-                  <div className="relative restaurant-dropdown-container">
-                    <div onClick={(e) => { e.stopPropagation(); setRestaurantDropdownOpen(!restaurantDropdownOpen); }} className="min-h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm cursor-pointer hover:border-ring flex items-center justify-between">
-                      <span className="text-muted-foreground">All restaurants (click to pick one)</span>
-                      <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${restaurantDropdownOpen ? "rotate-180" : ""}`} />
+                  <div className='restaurant-dropdown-container relative'>
+                    <div
+                      onClick={e => {
+                        e.stopPropagation();
+                        setRestaurantDropdownOpen(!restaurantDropdownOpen);
+                      }}
+                      className='border-input bg-background hover:border-ring flex min-h-10 w-full cursor-pointer items-center justify-between rounded-md border px-3 py-2 text-sm'
+                    >
+                      <span className='text-muted-foreground'>
+                        All restaurants (click to pick one)
+                      </span>
+                      <ChevronDown
+                        className={`ml-2 h-4 w-4 transition-transform ${restaurantDropdownOpen ? 'rotate-180' : ''}`}
+                      />
                     </div>
                     {restaurantDropdownOpen && (
-                      <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg">
-                        <div className="p-2 border-b">
-                          <Input placeholder="Search restaurants..." value={restaurantSearchFilter} onChange={(e) => setRestaurantSearchFilter(e.target.value)} onClick={(e) => e.stopPropagation()} className="h-8" autoFocus />
+                      <div className='bg-background border-input absolute z-50 mt-1 w-full rounded-md border shadow-lg'>
+                        <div className='border-b p-2'>
+                          <Input
+                            placeholder='Search restaurants...'
+                            value={restaurantSearchFilter}
+                            onChange={e => setRestaurantSearchFilter(e.target.value)}
+                            onClick={e => e.stopPropagation()}
+                            className='h-8'
+                            autoFocus
+                          />
                         </div>
-                        <div className="max-h-64 overflow-auto p-1" onClick={(e) => e.stopPropagation()}>
+                        <div
+                          className='max-h-64 overflow-auto p-1'
+                          onClick={e => e.stopPropagation()}
+                        >
                           {filteredRestaurants.length === 0 ? (
-                            <div className="px-2 py-4 text-sm text-center text-muted-foreground">No restaurants found</div>
+                            <div className='text-muted-foreground px-2 py-4 text-center text-sm'>
+                              No restaurants found
+                            </div>
                           ) : (
-                            filteredRestaurants.map((restaurant) => {
-                              const rid = (restaurant.restaurantId || restaurant.id || "").toString();
+                            filteredRestaurants.map(restaurant => {
+                              const rid = (
+                                restaurant.restaurantId ||
+                                restaurant.id ||
+                                ''
+                              ).toString();
                               return (
-                                <div key={rid} onClick={() => selectRestaurant(restaurant)} className="flex items-center px-2 py-1.5 text-sm rounded cursor-pointer hover:bg-accent">
-                                  <div className="flex-1">
-                                    <div className="font-medium">{restaurant.restaurantName}</div>
-                                    <div className="text-xs text-muted-foreground">{restaurant.userEmail || restaurant.phoneNumber || ""}</div>
+                                <div
+                                  key={rid}
+                                  onClick={() => selectRestaurant(restaurant)}
+                                  className='hover:bg-accent flex cursor-pointer items-center rounded px-2 py-1.5 text-sm'
+                                >
+                                  <div className='flex-1'>
+                                    <div className='font-medium'>{restaurant.restaurantName}</div>
+                                    <div className='text-muted-foreground text-xs'>
+                                      {restaurant.userEmail || restaurant.phoneNumber || ''}
+                                    </div>
                                   </div>
                                 </div>
                               );
@@ -914,37 +1108,67 @@ export function Coupons() {
                     )}
                   </div>
                 )}
-                <p className="text-xs text-muted-foreground">Leave empty to apply to all restaurants.</p>
+                <p className='text-muted-foreground text-xs'>
+                  Leave empty to apply to all restaurants.
+                </p>
               </div>
             )}
 
             {/* Grocery Store Dropdown — conditional on applicableTo */}
-            {(form.applicableTo === "grocery" || form.applicableTo === "both") && (
-              <div className="space-y-2 md:col-span-2">
+            {(form.applicableTo === 'grocery' || form.applicableTo === 'both') && (
+              <div className='space-y-2 md:col-span-2'>
                 <Label>Grocery Store (optional)</Label>
                 {selectedGroceryStore ? (
-                  <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/30 border-border">
-                    <div className="font-medium">{selectedGroceryStore.storeName}</div>
-                    <Button size="sm" variant="ghost" onClick={clearSelectedGroceryStore}><X className="h-4 w-4" /></Button>
+                  <div className='bg-muted/30 border-border flex items-center justify-between rounded-lg border p-3'>
+                    <div className='font-medium'>{selectedGroceryStore.storeName}</div>
+                    <Button size='sm' variant='ghost' onClick={clearSelectedGroceryStore}>
+                      <X className='h-4 w-4' />
+                    </Button>
                   </div>
                 ) : (
-                  <div className="relative grocery-dropdown-container">
-                    <div onClick={(e) => { e.stopPropagation(); setGroceryDropdownOpen(!groceryDropdownOpen); }} className="min-h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm cursor-pointer hover:border-ring flex items-center justify-between">
-                      <span className="text-muted-foreground">All grocery stores (click to pick one)</span>
-                      <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${groceryDropdownOpen ? "rotate-180" : ""}`} />
+                  <div className='grocery-dropdown-container relative'>
+                    <div
+                      onClick={e => {
+                        e.stopPropagation();
+                        setGroceryDropdownOpen(!groceryDropdownOpen);
+                      }}
+                      className='border-input bg-background hover:border-ring flex min-h-10 w-full cursor-pointer items-center justify-between rounded-md border px-3 py-2 text-sm'
+                    >
+                      <span className='text-muted-foreground'>
+                        All grocery stores (click to pick one)
+                      </span>
+                      <ChevronDown
+                        className={`ml-2 h-4 w-4 transition-transform ${groceryDropdownOpen ? 'rotate-180' : ''}`}
+                      />
                     </div>
                     {groceryDropdownOpen && (
-                      <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg">
-                        <div className="p-2 border-b">
-                          <Input placeholder="Search grocery stores..." value={grocerySearchFilter} onChange={(e) => setGrocerySearchFilter(e.target.value)} onClick={(e) => e.stopPropagation()} className="h-8" autoFocus />
+                      <div className='bg-background border-input absolute z-50 mt-1 w-full rounded-md border shadow-lg'>
+                        <div className='border-b p-2'>
+                          <Input
+                            placeholder='Search grocery stores...'
+                            value={grocerySearchFilter}
+                            onChange={e => setGrocerySearchFilter(e.target.value)}
+                            onClick={e => e.stopPropagation()}
+                            className='h-8'
+                            autoFocus
+                          />
                         </div>
-                        <div className="max-h-64 overflow-auto p-1" onClick={(e) => e.stopPropagation()}>
+                        <div
+                          className='max-h-64 overflow-auto p-1'
+                          onClick={e => e.stopPropagation()}
+                        >
                           {filteredGroceryStores.length === 0 ? (
-                            <div className="px-2 py-4 text-sm text-center text-muted-foreground">No grocery stores found</div>
+                            <div className='text-muted-foreground px-2 py-4 text-center text-sm'>
+                              No grocery stores found
+                            </div>
                           ) : (
-                            filteredGroceryStores.map((store) => (
-                              <div key={store.id} onClick={() => selectGroceryStore(store)} className="px-2 py-1.5 text-sm rounded cursor-pointer hover:bg-accent">
-                                <div className="font-medium">{store.storeName}</div>
+                            filteredGroceryStores.map(store => (
+                              <div
+                                key={store.id}
+                                onClick={() => selectGroceryStore(store)}
+                                className='hover:bg-accent cursor-pointer rounded px-2 py-1.5 text-sm'
+                              >
+                                <div className='font-medium'>{store.storeName}</div>
                               </div>
                             ))
                           )}
@@ -953,33 +1177,45 @@ export function Coupons() {
                     )}
                   </div>
                 )}
-                <p className="text-xs text-muted-foreground">Leave empty to apply to all grocery stores.</p>
+                <p className='text-muted-foreground text-xs'>
+                  Leave empty to apply to all grocery stores.
+                </p>
               </div>
             )}
 
-            <div className="flex items-center justify-between md:col-span-2 p-3 rounded-lg border">
+            <div className='flex items-center justify-between rounded-lg border p-3 md:col-span-2'>
               <div>
-                <div className="font-medium">Active</div>
-                <div className="text-xs text-muted-foreground">Inactive coupons won’t validate in checkout.</div>
+                <div className='font-medium'>Active</div>
+                <div className='text-muted-foreground text-xs'>
+                  Inactive coupons won’t validate in checkout.
+                </div>
               </div>
-              <Switch checked={form.isActive} onCheckedChange={(v) => setForm((s) => ({ ...s, isActive: v }))} />
+              <Switch
+                checked={form.isActive}
+                onCheckedChange={v => setForm(s => ({ ...s, isActive: v }))}
+              />
             </div>
 
-            <div className="flex items-center justify-between md:col-span-2 p-3 rounded-lg border">
+            <div className='flex items-center justify-between rounded-lg border p-3 md:col-span-2'>
               <div>
-                <div className="font-medium">Visibility</div>
-                <div className="text-xs text-muted-foreground">Hidden coupons won't appear in customer app but are still usable if code is known.</div>
+                <div className='font-medium'>Visibility</div>
+                <div className='text-muted-foreground text-xs'>
+                  Hidden coupons won't appear in customer app but are still usable if code is known.
+                </div>
               </div>
-              <Switch checked={form.visibility} onCheckedChange={(v) => setForm((s) => ({ ...s, visibility: v }))} />
+              <Switch
+                checked={form.visibility}
+                onCheckedChange={v => setForm(s => ({ ...s, visibility: v }))}
+              />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenEdit(false)} disabled={editing}>
+            <Button variant='outline' onClick={() => setOpenEdit(false)} disabled={editing}>
               Cancel
             </Button>
             <Button onClick={onUpdate} disabled={editing}>
-              {editing ? "Updating..." : "Update"}
+              {editing ? 'Updating...' : 'Update'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -987,23 +1223,24 @@ export function Coupons() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={openDelete} onOpenChange={setOpenDelete}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className='sm:max-w-md'>
           <DialogHeader>
             <DialogTitle>Delete Coupon</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete{" "}
-              <span className="font-medium">{selectedCoupon?.code || "this coupon"}</span>? This action cannot be undone.
-              <div className="text-xs text-muted-foreground mt-2">
+              Are you sure you want to delete{' '}
+              <span className='font-medium'>{selectedCoupon?.code || 'this coupon'}</span>? This
+              action cannot be undone.
+              <div className='text-muted-foreground mt-2 text-xs'>
                 Note: if a coupon has already been used, delete is blocked; deactivate it instead.
               </div>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenDelete(false)} disabled={deleting}>
+            <Button variant='outline' onClick={() => setOpenDelete(false)} disabled={deleting}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={onDelete} disabled={deleting}>
-              {deleting ? "Deleting..." : "Delete"}
+            <Button variant='destructive' onClick={onDelete} disabled={deleting}>
+              {deleting ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1011,5 +1248,3 @@ export function Coupons() {
     </div>
   );
 }
-
-

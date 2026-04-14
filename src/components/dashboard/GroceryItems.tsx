@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
-import { adminApi } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from 'react';
+import { adminApi } from '@/lib/api';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -20,12 +20,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Loader2, Search } from "lucide-react";
-import { toast } from "react-toastify";
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Edit, Trash2, Loader2, Search } from 'lucide-react';
+import { toast } from 'react-toastify';
 
-const UNITS = ["piece", "kg", "g", "l", "ml", "dozen", "pack"] as const;
+const UNITS = ['piece', 'kg', 'g', 'l', 'ml', 'dozen', 'pack'] as const;
 
 type ItemFormValues = {
   storeId: string;
@@ -55,19 +55,23 @@ function ItemForm({
   imgUploading: boolean;
   setImgUploading: (v: boolean) => void;
   stores: any[];
-  onImageUpload: (file: File, setter: (url: string) => void, loadingSetter: (v: boolean) => void) => void;
+  onImageUpload: (
+    file: File,
+    setter: (url: string) => void,
+    loadingSetter: (v: boolean) => void
+  ) => void;
 }) {
   return (
-    <div className="space-y-3">
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Store *</label>
+    <div className='space-y-3'>
+      <div className='space-y-1'>
+        <label className='text-sm font-medium'>Store *</label>
         <select
-          className="w-full border rounded-md px-3 py-2 text-sm bg-background"
+          className='bg-background w-full rounded-md border px-3 py-2 text-sm'
           value={f.storeId}
-          onChange={(e) => setF({ ...f, storeId: e.target.value })}
+          onChange={e => setF({ ...f, storeId: e.target.value })}
         >
-          <option value="">Select a store</option>
-          {stores.map((s) => (
+          <option value=''>Select a store</option>
+          {stores.map(s => (
             <option key={s.id} value={s.id}>
               {s.store_name}
             </option>
@@ -75,118 +79,111 @@ function ItemForm({
         </select>
       </div>
       <Input
-        placeholder="Item Name *"
+        placeholder='Item Name *'
         value={f.itemName}
-        onChange={(e) => setF({ ...f, itemName: e.target.value })}
+        onChange={e => setF({ ...f, itemName: e.target.value })}
       />
       <Input
-        placeholder="Category *"
+        placeholder='Category *'
         value={f.category}
-        onChange={(e) => setF({ ...f, category: e.target.value })}
+        onChange={e => setF({ ...f, category: e.target.value })}
       />
       <Input
-        placeholder="Description"
+        placeholder='Description'
         value={f.description}
-        onChange={(e) => setF({ ...f, description: e.target.value })}
+        onChange={e => setF({ ...f, description: e.target.value })}
       />
-      <div className="grid grid-cols-2 gap-2">
+      <div className='grid grid-cols-2 gap-2'>
         <Input
-          placeholder="Price (₹) *"
-          type="number"
+          placeholder='Price (₹) *'
+          type='number'
           value={f.price}
-          onChange={(e) => setF({ ...f, price: e.target.value })}
+          onChange={e => setF({ ...f, price: e.target.value })}
         />
         <Input
-          placeholder="MRP (₹) *"
-          type="number"
+          placeholder='MRP (₹) *'
+          type='number'
           value={f.mrp}
-          onChange={(e) => setF({ ...f, mrp: e.target.value })}
+          onChange={e => setF({ ...f, mrp: e.target.value })}
         />
       </div>
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Unit</label>
+      <div className='space-y-1'>
+        <label className='text-sm font-medium'>Unit</label>
         <select
-          className="w-full border rounded-md px-3 py-2 text-sm bg-background"
+          className='bg-background w-full rounded-md border px-3 py-2 text-sm'
           value={f.unit}
-          onChange={(e) => setF({ ...f, unit: e.target.value as (typeof UNITS)[number] })}
+          onChange={e => setF({ ...f, unit: e.target.value as (typeof UNITS)[number] })}
         >
-          {UNITS.map((u) => (
+          {UNITS.map(u => (
             <option key={u} value={u}>
               {u}
             </option>
           ))}
         </select>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className='grid grid-cols-2 gap-2'>
         <Input
-          placeholder="Qty Available"
-          type="number"
+          placeholder='Qty Available'
+          type='number'
           value={f.quantityAvailable}
-          onChange={(e) => setF({ ...f, quantityAvailable: e.target.value })}
+          onChange={e => setF({ ...f, quantityAvailable: e.target.value })}
         />
         <Input
-          placeholder="Total Qty Listed"
-          type="number"
+          placeholder='Total Qty Listed'
+          type='number'
           value={f.totalQuantityListed}
-          onChange={(e) => setF({ ...f, totalQuantityListed: e.target.value })}
+          onChange={e => setF({ ...f, totalQuantityListed: e.target.value })}
         />
       </div>
-      <div className="flex items-center gap-4">
-        <label className="flex items-center gap-2 text-sm">
+      <div className='flex items-center gap-4'>
+        <label className='flex items-center gap-2 text-sm'>
           <input
-            type="checkbox"
+            type='checkbox'
             checked={f.isActive}
-            onChange={(e) => setF({ ...f, isActive: e.target.checked })}
+            onChange={e => setF({ ...f, isActive: e.target.checked })}
           />
           Active
         </label>
-        <label className="flex items-center gap-2 text-sm">
+        <label className='flex items-center gap-2 text-sm'>
           <input
-            type="checkbox"
+            type='checkbox'
             checked={f.isInStock}
-            onChange={(e) => setF({ ...f, isInStock: e.target.checked })}
+            onChange={e => setF({ ...f, isInStock: e.target.checked })}
           />
           In Stock
         </label>
       </div>
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Item Image</label>
-        <div className="flex items-center gap-2">
+      <div className='space-y-2'>
+        <label className='text-sm font-medium'>Item Image</label>
+        <div className='flex items-center gap-2'>
           <input
-            type="file"
-            accept="image/*"
-            className="text-sm"
-            onChange={(e) => {
+            type='file'
+            accept='image/*'
+            className='text-sm'
+            onChange={e => {
               const file = e.target.files?.[0];
-              if (file)
-                onImageUpload(
-                  file,
-                  (url) => setF({ ...f, imageUrl: url }),
-                  setImgUploading
-                );
+              if (file) onImageUpload(file, url => setF({ ...f, imageUrl: url }), setImgUploading);
             }}
           />
-          {imgUploading && <Loader2 className="h-4 w-4 animate-spin" />}
+          {imgUploading && <Loader2 className='h-4 w-4 animate-spin' />}
         </div>
-        {f.imageUrl && (
-          <img src={f.imageUrl} alt="preview" className="h-20 rounded object-cover" />
-        )}
+        {f.imageUrl && <img src={f.imageUrl} alt='preview' className='h-20 rounded object-cover' />}
       </div>
     </div>
   );
 }
 
 const emptyForm: ItemFormValues = {
-  storeId: "",
-  itemName: "",
-  category: "",
-  description: "",
-  imageUrl: "",
-  price: "",
-  mrp: "",
-  unit: "piece" as (typeof UNITS)[number],
-  quantityAvailable: "0",
-  totalQuantityListed: "0",
+  storeId: '',
+  itemName: '',
+  category: '',
+  description: '',
+  imageUrl: '',
+  price: '',
+  mrp: '',
+  unit: 'piece' as (typeof UNITS)[number],
+  quantityAvailable: '0',
+  totalQuantityListed: '0',
   isActive: true,
   isInStock: true,
 };
@@ -195,8 +192,8 @@ export function GroceryItems() {
   const [items, setItems] = useState<any[]>([]);
   const [stores, setStores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchFilter, setSearchFilter] = useState("");
-  const [storeFilter, setStoreFilter] = useState("");
+  const [searchFilter, setSearchFilter] = useState('');
+  const [storeFilter, setStoreFilter] = useState('');
 
   // Add dialog
   const [openAdd, setOpenAdd] = useState(false);
@@ -232,16 +229,14 @@ export function GroceryItems() {
       setItems(itemsData);
       setStores(storesData);
     } catch (error: any) {
-      toast.error(error.message || "Failed to fetch grocery items");
+      toast.error(error.message || 'Failed to fetch grocery items');
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredItems = items.filter((item) => {
-    const matchesSearch = item.item_name
-      ?.toLowerCase()
-      .includes(searchFilter.toLowerCase());
+  const filteredItems = items.filter(item => {
+    const matchesSearch = item.item_name?.toLowerCase().includes(searchFilter.toLowerCase());
     const matchesStore = storeFilter ? item.store_id === storeFilter : true;
     return matchesSearch && matchesStore;
   });
@@ -255,20 +250,20 @@ export function GroceryItems() {
     try {
       const { imageUrl } = await adminApi.uploadGroceryImage(file);
       setter(imageUrl);
-      toast.success("Image uploaded");
+      toast.success('Image uploaded');
     } catch (error: any) {
-      toast.error(error.message || "Image upload failed");
+      toast.error(error.message || 'Image upload failed');
     } finally {
       loadingSetter(false);
     }
   };
 
   const handleCreate = async () => {
-    if (!form.itemName.trim()) return toast.error("Item name is required");
-    if (!form.storeId.trim()) return toast.error("Store is required");
-    if (!form.category.trim()) return toast.error("Category is required");
-    if (!form.price || isNaN(Number(form.price))) return toast.error("Valid price is required");
-    if (!form.mrp || isNaN(Number(form.mrp))) return toast.error("Valid MRP is required");
+    if (!form.itemName.trim()) return toast.error('Item name is required');
+    if (!form.storeId.trim()) return toast.error('Store is required');
+    if (!form.category.trim()) return toast.error('Category is required');
+    if (!form.price || isNaN(Number(form.price))) return toast.error('Valid price is required');
+    if (!form.mrp || isNaN(Number(form.mrp))) return toast.error('Valid MRP is required');
 
     setCreating(true);
     try {
@@ -286,12 +281,12 @@ export function GroceryItems() {
         isActive: form.isActive,
         isInStock: form.isInStock,
       });
-      toast.success("Grocery item created");
+      toast.success('Grocery item created');
       setOpenAdd(false);
       setForm({ ...emptyForm });
       await fetchData();
     } catch (error: any) {
-      toast.error(error.message || "Failed to create item");
+      toast.error(error.message || 'Failed to create item');
     } finally {
       setCreating(false);
     }
@@ -300,14 +295,14 @@ export function GroceryItems() {
   const openEditDialog = (item: any) => {
     setSelectedItem(item);
     setEditForm({
-      storeId: item.store_id || "",
-      itemName: item.item_name || "",
-      category: item.category || "",
-      description: item.description || "",
-      imageUrl: item.image_url || "",
-      price: String(item.price || ""),
-      mrp: String(item.mrp || ""),
-      unit: item.unit || "piece",
+      storeId: item.store_id || '',
+      itemName: item.item_name || '',
+      category: item.category || '',
+      description: item.description || '',
+      imageUrl: item.image_url || '',
+      price: String(item.price || ''),
+      mrp: String(item.mrp || ''),
+      unit: item.unit || 'piece',
       quantityAvailable: String(item.quantity_available ?? 0),
       totalQuantityListed: String(item.total_quantity_listed ?? 0),
       isActive: item.is_active ?? true,
@@ -333,12 +328,12 @@ export function GroceryItems() {
         isActive: editForm.isActive,
         isInStock: editForm.isInStock,
       });
-      toast.success("Grocery item updated");
+      toast.success('Grocery item updated');
       setOpenEdit(false);
       setSelectedItem(null);
       await fetchData();
     } catch (error: any) {
-      toast.error(error.message || "Failed to update item");
+      toast.error(error.message || 'Failed to update item');
     } finally {
       setEditing(false);
     }
@@ -349,29 +344,29 @@ export function GroceryItems() {
     setDeleting(true);
     try {
       await adminApi.deleteGroceryItem(itemToDelete.id);
-      toast.success("Grocery item deleted");
+      toast.success('Grocery item deleted');
       setOpenDelete(false);
       setItemToDelete(null);
       await fetchData();
     } catch (error: any) {
-      toast.error(error.message || "Failed to delete item");
+      toast.error(error.message || 'Failed to delete item');
     } finally {
       setDeleting(false);
     }
   };
 
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className='flex flex-row items-center justify-between'>
           <CardTitle>Grocery Items</CardTitle>
           <Dialog open={openAdd} onOpenChange={setOpenAdd}>
             <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-1" /> Add Item
+              <Button size='sm'>
+                <Plus className='mr-1 h-4 w-4' /> Add Item
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogContent className='max-h-[90vh] max-w-lg overflow-y-auto'>
               <DialogHeader>
                 <DialogTitle>Add Grocery Item</DialogTitle>
                 <DialogDescription>Add a new item to a grocery store.</DialogDescription>
@@ -385,11 +380,11 @@ export function GroceryItems() {
                 onImageUpload={handleImageUpload}
               />
               <DialogFooter>
-                <Button variant="outline" onClick={() => setOpenAdd(false)}>
+                <Button variant='outline' onClick={() => setOpenAdd(false)}>
                   Cancel
                 </Button>
                 <Button onClick={handleCreate} disabled={creating}>
-                  {creating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                  {creating ? <Loader2 className='mr-1 h-4 w-4 animate-spin' /> : null}
                   Create
                 </Button>
               </DialogFooter>
@@ -398,21 +393,21 @@ export function GroceryItems() {
         </CardHeader>
 
         <CardContent>
-          <div className="flex items-center gap-2 mb-4 flex-wrap">
-            <Search className="h-4 w-4 text-muted-foreground" />
+          <div className='mb-4 flex flex-wrap items-center gap-2'>
+            <Search className='text-muted-foreground h-4 w-4' />
             <Input
-              placeholder="Search items..."
+              placeholder='Search items...'
               value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              className="max-w-xs"
+              onChange={e => setSearchFilter(e.target.value)}
+              className='max-w-xs'
             />
             <select
-              className="border rounded-md px-3 py-2 text-sm bg-background"
+              className='bg-background rounded-md border px-3 py-2 text-sm'
               value={storeFilter}
-              onChange={(e) => setStoreFilter(e.target.value)}
+              onChange={e => setStoreFilter(e.target.value)}
             >
-              <option value="">All Stores</option>
-              {stores.map((s) => (
+              <option value=''>All Stores</option>
+              {stores.map(s => (
                 <option key={s.id} value={s.id}>
                   {s.store_name}
                 </option>
@@ -421,8 +416,8 @@ export function GroceryItems() {
           </div>
 
           {loading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin" />
+            <div className='flex justify-center py-8'>
+              <Loader2 className='h-6 w-6 animate-spin' />
             </div>
           ) : (
             <Table>
@@ -442,23 +437,20 @@ export function GroceryItems() {
               <TableBody>
                 {filteredItems.length === 0 ? (
                   <TableRow>
-                    <TableCell
-                      colSpan={9}
-                      className="text-center text-muted-foreground py-8"
-                    >
+                    <TableCell colSpan={9} className='text-muted-foreground py-8 text-center'>
                       No grocery items found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredItems.map((item) => (
+                  filteredItems.map(item => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
+                      <TableCell className='font-medium'>
+                        <div className='flex items-center gap-2'>
                           {item.image_url && (
                             <img
                               src={item.image_url}
                               alt={item.item_name}
-                              className="h-8 w-8 rounded object-cover"
+                              className='h-8 w-8 rounded object-cover'
                             />
                           )}
                           {item.item_name}
@@ -471,33 +463,29 @@ export function GroceryItems() {
                       <TableCell>{item.unit}</TableCell>
                       <TableCell>{item.quantity_available}</TableCell>
                       <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <Badge variant={item.is_active ? "default" : "outline"}>
-                            {item.is_active ? "Active" : "Inactive"}
+                        <div className='flex flex-col gap-1'>
+                          <Badge variant={item.is_active ? 'default' : 'outline'}>
+                            {item.is_active ? 'Active' : 'Inactive'}
                           </Badge>
-                          <Badge variant={item.is_in_stock ? "default" : "secondary"}>
-                            {item.is_in_stock ? "In Stock" : "Out of Stock"}
+                          <Badge variant={item.is_in_stock ? 'default' : 'secondary'}>
+                            {item.is_in_stock ? 'In Stock' : 'Out of Stock'}
                           </Badge>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openEditDialog(item)}
-                          >
-                            <Edit className="h-4 w-4" />
+                        <div className='flex items-center gap-1'>
+                          <Button variant='ghost' size='sm' onClick={() => openEditDialog(item)}>
+                            <Edit className='h-4 w-4' />
                           </Button>
                           <Button
-                            variant="ghost"
-                            size="sm"
+                            variant='ghost'
+                            size='sm'
                             onClick={() => {
                               setItemToDelete(item);
                               setOpenDelete(true);
                             }}
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className='text-destructive h-4 w-4' />
                           </Button>
                         </div>
                       </TableCell>
@@ -512,7 +500,7 @@ export function GroceryItems() {
 
       {/* Edit Dialog */}
       <Dialog open={openEdit} onOpenChange={setOpenEdit}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className='max-h-[90vh] max-w-lg overflow-y-auto'>
           <DialogHeader>
             <DialogTitle>Edit Grocery Item</DialogTitle>
             <DialogDescription>Update item details.</DialogDescription>
@@ -526,11 +514,11 @@ export function GroceryItems() {
             onImageUpload={handleImageUpload}
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenEdit(false)}>
+            <Button variant='outline' onClick={() => setOpenEdit(false)}>
               Cancel
             </Button>
             <Button onClick={handleUpdate} disabled={editing}>
-              {editing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+              {editing ? <Loader2 className='mr-1 h-4 w-4 animate-spin' /> : null}
               Save Changes
             </Button>
           </DialogFooter>
@@ -543,16 +531,16 @@ export function GroceryItems() {
           <DialogHeader>
             <DialogTitle>Delete Grocery Item</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete{" "}
-              <strong>{itemToDelete?.item_name}</strong>? This action cannot be undone.
+              Are you sure you want to delete <strong>{itemToDelete?.item_name}</strong>? This
+              action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenDelete(false)}>
+            <Button variant='outline' onClick={() => setOpenDelete(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+            <Button variant='destructive' onClick={handleDelete} disabled={deleting}>
+              {deleting ? <Loader2 className='mr-1 h-4 w-4 animate-spin' /> : null}
               Delete
             </Button>
           </DialogFooter>

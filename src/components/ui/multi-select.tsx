@@ -1,7 +1,7 @@
-import * as React from "react"
-import { X, ChevronDown } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
+import * as React from 'react';
+import { X, ChevronDown } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 
 interface MultiSelectProps {
   options: Array<{ id: number; name: string }>;
@@ -12,9 +12,16 @@ interface MultiSelectProps {
   onCreate?: (val: string) => void;
 }
 
-export function MultiSelect({ options, selected, onChange, placeholder = "Select items...", label, onCreate }: MultiSelectProps) {
+export function MultiSelect({
+  options,
+  selected,
+  onChange,
+  placeholder = 'Select items...',
+  label,
+  onCreate,
+}: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);
-  const [search, setSearch] = React.useState("");
+  const [search, setSearch] = React.useState('');
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -24,17 +31,17 @@ export function MultiSelect({ options, selected, onChange, placeholder = "Select
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleUnselect = (id: number) => {
-    onChange(selected.filter((s) => s !== id));
+    onChange(selected.filter(s => s !== id));
   };
 
   const handleSelect = (id: number) => {
     if (selected.includes(id)) {
-      onChange(selected.filter((s) => s !== id));
+      onChange(selected.filter(s => s !== id));
     } else {
       onChange([...selected, id]);
     }
@@ -46,73 +53,69 @@ export function MultiSelect({ options, selected, onChange, placeholder = "Select
   );
 
   return (
-    <div className="space-y-2 relative" ref={dropdownRef}>
-      {label && <label className="text-sm font-medium">{label}</label>}
+    <div className='relative space-y-2' ref={dropdownRef}>
+      {label && <label className='text-sm font-medium'>{label}</label>}
 
       {/* Selected Items Display */}
       <div
         onClick={() => setOpen(!open)}
-        className="min-h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm cursor-pointer hover:border-ring"
+        className='border-input bg-background hover:border-ring min-h-10 w-full cursor-pointer rounded-md border px-3 py-2 text-sm'
       >
-        <div className="flex flex-wrap gap-1 items-center">
+        <div className='flex flex-wrap items-center gap-1'>
           {selected.length === 0 ? (
-            <span className="text-muted-foreground">{placeholder}</span>
+            <span className='text-muted-foreground'>{placeholder}</span>
           ) : (
-            selectedOptions.map((option) => (
-              <Badge
-                variant="secondary"
-                key={option.id}
-                className="mr-1"
-              >
+            selectedOptions.map(option => (
+              <Badge variant='secondary' key={option.id} className='mr-1'>
                 {option.name}
                 <button
-                  type="button"
-                  className="ml-1 rounded-full outline-none hover:bg-muted"
-                  onClick={(e) => {
+                  type='button'
+                  className='hover:bg-muted ml-1 rounded-full outline-none'
+                  onClick={e => {
                     e.stopPropagation();
                     handleUnselect(option.id);
                   }}
                 >
-                  <X className="h-3 w-3" />
+                  <X className='h-3 w-3' />
                 </button>
               </Badge>
             ))
           )}
-          <ChevronDown className="h-4 w-4 ml-auto opacity-50" />
+          <ChevronDown className='ml-auto h-4 w-4 opacity-50' />
         </div>
       </div>
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute z-50 w-full mt-1 bg-background border border-input rounded-md shadow-lg">
-          <div className="p-2">
+        <div className='bg-background border-input absolute z-50 mt-1 w-full rounded-md border shadow-lg'>
+          <div className='p-2'>
             <Input
-              placeholder="Search or add new..."
+              placeholder='Search or add new...'
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-8"
-              onKeyDown={(e) => {
+              onChange={e => setSearch(e.target.value)}
+              className='h-8'
+              onKeyDown={e => {
                 if (e.key === 'Enter' && search.trim() && filteredOptions.length === 0) {
                   e.preventDefault();
                   if (onCreate) {
                     onCreate(search.trim());
-                    setSearch("");
+                    setSearch('');
                   }
                 }
               }}
             />
           </div>
-          <div className="max-h-64 overflow-auto p-1">
+          <div className='max-h-64 overflow-auto p-1'>
             {filteredOptions.length === 0 ? (
-              <div className="py-2 text-center text-sm text-muted-foreground">
+              <div className='text-muted-foreground py-2 text-center text-sm'>
                 No items found.
                 {search.trim() && onCreate && (
                   <button
-                    type="button"
-                    className="mt-2 block w-full text-primary hover:underline"
+                    type='button'
+                    className='text-primary mt-2 block w-full hover:underline'
                     onClick={() => {
                       onCreate(search.trim());
-                      setSearch("");
+                      setSearch('');
                     }}
                   >
                     Create "{search.trim()}"
@@ -120,30 +123,30 @@ export function MultiSelect({ options, selected, onChange, placeholder = "Select
                 )}
               </div>
             ) : (
-              filteredOptions.map((option) => (
+              filteredOptions.map(option => (
                 <div
                   key={option.id}
                   onClick={() => handleSelect(option.id)}
-                  className={`flex items-center px-2 py-1.5 text-sm rounded cursor-pointer hover:bg-accent ${selected.includes(option.id) ? 'bg-accent' : ''
-                    }`}
+                  className={`hover:bg-accent flex cursor-pointer items-center rounded px-2 py-1.5 text-sm ${
+                    selected.includes(option.id) ? 'bg-accent' : ''
+                  }`}
                 >
                   <div
-                    className={`mr-2 flex h-4 w-4 items-center justify-center rounded-sm border ${selected.includes(option.id)
-                      ? "bg-primary border-primary"
-                      : "border-input"
-                      }`}
+                    className={`mr-2 flex h-4 w-4 items-center justify-center rounded-sm border ${
+                      selected.includes(option.id) ? 'bg-primary border-primary' : 'border-input'
+                    }`}
                   >
                     {selected.includes(option.id) && (
                       <svg
-                        className="h-3 w-3 text-primary-foreground"
-                        fill="none"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+                        className='text-primary-foreground h-3 w-3'
+                        fill='none'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth='2'
+                        viewBox='0 0 24 24'
+                        stroke='currentColor'
                       >
-                        <polyline points="20 6 9 17 4 12" />
+                        <polyline points='20 6 9 17 4 12' />
                       </svg>
                     )}
                   </div>
@@ -156,11 +159,10 @@ export function MultiSelect({ options, selected, onChange, placeholder = "Select
       )}
 
       {selected.length > 0 && (
-        <p className="text-xs text-muted-foreground">
+        <p className='text-muted-foreground text-xs'>
           {selected.length} item{selected.length > 1 ? 's' : ''} selected
         </p>
       )}
     </div>
   );
 }
-

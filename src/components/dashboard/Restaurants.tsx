@@ -1,11 +1,18 @@
-import { useState, useEffect } from "react";
-import { adminApi } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState, useEffect } from 'react';
+import { adminApi } from '@/lib/api';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -13,13 +20,30 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Plus, MapPin, Loader2, Building2, Edit, Trash2, CheckCircle2, XCircle, Ban, Search } from "lucide-react";
-import { MultiSelect } from "@/components/ui/multi-select";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { isTenDigitPhone, normalizePhoneDigits, apiRequestWithStatus } from "@/lib/utils";
-import { toast } from "react-toastify";
-import type { Restaurant, ApiError, Cuisine } from "@/types";
+} from '@/components/ui/table';
+import {
+  Plus,
+  MapPin,
+  Loader2,
+  Building2,
+  Edit,
+  Trash2,
+  CheckCircle2,
+  XCircle,
+  Ban,
+  Search,
+} from 'lucide-react';
+import { MultiSelect } from '@/components/ui/multi-select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { isTenDigitPhone, normalizePhoneDigits, apiRequestWithStatus } from '@/lib/utils';
+import { toast } from 'react-toastify';
+import type { Restaurant, ApiError, Cuisine } from '@/types';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
@@ -34,7 +58,7 @@ export function Restaurants() {
 
   // Search states
   const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
-  const [restaurantSearchFilter, setRestaurantSearchFilter] = useState("");
+  const [restaurantSearchFilter, setRestaurantSearchFilter] = useState('');
 
   // Detail popup
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
@@ -54,55 +78,57 @@ export function Restaurants() {
 
   // Basic Info
   const [formR, setFormR] = useState({
-    fullName: "",
-    email: "",
-    phoneNumber: "",
-    password: "",
-    restaurantName: "",
-    description: "",
-    whatYouGet: "",
-    contactPersonName: "",
-    fssaiLicenseNumber: "",
-    gstinNumber: ""
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    password: '',
+    restaurantName: '',
+    description: '',
+    whatYouGet: '',
+    contactPersonName: '',
+    fssaiLicenseNumber: '',
+    gstinNumber: '',
   });
 
   // Location Info
   const [location, setLocation] = useState({
-    locationName: "",
-    address: "",
-    latitude: "",
-    longitude: "",
-    contactNumber: "",
-    email: ""
+    locationName: '',
+    address: '',
+    latitude: '',
+    longitude: '',
+    contactNumber: '',
+    email: '',
   });
 
   // Operating Hours
-  const [operatingHours, setOperatingHours] = useState<Record<string, { open: string, close: string, isClosed: boolean }>>({
-    monday: { open: "09:00", close: "22:00", isClosed: false },
-    tuesday: { open: "09:00", close: "22:00", isClosed: false },
-    wednesday: { open: "09:00", close: "22:00", isClosed: false },
-    thursday: { open: "09:00", close: "22:00", isClosed: false },
-    friday: { open: "09:00", close: "22:00", isClosed: false },
-    saturday: { open: "09:00", close: "22:00", isClosed: false },
-    sunday: { open: "09:00", close: "22:00", isClosed: false }
+  const [operatingHours, setOperatingHours] = useState<
+    Record<string, { open: string; close: string; isClosed: boolean }>
+  >({
+    monday: { open: '09:00', close: '22:00', isClosed: false },
+    tuesday: { open: '09:00', close: '22:00', isClosed: false },
+    wednesday: { open: '09:00', close: '22:00', isClosed: false },
+    thursday: { open: '09:00', close: '22:00', isClosed: false },
+    friday: { open: '09:00', close: '22:00', isClosed: false },
+    saturday: { open: '09:00', close: '22:00', isClosed: false },
+    sunday: { open: '09:00', close: '22:00', isClosed: false },
   });
 
   // Bank Details
   const [bankDetails, setBankDetails] = useState({
-    accountNumber: "",
-    ifscCode: "",
-    accountHolderName: "",
-    bankName: ""
+    accountNumber: '',
+    ifscCode: '',
+    accountHolderName: '',
+    bankName: '',
   });
 
   // Image upload states
-  const [restaurantImageUrl, setRestaurantImageUrl] = useState<string>("");
+  const [restaurantImageUrl, setRestaurantImageUrl] = useState<string>('');
   const [uploadingImage, setUploadingImage] = useState(false);
 
   // Cuisine Creation states
   const [openAddCuisine, setOpenAddCuisine] = useState(false);
-  const [newCuisineName, setNewCuisineName] = useState("");
-  const [newCuisineImageUrl, setNewCuisineImageUrl] = useState("");
+  const [newCuisineName, setNewCuisineName] = useState('');
+  const [newCuisineImageUrl, setNewCuisineImageUrl] = useState('');
   const [uploadingCuisineImage, setUploadingCuisineImage] = useState(false);
 
   useEffect(() => {
@@ -127,11 +153,13 @@ export function Restaurants() {
   useEffect(() => {
     if (restaurantSearchFilter.trim()) {
       const searchTerm = restaurantSearchFilter.toLowerCase().trim();
-      const filtered = allRestaurants.filter((restaurant) => {
+      const filtered = allRestaurants.filter(restaurant => {
         const name = restaurant.restaurantName?.toLowerCase() || '';
         const email = restaurant.userEmail?.toLowerCase() || '';
         const phone = restaurant.phoneNumber?.toLowerCase() || '';
-        return name.includes(searchTerm) || email.includes(searchTerm) || phone.includes(searchTerm);
+        return (
+          name.includes(searchTerm) || email.includes(searchTerm) || phone.includes(searchTerm)
+        );
       });
       setRestaurants(filtered);
     } else {
@@ -158,7 +186,7 @@ export function Restaurants() {
       return;
     }
     setNewCuisineName(name);
-    setNewCuisineImageUrl("");
+    setNewCuisineImageUrl('');
     setOpenAddCuisine(true);
   };
 
@@ -167,11 +195,11 @@ export function Restaurants() {
       setUploadingCuisineImage(true);
       const result = await adminApi.uploadCuisineImage(file);
       setNewCuisineImageUrl(result.imageUrl);
-      toast.success("Image uploaded successfully!", { position: "top-right", autoClose: 2000 });
+      toast.success('Image uploaded successfully!', { position: 'top-right', autoClose: 2000 });
     } catch (err) {
       const error = err as ApiError;
       console.error('Image upload failed:', error);
-      toast.error(error.message || "Failed to upload image");
+      toast.error(error.message || 'Failed to upload image');
     } finally {
       setUploadingCuisineImage(false);
     }
@@ -179,19 +207,19 @@ export function Restaurants() {
 
   const submitNewCuisine = async () => {
     if (!newCuisineName.trim()) {
-      toast.error("Cuisine name is required");
+      toast.error('Cuisine name is required');
       return;
     }
     try {
       const newCuisine = await adminApi.createCuisine({
         name: newCuisineName.trim(),
-        imageUrl: newCuisineImageUrl.trim() || undefined
+        imageUrl: newCuisineImageUrl.trim() || undefined,
       });
       setCuisines(prev => [...prev, newCuisine].sort((a, b) => a.name.localeCompare(b.name)));
       setSelectedCuisineIds(prev => [...prev, newCuisine.id]);
       setOpenAddCuisine(false);
-      setNewCuisineName("");
-      setNewCuisineImageUrl("");
+      setNewCuisineName('');
+      setNewCuisineImageUrl('');
       toast.success(`Cuisine "${newCuisine.name}" added successfully`);
     } catch (err) {
       const error = err as ApiError;
@@ -201,7 +229,7 @@ export function Restaurants() {
   };
 
   const handleClearSearch = () => {
-    setRestaurantSearchFilter("");
+    setRestaurantSearchFilter('');
     setRestaurants(allRestaurants);
   };
 
@@ -210,15 +238,15 @@ export function Restaurants() {
       setUploadingImage(true);
       const result = await adminApi.uploadRestaurantImage(file);
       setRestaurantImageUrl(result.imageUrl);
-      toast.success("Image uploaded successfully!", {
-        position: "top-right",
+      toast.success('Image uploaded successfully!', {
+        position: 'top-right',
         autoClose: 2000,
       });
     } catch (err) {
       const error = err as ApiError;
       console.error('Image upload failed:', error);
-      toast.error(error.message || "Failed to upload image", {
-        position: "top-right",
+      toast.error(error.message || 'Failed to upload image', {
+        position: 'top-right',
         autoClose: 3000,
       });
     } finally {
@@ -233,48 +261,48 @@ export function Restaurants() {
 
   const resetForm = () => {
     setFormR({
-      fullName: "",
-      email: "",
-      phoneNumber: "",
-      password: "",
-      restaurantName: "",
-      description: "",
-      whatYouGet: "",
-      contactPersonName: "",
-      fssaiLicenseNumber: "",
-      gstinNumber: ""
+      fullName: '',
+      email: '',
+      phoneNumber: '',
+      password: '',
+      restaurantName: '',
+      description: '',
+      whatYouGet: '',
+      contactPersonName: '',
+      fssaiLicenseNumber: '',
+      gstinNumber: '',
     });
     setLocation({
-      locationName: "",
-      address: "",
-      latitude: "",
-      longitude: "",
-      contactNumber: "",
-      email: ""
+      locationName: '',
+      address: '',
+      latitude: '',
+      longitude: '',
+      contactNumber: '',
+      email: '',
     });
     setOperatingHours({
-      monday: { open: "09:00", close: "22:00", isClosed: false },
-      tuesday: { open: "09:00", close: "22:00", isClosed: false },
-      wednesday: { open: "09:00", close: "22:00", isClosed: false },
-      thursday: { open: "09:00", close: "22:00", isClosed: false },
-      friday: { open: "09:00", close: "22:00", isClosed: false },
-      saturday: { open: "09:00", close: "22:00", isClosed: false },
-      sunday: { open: "09:00", close: "22:00", isClosed: false }
+      monday: { open: '09:00', close: '22:00', isClosed: false },
+      tuesday: { open: '09:00', close: '22:00', isClosed: false },
+      wednesday: { open: '09:00', close: '22:00', isClosed: false },
+      thursday: { open: '09:00', close: '22:00', isClosed: false },
+      friday: { open: '09:00', close: '22:00', isClosed: false },
+      saturday: { open: '09:00', close: '22:00', isClosed: false },
+      sunday: { open: '09:00', close: '22:00', isClosed: false },
     });
     setBankDetails({
-      accountNumber: "",
-      ifscCode: "",
-      accountHolderName: "",
-      bankName: ""
+      accountNumber: '',
+      ifscCode: '',
+      accountHolderName: '',
+      bankName: '',
     });
     setSelectedCuisineIds([]);
-    setRestaurantImageUrl("");
+    setRestaurantImageUrl('');
   };
 
   // Geocode address to get lat/long
   const handleGeocodeAddress = async () => {
     if (!location.address.trim()) {
-      alert("Please enter an address first");
+      alert('Please enter an address first');
       return;
     }
 
@@ -287,7 +315,7 @@ export function Restaurants() {
 
       const data = await response.json();
 
-      if (data.status === "OK" && data.results && data.results.length > 0) {
+      if (data.status === 'OK' && data.results && data.results.length > 0) {
         const result = data.results[0];
         const lat = result.geometry.location.lat;
         const lng = result.geometry.location.lng;
@@ -295,16 +323,16 @@ export function Restaurants() {
         setLocation({
           ...location,
           latitude: lat.toString(),
-          longitude: lng.toString()
+          longitude: lng.toString(),
         });
 
-        alert("Location coordinates found successfully!");
+        alert('Location coordinates found successfully!');
       } else {
         alert(`Geocoding failed: ${data.status}. Please check the address and try again.`);
       }
     } catch (error) {
-      console.error("Geocoding error:", error);
-      alert("Failed to get coordinates. Please check your internet connection and try again.");
+      console.error('Geocoding error:', error);
+      alert('Failed to get coordinates. Please check your internet connection and try again.');
     } finally {
       setGeocoding(false);
     }
@@ -313,7 +341,10 @@ export function Restaurants() {
   // Check if all required fields are filled
   const isFormValid = () => {
     // Basic info validation
-    const basicValid = formR.fullName && formR.password && formR.restaurantName &&
+    const basicValid =
+      formR.fullName &&
+      formR.password &&
+      formR.restaurantName &&
       (formR.email || formR.phoneNumber);
 
     // Location validation (must have address AND coordinates)
@@ -331,49 +362,52 @@ export function Restaurants() {
 
       // Validate required fields
       if (!formR.fullName || !formR.password || !formR.restaurantName) {
-        alert("Please fill in all required fields (Name, Password, Restaurant Name)");
+        alert('Please fill in all required fields (Name, Password, Restaurant Name)');
         return;
       }
 
       if (!formR.email && !formR.phoneNumber) {
-        alert("Please provide either email or phone number");
+        alert('Please provide either email or phone number');
         return;
       }
 
       if (formR.phoneNumber && !isTenDigitPhone(formR.phoneNumber)) {
-        alert("Mobile number must be exactly 10 digits");
+        alert('Mobile number must be exactly 10 digits');
         return;
       }
 
       if (location.contactNumber && !isTenDigitPhone(location.contactNumber)) {
-        alert("Mobile number must be exactly 10 digits");
+        alert('Mobile number must be exactly 10 digits');
         return;
       }
 
       if (!location.address || !location.latitude || !location.longitude) {
-        alert("Please provide complete location details (Address, Latitude, Longitude)");
+        alert('Please provide complete location details (Address, Latitude, Longitude)');
         return;
       }
 
       if (selectedCuisineIds.length === 0) {
-        alert("Please select at least one cuisine");
+        alert('Please select at least one cuisine');
         return;
       }
 
       // Build bank details object if any field is provided
-      const bankAccountDetails = (bankDetails.accountNumber || bankDetails.ifscCode) ? {
-        accountNumber: bankDetails.accountNumber,
-        ifscCode: bankDetails.ifscCode,
-        accountHolderName: bankDetails.accountHolderName,
-        bankName: bankDetails.bankName
-      } : undefined;
+      const bankAccountDetails =
+        bankDetails.accountNumber || bankDetails.ifscCode
+          ? {
+              accountNumber: bankDetails.accountNumber,
+              ifscCode: bankDetails.ifscCode,
+              accountHolderName: bankDetails.accountHolderName,
+              bankName: bankDetails.bankName,
+            }
+          : undefined;
 
       // Build operating hours array
       const hoursArray = DAYS_OF_WEEK.map(day => ({
         dayOfWeek: day,
         openTime: operatingHours[day].isClosed ? null : `${operatingHours[day].open}:00`,
         closeTime: operatingHours[day].isClosed ? null : `${operatingHours[day].close}:00`,
-        isClosed: operatingHours[day].isClosed
+        isClosed: operatingHours[day].isClosed,
       }));
 
       const userPhoneDigits = normalizePhoneDigits(formR.phoneNumber);
@@ -401,18 +435,22 @@ export function Restaurants() {
             address: location.address,
             latitude: parseFloat(location.latitude),
             longitude: parseFloat(location.longitude),
-            contactNumber: locationPhoneDigits ? `+91${locationPhoneDigits}` : (userPhoneDigits ? `+91${userPhoneDigits}` : undefined),
-            email: location.email || formR.email
+            contactNumber: locationPhoneDigits
+              ? `+91${locationPhoneDigits}`
+              : userPhoneDigits
+                ? `+91${userPhoneDigits}`
+                : undefined,
+            email: location.email || formR.email,
           },
           operatingHours: hoursArray,
-          restaurantCuisineIds: selectedCuisineIds
-        })
+          restaurantCuisineIds: selectedCuisineIds,
+        }),
       });
 
       // Show toast based on status
       if (result.status < 300) {
         toast.success(result.message, {
-          position: "top-right",
+          position: 'top-right',
           autoClose: 3000,
         });
         // Refresh the list
@@ -422,7 +460,7 @@ export function Restaurants() {
       } else {
         // Show red toast for any error status (status >= 400)
         toast.error(result.message, {
-          position: "top-right",
+          position: 'top-right',
           autoClose: 3000,
         });
       }
@@ -430,9 +468,9 @@ export function Restaurants() {
       const error = err as ApiError;
       console.error('Create restaurant failed', error);
       // Show error toast for unexpected errors
-      const errorMessage = error?.message || "Failed to add restaurant";
+      const errorMessage = error?.message || 'Failed to add restaurant';
       toast.error(errorMessage, {
-        position: "top-right",
+        position: 'top-right',
         autoClose: 3000,
       });
     } finally {
@@ -440,13 +478,17 @@ export function Restaurants() {
     }
   };
 
-  const updateOperatingHours = (day: string, field: 'open' | 'close' | 'isClosed', value: string | boolean) => {
+  const updateOperatingHours = (
+    day: string,
+    field: 'open' | 'close' | 'isClosed',
+    value: string | boolean
+  ) => {
     setOperatingHours(prev => ({
       ...prev,
       [day]: {
         ...prev[day],
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
@@ -458,43 +500,43 @@ export function Restaurants() {
 
       // Pre-fill form with existing data
       setFormR({
-        fullName: fullDetails.userFullName || "",
-        email: fullDetails.userEmail || "",
-        phoneNumber: fullDetails.phoneNumber?.replace('+91', '') || "",
-        password: "", // Don't pre-fill password
-        restaurantName: fullDetails.restaurantName || "",
-        description: fullDetails.description || "",
-        whatYouGet: fullDetails.whatYouGet || "",
-        contactPersonName: fullDetails.contactPersonName || "",
-        fssaiLicenseNumber: fullDetails.fssaiLicenseNumber || "",
-        gstinNumber: fullDetails.gstinNumber || ""
+        fullName: fullDetails.userFullName || '',
+        email: fullDetails.userEmail || '',
+        phoneNumber: fullDetails.phoneNumber?.replace('+91', '') || '',
+        password: '', // Don't pre-fill password
+        restaurantName: fullDetails.restaurantName || '',
+        description: fullDetails.description || '',
+        whatYouGet: fullDetails.whatYouGet || '',
+        contactPersonName: fullDetails.contactPersonName || '',
+        fssaiLicenseNumber: fullDetails.fssaiLicenseNumber || '',
+        gstinNumber: fullDetails.gstinNumber || '',
       });
 
       // Pre-fill location
       if (fullDetails.primaryLocation) {
         setLocation({
-          locationName: fullDetails.primaryLocation.locationName || "",
-          address: fullDetails.primaryLocation.address || "",
-          latitude: fullDetails.primaryLocation.latitude?.toString() || "",
-          longitude: fullDetails.primaryLocation.longitude?.toString() || "",
-          contactNumber: fullDetails.primaryLocation.contactNumber?.replace('+91', '') || "",
-          email: fullDetails.primaryLocation.email || ""
+          locationName: fullDetails.primaryLocation.locationName || '',
+          address: fullDetails.primaryLocation.address || '',
+          latitude: fullDetails.primaryLocation.latitude?.toString() || '',
+          longitude: fullDetails.primaryLocation.longitude?.toString() || '',
+          contactNumber: fullDetails.primaryLocation.contactNumber?.replace('+91', '') || '',
+          email: fullDetails.primaryLocation.email || '',
         });
       }
 
       // Pre-fill operating hours
       if (fullDetails.operatingHours) {
-        const hours: Record<string, { open: string, close: string, isClosed: boolean }> = {};
+        const hours: Record<string, { open: string; close: string; isClosed: boolean }> = {};
         DAYS_OF_WEEK.forEach(day => {
           const dayData = fullDetails.operatingHours[day];
           if (dayData) {
             hours[day] = {
-              open: dayData.openTime?.substring(0, 5) || "09:00",
-              close: dayData.closeTime?.substring(0, 5) || "22:00",
-              isClosed: dayData.isClosed || false
+              open: dayData.openTime?.substring(0, 5) || '09:00',
+              close: dayData.closeTime?.substring(0, 5) || '22:00',
+              isClosed: dayData.isClosed || false,
             };
           } else {
-            hours[day] = { open: "09:00", close: "22:00", isClosed: false };
+            hours[day] = { open: '09:00', close: '22:00', isClosed: false };
           }
         });
         setOperatingHours(hours);
@@ -503,18 +545,24 @@ export function Restaurants() {
       // Pre-fill bank details
       if (fullDetails.bankAccountDetails) {
         setBankDetails({
-          accountNumber: fullDetails.bankAccountDetails.accountNumber || "",
-          ifscCode: fullDetails.bankAccountDetails.ifscCode || "",
-          accountHolderName: fullDetails.bankAccountDetails.accountHolderName || "",
-          bankName: fullDetails.bankAccountDetails.bankName || ""
+          accountNumber: fullDetails.bankAccountDetails.accountNumber || '',
+          ifscCode: fullDetails.bankAccountDetails.ifscCode || '',
+          accountHolderName: fullDetails.bankAccountDetails.accountHolderName || '',
+          bankName: fullDetails.bankAccountDetails.bankName || '',
         });
       }
 
       // Pre-fill cuisines
-      setSelectedCuisineIds(fullDetails.cuisines ? fullDetails.cuisines.map((c: Cuisine) => c.id || (c as unknown as { cuisineId: number }).cuisineId) : []);
+      setSelectedCuisineIds(
+        fullDetails.cuisines
+          ? fullDetails.cuisines.map(
+              (c: Cuisine) => c.id || (c as unknown as { cuisineId: number }).cuisineId
+            )
+          : []
+      );
 
       // Pre-fill image URL
-      setRestaurantImageUrl(fullDetails.imageUrl || "");
+      setRestaurantImageUrl(fullDetails.imageUrl || '');
 
       setOpenEdit(true);
     } catch (error) {
@@ -531,33 +579,36 @@ export function Restaurants() {
 
       // Validate cuisines
       if (selectedCuisineIds.length === 0) {
-        toast.error("Please select at least one cuisine");
+        toast.error('Please select at least one cuisine');
         return;
       }
 
       // Build bank details object if any field is provided
-      const bankAccountDetails = (bankDetails.accountNumber || bankDetails.ifscCode) ? {
-        accountNumber: bankDetails.accountNumber,
-        ifscCode: bankDetails.ifscCode,
-        accountHolderName: bankDetails.accountHolderName,
-        bankName: bankDetails.bankName
-      } : undefined;
+      const bankAccountDetails =
+        bankDetails.accountNumber || bankDetails.ifscCode
+          ? {
+              accountNumber: bankDetails.accountNumber,
+              ifscCode: bankDetails.ifscCode,
+              accountHolderName: bankDetails.accountHolderName,
+              bankName: bankDetails.bankName,
+            }
+          : undefined;
 
       // Build operating hours array
       const hoursArray = DAYS_OF_WEEK.map(day => ({
         dayOfWeek: day,
         openTime: operatingHours[day].isClosed ? null : `${operatingHours[day].open}:00`,
         closeTime: operatingHours[day].isClosed ? null : `${operatingHours[day].close}:00`,
-        isClosed: operatingHours[day].isClosed
+        isClosed: operatingHours[day].isClosed,
       }));
 
       if (location.contactNumber && !isTenDigitPhone(location.contactNumber)) {
-        toast.error("Location mobile number must be exactly 10 digits");
+        toast.error('Location mobile number must be exactly 10 digits');
         return;
       }
 
       if (formR.phoneNumber && !isTenDigitPhone(formR.phoneNumber)) {
-        toast.error("Owner mobile number must be exactly 10 digits");
+        toast.error('Owner mobile number must be exactly 10 digits');
         return;
       }
 
@@ -583,9 +634,9 @@ export function Restaurants() {
           latitude: parseFloat(location.latitude),
           longitude: parseFloat(location.longitude),
           contactNumber: locationPhoneDigits ? `+91${locationPhoneDigits}` : undefined,
-          email: location.email || undefined
+          email: location.email || undefined,
         },
-        operatingHours: hoursArray
+        operatingHours: hoursArray,
       });
 
       // Update cuisines
@@ -596,7 +647,7 @@ export function Restaurants() {
       setRestaurants(updatedRestaurants);
       setOpenEdit(false);
       resetForm();
-      toast.success("Restaurant updated successfully!");
+      toast.success('Restaurant updated successfully!');
     } catch (error) {
       console.error('Update failed', error);
       toast.error(`Failed to update restaurant: ${error}`);
@@ -622,8 +673,8 @@ export function Restaurants() {
       setRestaurants(updatedRestaurants);
       setDeleteConfirm(false);
       setSelectedRestaurant(null);
-      toast.success("Restaurant deleted successfully!", {
-        position: "top-right",
+      toast.success('Restaurant deleted successfully!', {
+        position: 'top-right',
         autoClose: 3000,
       });
     } catch (error) {
@@ -645,7 +696,7 @@ export function Restaurants() {
       // Show toast based on status
       if (result.status < 300) {
         toast.success(`Restaurant ${newStatus} successfully`, {
-          position: "top-right",
+          position: 'top-right',
           autoClose: 3000,
         });
         // Refresh list
@@ -654,7 +705,7 @@ export function Restaurants() {
       } else {
         // Show red toast for any error status (status >= 400)
         toast.error(result.message, {
-          position: "top-right",
+          position: 'top-right',
           autoClose: 3000,
         });
       }
@@ -662,57 +713,83 @@ export function Restaurants() {
       const error = err as ApiError;
       console.error('Status update failed', error);
       // Show error toast for unexpected errors
-      const errorMessage = error?.message || "Failed to update status";
+      const errorMessage = error?.message || 'Failed to update status';
       toast.error(errorMessage, {
-        position: "top-right",
+        position: 'top-right',
         autoClose: 3000,
       });
     }
   };
 
   return (
-    <div className="grid gap-4">
-      <Card className="rounded-2xl">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between mb-4">
+    <div className='grid gap-4'>
+      <Card className='rounded-2xl'>
+        <CardHeader className='pb-2'>
+          <div className='mb-4 flex items-center justify-between'>
             <CardTitle>Partner Restaurants</CardTitle>
-            <Dialog open={openAdd} onOpenChange={(open) => { setOpenAdd(open); if (!open) resetForm(); }}>
+            <Dialog
+              open={openAdd}
+              onOpenChange={open => {
+                setOpenAdd(open);
+                if (!open) resetForm();
+              }}
+            >
               <DialogTrigger asChild>
-                <Button className="gap-2"><Plus className="h-4 w-4" />Add Restaurant</Button>
+                <Button className='gap-2'>
+                  <Plus className='h-4 w-4' />
+                  Add Restaurant
+                </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-4xl'>
                 <DialogHeader>
                   <DialogTitle>Add Restaurant</DialogTitle>
-                  <DialogDescription>Complete restaurant onboarding with all details</DialogDescription>
+                  <DialogDescription>
+                    Complete restaurant onboarding with all details
+                  </DialogDescription>
                 </DialogHeader>
 
-                <Tabs defaultValue="basic" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                    <TabsTrigger value="location">Location</TabsTrigger>
-                    <TabsTrigger value="hours">Operating Hours</TabsTrigger>
-                    <TabsTrigger value="bank">Bank Details</TabsTrigger>
+                <Tabs defaultValue='basic' className='w-full'>
+                  <TabsList className='grid w-full grid-cols-4'>
+                    <TabsTrigger value='basic'>Basic Info</TabsTrigger>
+                    <TabsTrigger value='location'>Location</TabsTrigger>
+                    <TabsTrigger value='hours'>Operating Hours</TabsTrigger>
+                    <TabsTrigger value='bank'>Bank Details</TabsTrigger>
                   </TabsList>
 
                   {/* Basic Info Tab */}
-                  <TabsContent value="basic" className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                  <TabsContent value='basic' className='space-y-4'>
+                    <div className='grid grid-cols-2 gap-4'>
                       <div>
-                        <label className="text-sm font-medium">Owner Full Name *</label>
-                        <Input value={formR.fullName} onChange={e => setFormR({ ...formR, fullName: e.target.value })} placeholder="John Doe" />
+                        <label className='text-sm font-medium'>Owner Full Name *</label>
+                        <Input
+                          value={formR.fullName}
+                          onChange={e => setFormR({ ...formR, fullName: e.target.value })}
+                          placeholder='John Doe'
+                        />
                       </div>
                       <div>
-                        <label className="text-sm font-medium">Restaurant Name *</label>
-                        <Input value={formR.restaurantName} onChange={e => setFormR({ ...formR, restaurantName: e.target.value })} placeholder="Tasty Bites" />
+                        <label className='text-sm font-medium'>Restaurant Name *</label>
+                        <Input
+                          value={formR.restaurantName}
+                          onChange={e => setFormR({ ...formR, restaurantName: e.target.value })}
+                          placeholder='Tasty Bites'
+                        />
                       </div>
                       <div>
-                        <label className="text-sm font-medium">Email *</label>
-                        <Input type="email" value={formR.email} onChange={e => setFormR({ ...formR, email: e.target.value })} placeholder="owner@restaurant.com" />
+                        <label className='text-sm font-medium'>Email *</label>
+                        <Input
+                          type='email'
+                          value={formR.email}
+                          onChange={e => setFormR({ ...formR, email: e.target.value })}
+                          placeholder='owner@restaurant.com'
+                        />
                       </div>
                       <div>
-                        <label className="text-sm font-medium">Phone Number *</label>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium px-3 py-2 bg-muted rounded-md">+91</span>
+                        <label className='text-sm font-medium'>Phone Number *</label>
+                        <div className='flex items-center gap-2'>
+                          <span className='bg-muted rounded-md px-3 py-2 text-sm font-medium'>
+                            +91
+                          </span>
                           <Input
                             value={formR.phoneNumber}
                             onChange={e => {
@@ -721,72 +798,93 @@ export function Restaurants() {
                                 setFormR({ ...formR, phoneNumber: value });
                               }
                             }}
-                            placeholder="9876543210"
+                            placeholder='9876543210'
                             maxLength={10}
                           />
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">Enter 10-digit mobile number</p>
+                        <p className='text-muted-foreground mt-1 text-xs'>
+                          Enter 10-digit mobile number
+                        </p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium">Password *</label>
-                        <Input type="password" value={formR.password} onChange={e => setFormR({ ...formR, password: e.target.value })} placeholder="Initial password" />
+                        <label className='text-sm font-medium'>Password *</label>
+                        <Input
+                          type='password'
+                          value={formR.password}
+                          onChange={e => setFormR({ ...formR, password: e.target.value })}
+                          placeholder='Initial password'
+                        />
                       </div>
-                      <div className="col-span-2">
-                        <label className="text-sm font-medium">Description</label>
+                      <div className='col-span-2'>
+                        <label className='text-sm font-medium'>Description</label>
                         <textarea
-                          className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          className='border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
                           value={formR.description}
                           onChange={e => setFormR({ ...formR, description: e.target.value })}
-                          placeholder="Tell us about your restaurant..."
+                          placeholder='Tell us about your restaurant...'
                         />
                       </div>
-                      <div className="col-span-2">
-                        <label className="text-sm font-medium">What You Get</label>
+                      <div className='col-span-2'>
+                        <label className='text-sm font-medium'>What You Get</label>
                         <textarea
-                          className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          className='border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
                           value={formR.whatYouGet}
                           onChange={e => setFormR({ ...formR, whatYouGet: e.target.value })}
-                          placeholder="Describe what customers will get..."
+                          placeholder='Describe what customers will get...'
                         />
                       </div>
                       <div>
-                        <label className="text-sm font-medium">Contact Person</label>
-                        <Input value={formR.contactPersonName} onChange={e => setFormR({ ...formR, contactPersonName: e.target.value })} placeholder="Manager name" />
+                        <label className='text-sm font-medium'>Contact Person</label>
+                        <Input
+                          value={formR.contactPersonName}
+                          onChange={e => setFormR({ ...formR, contactPersonName: e.target.value })}
+                          placeholder='Manager name'
+                        />
                       </div>
                       <div>
-                        <label className="text-sm font-medium">FSSAI License</label>
-                        <Input value={formR.fssaiLicenseNumber} onChange={e => setFormR({ ...formR, fssaiLicenseNumber: e.target.value })} placeholder="12345678901234" />
+                        <label className='text-sm font-medium'>FSSAI License</label>
+                        <Input
+                          value={formR.fssaiLicenseNumber}
+                          onChange={e => setFormR({ ...formR, fssaiLicenseNumber: e.target.value })}
+                          placeholder='12345678901234'
+                        />
                       </div>
                       <div>
-                        <label className="text-sm font-medium">GSTIN</label>
-                        <Input value={formR.gstinNumber} onChange={e => setFormR({ ...formR, gstinNumber: e.target.value })} placeholder="22AAAAA0000A1Z5" />
+                        <label className='text-sm font-medium'>GSTIN</label>
+                        <Input
+                          value={formR.gstinNumber}
+                          onChange={e => setFormR({ ...formR, gstinNumber: e.target.value })}
+                          placeholder='22AAAAA0000A1Z5'
+                        />
                       </div>
-                      <div className="col-span-2">
-                        <label className="text-sm font-medium">Restaurant Image (Optional)</label>
-                        <div className="space-y-2">
+                      <div className='col-span-2'>
+                        <label className='text-sm font-medium'>Restaurant Image (Optional)</label>
+                        <div className='space-y-2'>
                           <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
+                            type='file'
+                            accept='image/*'
+                            onChange={e => {
                               const file = e.target.files?.[0];
                               if (file) {
                                 handleImageUpload(file);
                               }
                             }}
                             disabled={uploadingImage}
-                            className="cursor-pointer"
+                            className='cursor-pointer'
                           />
                           {uploadingImage && (
-                            <p className="text-xs text-muted-foreground">Uploading image...</p>
+                            <p className='text-muted-foreground text-xs'>Uploading image...</p>
                           )}
                           {restaurantImageUrl && (
-                            <div className="mt-2">
+                            <div className='mt-2'>
                               <img
                                 src={restaurantImageUrl}
-                                alt="Restaurant preview"
-                                className="w-32 h-32 object-cover rounded-md border"
+                                alt='Restaurant preview'
+                                className='h-32 w-32 rounded-md border object-cover'
                               />
-                              <p className="text-xs text-muted-foreground mt-1">Image uploaded successfully</p>
+                              <p className='text-muted-foreground mt-1 text-xs'>
+                                Image uploaded successfully
+                              </p>
                             </div>
                           )}
                         </div>
@@ -794,97 +892,118 @@ export function Restaurants() {
                     </div>
 
                     {/* Cuisine Selection */}
-                    <div className="mt-4">
-                      <div className="flex items-end gap-2">
-                        <div className="flex-1">
+                    <div className='mt-4'>
+                      <div className='flex items-end gap-2'>
+                        <div className='flex-1'>
                           <MultiSelect
-                            label="Cuisines *"
+                            label='Cuisines *'
                             options={cuisines}
                             selected={selectedCuisineIds}
                             onChange={setSelectedCuisineIds}
-                            placeholder="Select cuisines..."
+                            placeholder='Select cuisines...'
                             onCreate={handleCreateCuisine}
                           />
                         </div>
                         <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => { setNewCuisineName(""); setNewCuisineImageUrl(""); setOpenAddCuisine(true); }}
+                          type='button'
+                          variant='outline'
+                          onClick={() => {
+                            setNewCuisineName('');
+                            setNewCuisineImageUrl('');
+                            setOpenAddCuisine(true);
+                          }}
                         >
-                          <Plus className="mr-2 h-4 w-4" /> Add Cuisine
+                          <Plus className='mr-2 h-4 w-4' /> Add Cuisine
                         </Button>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className='text-muted-foreground mt-1 text-xs'>
                         Search and select multiple cuisines. At least one is required.
                       </p>
                     </div>
 
-                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="text-sm text-green-800">
-                        <strong>Note:</strong> Restaurants onboarded by admins are automatically approved and verified.
+                    <div className='mt-3 rounded-lg border border-green-200 bg-green-50 p-3'>
+                      <p className='text-sm text-green-800'>
+                        <strong>Note:</strong> Restaurants onboarded by admins are automatically
+                        approved and verified.
                       </p>
                     </div>
                   </TabsContent>
 
                   {/* Location Tab */}
-                  <TabsContent value="location" className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="col-span-2">
-                        <label className="text-sm font-medium">Location Name</label>
-                        <Input value={location.locationName} onChange={e => setLocation({ ...location, locationName: e.target.value })} placeholder="Main Branch" />
+                  <TabsContent value='location' className='space-y-4'>
+                    <div className='grid grid-cols-2 gap-4'>
+                      <div className='col-span-2'>
+                        <label className='text-sm font-medium'>Location Name</label>
+                        <Input
+                          value={location.locationName}
+                          onChange={e => setLocation({ ...location, locationName: e.target.value })}
+                          placeholder='Main Branch'
+                        />
                       </div>
-                      <div className="col-span-2">
-                        <label className="text-sm font-medium">Address *</label>
-                        <Input value={location.address} onChange={e => setLocation({ ...location, address: e.target.value })} placeholder="123 Main Street, City, State - 400001" />
-                        <p className="text-xs text-muted-foreground mt-1">Enter the full address and click the button below to get coordinates</p>
+                      <div className='col-span-2'>
+                        <label className='text-sm font-medium'>Address *</label>
+                        <Input
+                          value={location.address}
+                          onChange={e => setLocation({ ...location, address: e.target.value })}
+                          placeholder='123 Main Street, City, State - 400001'
+                        />
+                        <p className='text-muted-foreground mt-1 text-xs'>
+                          Enter the full address and click the button below to get coordinates
+                        </p>
                       </div>
-                      <div className="col-span-2">
+                      <div className='col-span-2'>
                         <Button
-                          type="button"
+                          type='button'
                           onClick={handleGeocodeAddress}
                           disabled={!location.address || geocoding}
-                          className="w-full gap-2"
-                          variant="secondary"
+                          className='w-full gap-2'
+                          variant='secondary'
                         >
                           {geocoding ? (
                             <>
-                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <Loader2 className='h-4 w-4 animate-spin' />
                               Getting Coordinates...
                             </>
                           ) : (
                             <>
-                              <MapPin className="h-4 w-4" />
+                              <MapPin className='h-4 w-4' />
                               Get Coordinates from Address
                             </>
                           )}
                         </Button>
                       </div>
                       <div>
-                        <label className="text-sm font-medium">Latitude *</label>
+                        <label className='text-sm font-medium'>Latitude *</label>
                         <Input
-                          type="text"
+                          type='text'
                           value={location.latitude}
                           readOnly
-                          placeholder="Auto-filled from address"
-                          className="bg-muted cursor-not-allowed"
+                          placeholder='Auto-filled from address'
+                          className='bg-muted cursor-not-allowed'
                         />
-                        <p className="text-xs text-muted-foreground mt-1">Auto-populated from address</p>
+                        <p className='text-muted-foreground mt-1 text-xs'>
+                          Auto-populated from address
+                        </p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium">Longitude *</label>
+                        <label className='text-sm font-medium'>Longitude *</label>
                         <Input
-                          type="text"
+                          type='text'
                           value={location.longitude}
                           readOnly
-                          placeholder="Auto-filled from address"
-                          className="bg-muted cursor-not-allowed"
+                          placeholder='Auto-filled from address'
+                          className='bg-muted cursor-not-allowed'
                         />
-                        <p className="text-xs text-muted-foreground mt-1">Auto-populated from address</p>
+                        <p className='text-muted-foreground mt-1 text-xs'>
+                          Auto-populated from address
+                        </p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium">Location Contact</label>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium px-3 py-2 bg-muted rounded-md">+91</span>
+                        <label className='text-sm font-medium'>Location Contact</label>
+                        <div className='flex items-center gap-2'>
+                          <span className='bg-muted rounded-md px-3 py-2 text-sm font-medium'>
+                            +91
+                          </span>
                           <Input
                             value={location.contactNumber}
                             onChange={e => {
@@ -893,45 +1012,50 @@ export function Restaurants() {
                                 setLocation({ ...location, contactNumber: value });
                               }
                             }}
-                            placeholder="9876543210"
+                            placeholder='9876543210'
                             maxLength={10}
                           />
                         </div>
                       </div>
                       <div>
-                        <label className="text-sm font-medium">Location Email</label>
-                        <Input type="email" value={location.email} onChange={e => setLocation({ ...location, email: e.target.value })} placeholder="branch@restaurant.com" />
+                        <label className='text-sm font-medium'>Location Email</label>
+                        <Input
+                          type='email'
+                          value={location.email}
+                          onChange={e => setLocation({ ...location, email: e.target.value })}
+                          placeholder='branch@restaurant.com'
+                        />
                       </div>
                     </div>
                   </TabsContent>
 
                   {/* Operating Hours Tab */}
-                  <TabsContent value="hours" className="space-y-2">
+                  <TabsContent value='hours' className='space-y-2'>
                     {DAYS_OF_WEEK.map(day => (
-                      <div key={day} className="flex items-center gap-4 p-2 border rounded">
-                        <div className="w-24 font-medium capitalize">{day}</div>
+                      <div key={day} className='flex items-center gap-4 rounded border p-2'>
+                        <div className='w-24 font-medium capitalize'>{day}</div>
                         <input
-                          type="checkbox"
+                          type='checkbox'
                           checked={operatingHours[day].isClosed}
-                          onChange={(e) => updateOperatingHours(day, 'isClosed', e.target.checked)}
-                          className="h-4 w-4"
+                          onChange={e => updateOperatingHours(day, 'isClosed', e.target.checked)}
+                          className='h-4 w-4'
                         />
-                        <label className="text-sm">Closed</label>
-                        <div className="flex items-center gap-2">
+                        <label className='text-sm'>Closed</label>
+                        <div className='flex items-center gap-2'>
                           <Input
-                            type="time"
+                            type='time'
                             value={operatingHours[day].open}
-                            onChange={(e) => updateOperatingHours(day, 'open', e.target.value)}
+                            onChange={e => updateOperatingHours(day, 'open', e.target.value)}
                             disabled={operatingHours[day].isClosed}
-                            className="w-32"
+                            className='w-32'
                           />
                           <span>to</span>
                           <Input
-                            type="time"
+                            type='time'
                             value={operatingHours[day].close}
-                            onChange={(e) => updateOperatingHours(day, 'close', e.target.value)}
+                            onChange={e => updateOperatingHours(day, 'close', e.target.value)}
                             disabled={operatingHours[day].isClosed}
-                            className="w-32"
+                            className='w-32'
                           />
                         </div>
                       </div>
@@ -939,58 +1063,91 @@ export function Restaurants() {
                   </TabsContent>
 
                   {/* Bank Details Tab */}
-                  <TabsContent value="bank" className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                  <TabsContent value='bank' className='space-y-4'>
+                    <div className='grid grid-cols-2 gap-4'>
                       <div>
-                        <label className="text-sm font-medium">Account Holder Name</label>
-                        <Input value={bankDetails.accountHolderName} onChange={e => setBankDetails({ ...bankDetails, accountHolderName: e.target.value })} placeholder="John Doe" />
+                        <label className='text-sm font-medium'>Account Holder Name</label>
+                        <Input
+                          value={bankDetails.accountHolderName}
+                          onChange={e =>
+                            setBankDetails({ ...bankDetails, accountHolderName: e.target.value })
+                          }
+                          placeholder='John Doe'
+                        />
                       </div>
                       <div>
-                        <label className="text-sm font-medium">Bank Name</label>
-                        <Input value={bankDetails.bankName} onChange={e => setBankDetails({ ...bankDetails, bankName: e.target.value })} placeholder="HDFC Bank" />
+                        <label className='text-sm font-medium'>Bank Name</label>
+                        <Input
+                          value={bankDetails.bankName}
+                          onChange={e =>
+                            setBankDetails({ ...bankDetails, bankName: e.target.value })
+                          }
+                          placeholder='HDFC Bank'
+                        />
                       </div>
                       <div>
-                        <label className="text-sm font-medium">Account Number</label>
-                        <Input value={bankDetails.accountNumber} onChange={e => setBankDetails({ ...bankDetails, accountNumber: e.target.value })} placeholder="1234567890" />
+                        <label className='text-sm font-medium'>Account Number</label>
+                        <Input
+                          value={bankDetails.accountNumber}
+                          onChange={e =>
+                            setBankDetails({ ...bankDetails, accountNumber: e.target.value })
+                          }
+                          placeholder='1234567890'
+                        />
                       </div>
                       <div>
-                        <label className="text-sm font-medium">IFSC Code</label>
-                        <Input value={bankDetails.ifscCode} onChange={e => setBankDetails({ ...bankDetails, ifscCode: e.target.value })} placeholder="HDFC0001234" />
+                        <label className='text-sm font-medium'>IFSC Code</label>
+                        <Input
+                          value={bankDetails.ifscCode}
+                          onChange={e =>
+                            setBankDetails({ ...bankDetails, ifscCode: e.target.value })
+                          }
+                          placeholder='HDFC0001234'
+                        />
                       </div>
                     </div>
                   </TabsContent>
                 </Tabs>
 
-                <div className="flex justify-end gap-2 mt-4">
-                  <Button variant="outline" onClick={() => { setOpenAdd(false); resetForm(); }}>Cancel</Button>
+                <div className='mt-4 flex justify-end gap-2'>
+                  <Button
+                    variant='outline'
+                    onClick={() => {
+                      setOpenAdd(false);
+                      resetForm();
+                    }}
+                  >
+                    Cancel
+                  </Button>
                   <Button disabled={creating || !isFormValid()} onClick={handleCreate}>
                     {creating ? 'Creating...' : 'Create Restaurant'}
                   </Button>
                 </div>
                 {!isFormValid() && (
-                  <p className="text-xs text-amber-600 text-right mt-2">
-                    Please fill all required fields including address coordinates and at least one cuisine
+                  <p className='mt-2 text-right text-xs text-amber-600'>
+                    Please fill all required fields including address coordinates and at least one
+                    cuisine
                   </p>
                 )}
               </DialogContent>
             </Dialog>
           </div>
           {/* Restaurant Real-time Search */}
-          <div className="flex gap-2 items-end">
-            <div className="flex-1 max-w-md">
-              <label className="text-sm font-medium mb-1 block">Search Restaurants</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className='flex items-end gap-2'>
+            <div className='max-w-md flex-1'>
+              <label className='mb-1 block text-sm font-medium'>Search Restaurants</label>
+              <div className='relative'>
+                <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform' />
                 <Input
                   value={restaurantSearchFilter}
-                  onChange={(e) => setRestaurantSearchFilter(e.target.value)}
-                  placeholder="Search by name, email, or phone..."
-                  className="pl-9"
+                  onChange={e => setRestaurantSearchFilter(e.target.value)}
+                  placeholder='Search by name, email, or phone...'
+                  className='pl-9'
                 />
               </div>
             </div>
             {restaurantSearchFilter && (
-              <Button variant="outline" onClick={handleClearSearch} className="mb-0">
+              <Button variant='outline' onClick={handleClearSearch} className='mb-0'>
                 Clear
               </Button>
             )}
@@ -998,9 +1155,9 @@ export function Restaurants() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8">Loading restaurants...</div>
+            <div className='py-8 text-center'>Loading restaurants...</div>
           ) : restaurants.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">No restaurants found</div>
+            <div className='text-muted-foreground py-8 text-center'>No restaurants found</div>
           ) : (
             <Table>
               <TableHeader>
@@ -1012,45 +1169,51 @@ export function Restaurants() {
                   <TableHead>Status</TableHead>
                   <TableHead>Rating</TableHead>
                   <TableHead>Verified</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className='text-right'>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {restaurants.map((r) => (
-                  <TableRow
-                    key={r.restaurantId}
-                  >
-                    <TableCell className="font-medium cursor-pointer hover:underline" onClick={() => openRestaurantDetail(r)}>{r.restaurantName || 'N/A'}</TableCell>
+                {restaurants.map(r => (
+                  <TableRow key={r.restaurantId}>
+                    <TableCell
+                      className='cursor-pointer font-medium hover:underline'
+                      onClick={() => openRestaurantDetail(r)}
+                    >
+                      {r.restaurantName || 'N/A'}
+                    </TableCell>
                     <TableCell>{r.contactPersonName || 'N/A'}</TableCell>
                     <TableCell>{r.userEmail || 'N/A'}</TableCell>
                     <TableCell>{r.phoneNumber || 'N/A'}</TableCell>
                     <TableCell>
-                      <Select value={r.status || 'pending'} onValueChange={(value) => handleStatusChange(r.restaurantId, value)}>
-                        <SelectTrigger className="w-[130px] h-8">
+                      <Select
+                        value={r.status || 'pending'}
+                        onValueChange={value => handleStatusChange(r.restaurantId, value)}
+                      >
+                        <SelectTrigger className='h-8 w-[130px]'>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="pending">
-                            <div className="flex items-center gap-2">
-                              <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
+                          <SelectItem value='pending'>
+                            <div className='flex items-center gap-2'>
+                              <div className='h-2 w-2 rounded-full bg-yellow-500'></div>
                               Pending
                             </div>
                           </SelectItem>
-                          <SelectItem value="approved">
-                            <div className="flex items-center gap-2">
-                              <CheckCircle2 className="h-3 w-3 text-green-600" />
+                          <SelectItem value='approved'>
+                            <div className='flex items-center gap-2'>
+                              <CheckCircle2 className='h-3 w-3 text-green-600' />
                               Approved
                             </div>
                           </SelectItem>
-                          <SelectItem value="rejected">
-                            <div className="flex items-center gap-2">
-                              <XCircle className="h-3 w-3 text-red-600" />
+                          <SelectItem value='rejected'>
+                            <div className='flex items-center gap-2'>
+                              <XCircle className='h-3 w-3 text-red-600' />
                               Rejected
                             </div>
                           </SelectItem>
-                          <SelectItem value="suspended">
-                            <div className="flex items-center gap-2">
-                              <Ban className="h-3 w-3 text-orange-600" />
+                          <SelectItem value='suspended'>
+                            <div className='flex items-center gap-2'>
+                              <Ban className='h-3 w-3 text-orange-600' />
                               Suspended
                             </div>
                           </SelectItem>
@@ -1059,27 +1222,27 @@ export function Restaurants() {
                     </TableCell>
                     <TableCell>{r.averageRating || 'N/A'}</TableCell>
                     <TableCell>
-                      <Badge variant={r.documentsVerified ? "default" : "secondary"}>
-                        {r.documentsVerified ? "Yes" : "No"}
+                      <Badge variant={r.documentsVerified ? 'default' : 'secondary'}>
+                        {r.documentsVerified ? 'Yes' : 'No'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex gap-2 justify-end">
+                    <TableCell className='text-right'>
+                      <div className='flex justify-end gap-2'>
                         <Button
-                          variant="ghost"
-                          size="sm"
+                          variant='ghost'
+                          size='sm'
                           onClick={() => openEditDialog(r)}
-                          className="h-8 w-8 p-0"
+                          className='h-8 w-8 p-0'
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className='h-4 w-4' />
                         </Button>
                         <Button
-                          variant="ghost"
-                          size="sm"
+                          variant='ghost'
+                          size='sm'
                           onClick={() => openDeleteDialog(r)}
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          className='text-destructive hover:text-destructive h-8 w-8 p-0'
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className='h-4 w-4' />
                         </Button>
                       </div>
                     </TableCell>
@@ -1093,23 +1256,23 @@ export function Restaurants() {
 
       {/* Restaurant Detail Dialog */}
       <Dialog open={openDetail} onOpenChange={setOpenDetail}>
-        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-3xl'>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
+            <DialogTitle className='flex items-center gap-2'>
+              <Building2 className='h-5 w-5' />
               Restaurant Details
             </DialogTitle>
           </DialogHeader>
           {selectedRestaurant && (
-            <div className="grid gap-6">
+            <div className='grid gap-6'>
               {/* Restaurant Image */}
               {selectedRestaurant.imageUrl && (
-                <div className="flex justify-center">
-                  <div className="space-y-2">
+                <div className='flex justify-center'>
+                  <div className='space-y-2'>
                     <img
                       src={selectedRestaurant.imageUrl}
                       alt={selectedRestaurant.restaurantName || 'Restaurant'}
-                      className="w-full max-w-md h-64 object-cover rounded-lg border shadow-sm"
+                      className='h-64 w-full max-w-md rounded-lg border object-cover shadow-sm'
                     />
                   </div>
                 </div>
@@ -1117,68 +1280,94 @@ export function Restaurants() {
 
               {/* Basic Info */}
               <div>
-                <h3 className="font-semibold mb-3">Basic Information</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <h3 className='mb-3 font-semibold'>Basic Information</h3>
+                <div className='grid grid-cols-2 gap-4'>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Restaurant Name</label>
-                    <div className="text-sm mt-1">{selectedRestaurant.restaurantName || '—'}</div>
+                    <label className='text-muted-foreground text-sm font-medium'>
+                      Restaurant Name
+                    </label>
+                    <div className='mt-1 text-sm'>{selectedRestaurant.restaurantName || '—'}</div>
                   </div>
-                  <div className="col-span-2">
-                    <label className="text-sm font-medium text-muted-foreground">Description</label>
-                    <div className="text-sm mt-1">{selectedRestaurant.description || '—'}</div>
+                  <div className='col-span-2'>
+                    <label className='text-muted-foreground text-sm font-medium'>Description</label>
+                    <div className='mt-1 text-sm'>{selectedRestaurant.description || '—'}</div>
                   </div>
-                  <div className="col-span-2">
-                    <label className="text-sm font-medium text-muted-foreground">What You Get</label>
-                    <div className="text-sm mt-1">{selectedRestaurant.whatYouGet || '—'}</div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Contact Person</label>
-                    <div className="text-sm mt-1">{selectedRestaurant.contactPersonName || '—'}</div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Email</label>
-                    <div className="text-sm mt-1">{selectedRestaurant.userEmail || '—'}</div>
+                  <div className='col-span-2'>
+                    <label className='text-muted-foreground text-sm font-medium'>
+                      What You Get
+                    </label>
+                    <div className='mt-1 text-sm'>{selectedRestaurant.whatYouGet || '—'}</div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Phone</label>
-                    <div className="text-sm mt-1">{selectedRestaurant.phoneNumber || '—'}</div>
+                    <label className='text-muted-foreground text-sm font-medium'>
+                      Contact Person
+                    </label>
+                    <div className='mt-1 text-sm'>
+                      {selectedRestaurant.contactPersonName || '—'}
+                    </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">FSSAI License</label>
-                    <div className="text-sm mt-1">{selectedRestaurant.fssaiLicenseNumber || '—'}</div>
+                    <label className='text-muted-foreground text-sm font-medium'>Email</label>
+                    <div className='mt-1 text-sm'>{selectedRestaurant.userEmail || '—'}</div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">GSTIN</label>
-                    <div className="text-sm mt-1">{selectedRestaurant.gstinNumber || '—'}</div>
+                    <label className='text-muted-foreground text-sm font-medium'>Phone</label>
+                    <div className='mt-1 text-sm'>{selectedRestaurant.phoneNumber || '—'}</div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Status</label>
-                    <div className="text-sm mt-1">
-                      <Badge variant={
-                        selectedRestaurant.status === "approved" ? "default" :
-                          selectedRestaurant.status === "rejected" ? "destructive" :
-                            "secondary"
-                      }>
+                    <label className='text-muted-foreground text-sm font-medium'>
+                      FSSAI License
+                    </label>
+                    <div className='mt-1 text-sm'>
+                      {selectedRestaurant.fssaiLicenseNumber || '—'}
+                    </div>
+                  </div>
+                  <div>
+                    <label className='text-muted-foreground text-sm font-medium'>GSTIN</label>
+                    <div className='mt-1 text-sm'>{selectedRestaurant.gstinNumber || '—'}</div>
+                  </div>
+                  <div>
+                    <label className='text-muted-foreground text-sm font-medium'>Status</label>
+                    <div className='mt-1 text-sm'>
+                      <Badge
+                        variant={
+                          selectedRestaurant.status === 'approved'
+                            ? 'default'
+                            : selectedRestaurant.status === 'rejected'
+                              ? 'destructive'
+                              : 'secondary'
+                        }
+                      >
                         {selectedRestaurant.status || 'pending'}
                       </Badge>
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Average Rating</label>
-                    <div className="text-sm mt-1">{selectedRestaurant.averageRating || '0.0'} ⭐</div>
+                    <label className='text-muted-foreground text-sm font-medium'>
+                      Average Rating
+                    </label>
+                    <div className='mt-1 text-sm'>
+                      {selectedRestaurant.averageRating || '0.0'} ⭐
+                    </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Documents Verified</label>
-                    <div className="text-sm mt-1">
-                      <Badge variant={selectedRestaurant.documentsVerified ? "default" : "secondary"}>
-                        {selectedRestaurant.documentsVerified ? "Yes" : "No"}
+                    <label className='text-muted-foreground text-sm font-medium'>
+                      Documents Verified
+                    </label>
+                    <div className='mt-1 text-sm'>
+                      <Badge
+                        variant={selectedRestaurant.documentsVerified ? 'default' : 'secondary'}
+                      >
+                        {selectedRestaurant.documentsVerified ? 'Yes' : 'No'}
                       </Badge>
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Created At</label>
-                    <div className="text-sm mt-1">
-                      {selectedRestaurant.createdAt ? new Date(selectedRestaurant.createdAt).toLocaleString() : '—'}
+                    <label className='text-muted-foreground text-sm font-medium'>Created At</label>
+                    <div className='mt-1 text-sm'>
+                      {selectedRestaurant.createdAt
+                        ? new Date(selectedRestaurant.createdAt).toLocaleString()
+                        : '—'}
                     </div>
                   </div>
                 </div>
@@ -1187,10 +1376,10 @@ export function Restaurants() {
               {/* Cuisines */}
               {selectedRestaurant.cuisines && selectedRestaurant.cuisines.length > 0 && (
                 <div>
-                  <h3 className="font-semibold mb-3">Cuisines</h3>
-                  <div className="flex flex-wrap gap-2">
+                  <h3 className='mb-3 font-semibold'>Cuisines</h3>
+                  <div className='flex flex-wrap gap-2'>
                     {selectedRestaurant.cuisines.map((cuisine: Cuisine) => (
-                      <Badge key={cuisine.id} variant="secondary">
+                      <Badge key={cuisine.id} variant='secondary'>
                         {cuisine.name}
                       </Badge>
                     ))}
@@ -1200,15 +1389,17 @@ export function Restaurants() {
 
               {/* IDs */}
               <div>
-                <h3 className="font-semibold mb-3">System IDs</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <h3 className='mb-3 font-semibold'>System IDs</h3>
+                <div className='grid grid-cols-2 gap-4'>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Restaurant ID</label>
-                    <div className="text-xs mt-1 font-mono">{selectedRestaurant.restaurantId}</div>
+                    <label className='text-muted-foreground text-sm font-medium'>
+                      Restaurant ID
+                    </label>
+                    <div className='mt-1 font-mono text-xs'>{selectedRestaurant.restaurantId}</div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">User ID</label>
-                    <div className="text-xs mt-1 font-mono">{selectedRestaurant.userId}</div>
+                    <label className='text-muted-foreground text-sm font-medium'>User ID</label>
+                    <div className='mt-1 font-mono text-xs'>{selectedRestaurant.userId}</div>
                   </div>
                 </div>
               </div>
@@ -1218,11 +1409,14 @@ export function Restaurants() {
       </Dialog>
 
       {/* Edit Restaurant Dialog */}
-      <Dialog open={openEdit} onOpenChange={(open) => {
-        setOpenEdit(open);
-        if (!open) resetForm();
-      }}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+      <Dialog
+        open={openEdit}
+        onOpenChange={open => {
+          setOpenEdit(open);
+          if (!open) resetForm();
+        }}
+      >
+        <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-4xl'>
           <DialogHeader>
             <DialogTitle>Edit Restaurant</DialogTitle>
             <DialogDescription>
@@ -1230,91 +1424,118 @@ export function Restaurants() {
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              <TabsTrigger value="location">Location</TabsTrigger>
-              <TabsTrigger value="hours">Hours</TabsTrigger>
-              <TabsTrigger value="cuisines">Cuisines</TabsTrigger>
-              <TabsTrigger value="bank">Bank</TabsTrigger>
+          <Tabs defaultValue='basic' className='w-full'>
+            <TabsList className='grid w-full grid-cols-5'>
+              <TabsTrigger value='basic'>Basic Info</TabsTrigger>
+              <TabsTrigger value='location'>Location</TabsTrigger>
+              <TabsTrigger value='hours'>Hours</TabsTrigger>
+              <TabsTrigger value='cuisines'>Cuisines</TabsTrigger>
+              <TabsTrigger value='bank'>Bank</TabsTrigger>
             </TabsList>
 
             {/* Basic Info Tab */}
-            <TabsContent value="basic" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <TabsContent value='basic' className='space-y-4'>
+              <div className='grid grid-cols-2 gap-4'>
                 <div>
-                  <label className="text-sm font-medium">Restaurant Name *</label>
-                  <Input value={formR.restaurantName} onChange={e => setFormR({ ...formR, restaurantName: e.target.value })} placeholder="Tasty Bites" />
+                  <label className='text-sm font-medium'>Restaurant Name *</label>
+                  <Input
+                    value={formR.restaurantName}
+                    onChange={e => setFormR({ ...formR, restaurantName: e.target.value })}
+                    placeholder='Tasty Bites'
+                  />
                 </div>
-                <div className="col-span-2">
-                  <label className="text-sm font-medium">Description</label>
+                <div className='col-span-2'>
+                  <label className='text-sm font-medium'>Description</label>
                   <textarea
-                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className='border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
                     value={formR.description}
                     onChange={e => setFormR({ ...formR, description: e.target.value })}
-                    placeholder="Tell us about your restaurant..."
+                    placeholder='Tell us about your restaurant...'
                   />
                 </div>
-                <div className="col-span-2">
-                  <label className="text-sm font-medium">What You Get</label>
+                <div className='col-span-2'>
+                  <label className='text-sm font-medium'>What You Get</label>
                   <textarea
-                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className='border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[80px] w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
                     value={formR.whatYouGet}
                     onChange={e => setFormR({ ...formR, whatYouGet: e.target.value })}
-                    placeholder="Describe what customers will get..."
+                    placeholder='Describe what customers will get...'
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Contact Person</label>
-                  <Input value={formR.contactPersonName} onChange={e => setFormR({ ...formR, contactPersonName: e.target.value })} placeholder="Manager name" />
+                  <label className='text-sm font-medium'>Contact Person</label>
+                  <Input
+                    value={formR.contactPersonName}
+                    onChange={e => setFormR({ ...formR, contactPersonName: e.target.value })}
+                    placeholder='Manager name'
+                  />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Email</label>
-                  <Input type="email" value={formR.email} disabled className="bg-muted cursor-not-allowed" />
-                  <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>
+                  <label className='text-sm font-medium'>Email</label>
+                  <Input
+                    type='email'
+                    value={formR.email}
+                    disabled
+                    className='bg-muted cursor-not-allowed'
+                  />
+                  <p className='text-muted-foreground mt-1 text-xs'>Email cannot be changed</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Phone Number</label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium px-3 py-2 bg-muted rounded-md">+91</span>
-                    <Input value={formR.phoneNumber} disabled className="bg-muted cursor-not-allowed" />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">Phone cannot be changed</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">FSSAI License</label>
-                  <Input value={formR.fssaiLicenseNumber} onChange={e => setFormR({ ...formR, fssaiLicenseNumber: e.target.value })} placeholder="12345678901234" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">GSTIN</label>
-                  <Input value={formR.gstinNumber} onChange={e => setFormR({ ...formR, gstinNumber: e.target.value })} placeholder="22AAAAA0000A1Z5" />
-                </div>
-                <div className="col-span-2">
-                  <label className="text-sm font-medium">Restaurant Image (Optional)</label>
-                  <div className="space-y-2">
+                  <label className='text-sm font-medium'>Phone Number</label>
+                  <div className='flex items-center gap-2'>
+                    <span className='bg-muted rounded-md px-3 py-2 text-sm font-medium'>+91</span>
                     <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
+                      value={formR.phoneNumber}
+                      disabled
+                      className='bg-muted cursor-not-allowed'
+                    />
+                  </div>
+                  <p className='text-muted-foreground mt-1 text-xs'>Phone cannot be changed</p>
+                </div>
+                <div>
+                  <label className='text-sm font-medium'>FSSAI License</label>
+                  <Input
+                    value={formR.fssaiLicenseNumber}
+                    onChange={e => setFormR({ ...formR, fssaiLicenseNumber: e.target.value })}
+                    placeholder='12345678901234'
+                  />
+                </div>
+                <div>
+                  <label className='text-sm font-medium'>GSTIN</label>
+                  <Input
+                    value={formR.gstinNumber}
+                    onChange={e => setFormR({ ...formR, gstinNumber: e.target.value })}
+                    placeholder='22AAAAA0000A1Z5'
+                  />
+                </div>
+                <div className='col-span-2'>
+                  <label className='text-sm font-medium'>Restaurant Image (Optional)</label>
+                  <div className='space-y-2'>
+                    <Input
+                      type='file'
+                      accept='image/*'
+                      onChange={e => {
                         const file = e.target.files?.[0];
                         if (file) {
                           handleImageUpload(file);
                         }
                       }}
                       disabled={uploadingImage}
-                      className="cursor-pointer"
+                      className='cursor-pointer'
                     />
                     {uploadingImage && (
-                      <p className="text-xs text-muted-foreground">Uploading image...</p>
+                      <p className='text-muted-foreground text-xs'>Uploading image...</p>
                     )}
                     {restaurantImageUrl && (
-                      <div className="mt-2">
+                      <div className='mt-2'>
                         <img
                           src={restaurantImageUrl}
-                          alt="Restaurant preview"
-                          className="w-32 h-32 object-cover rounded-md border"
+                          alt='Restaurant preview'
+                          className='h-32 w-32 rounded-md border object-cover'
                         />
-                        <p className="text-xs text-muted-foreground mt-1">Image uploaded successfully</p>
+                        <p className='text-muted-foreground mt-1 text-xs'>
+                          Image uploaded successfully
+                        </p>
                       </div>
                     )}
                   </div>
@@ -1323,60 +1544,70 @@ export function Restaurants() {
             </TabsContent>
 
             {/* Location Tab */}
-            <TabsContent value="location" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="text-sm font-medium">Location Name</label>
-                  <Input value={location.locationName} onChange={e => setLocation({ ...location, locationName: e.target.value })} placeholder="Main Branch" />
+            <TabsContent value='location' className='space-y-4'>
+              <div className='grid grid-cols-2 gap-4'>
+                <div className='col-span-2'>
+                  <label className='text-sm font-medium'>Location Name</label>
+                  <Input
+                    value={location.locationName}
+                    onChange={e => setLocation({ ...location, locationName: e.target.value })}
+                    placeholder='Main Branch'
+                  />
                 </div>
-                <div className="col-span-2">
-                  <label className="text-sm font-medium">Address *</label>
-                  <Input value={location.address} onChange={e => setLocation({ ...location, address: e.target.value })} placeholder="123 Main Street, City, State - 400001" />
-                  <p className="text-xs text-muted-foreground mt-1">Enter the full address and click below to update coordinates</p>
+                <div className='col-span-2'>
+                  <label className='text-sm font-medium'>Address *</label>
+                  <Input
+                    value={location.address}
+                    onChange={e => setLocation({ ...location, address: e.target.value })}
+                    placeholder='123 Main Street, City, State - 400001'
+                  />
+                  <p className='text-muted-foreground mt-1 text-xs'>
+                    Enter the full address and click below to update coordinates
+                  </p>
                 </div>
-                <div className="col-span-2">
+                <div className='col-span-2'>
                   <Button
-                    type="button"
+                    type='button'
                     onClick={handleGeocodeAddress}
                     disabled={!location.address || geocoding}
-                    className="w-full gap-2"
-                    variant="secondary"
+                    className='w-full gap-2'
+                    variant='secondary'
                   >
                     {geocoding ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className='h-4 w-4 animate-spin' />
                         Getting Coordinates...
                       </>
                     ) : (
                       <>
-                        <MapPin className="h-4 w-4" />
+                        <MapPin className='h-4 w-4' />
                         Update Coordinates from Address
                       </>
                     )}
                   </Button>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Latitude *</label>
+                  <label className='text-sm font-medium'>Latitude *</label>
                   <Input
-                    type="text"
+                    type='text'
                     value={location.latitude}
                     readOnly
-                    className="bg-muted cursor-not-allowed"
+                    className='bg-muted cursor-not-allowed'
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Longitude *</label>
+                  <label className='text-sm font-medium'>Longitude *</label>
                   <Input
-                    type="text"
+                    type='text'
                     value={location.longitude}
                     readOnly
-                    className="bg-muted cursor-not-allowed"
+                    className='bg-muted cursor-not-allowed'
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Location Contact</label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium px-3 py-2 bg-muted rounded-md">+91</span>
+                  <label className='text-sm font-medium'>Location Contact</label>
+                  <div className='flex items-center gap-2'>
+                    <span className='bg-muted rounded-md px-3 py-2 text-sm font-medium'>+91</span>
                     <Input
                       value={location.contactNumber}
                       onChange={e => {
@@ -1385,45 +1616,50 @@ export function Restaurants() {
                           setLocation({ ...location, contactNumber: value });
                         }
                       }}
-                      placeholder="9876543210"
+                      placeholder='9876543210'
                       maxLength={10}
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Location Email</label>
-                  <Input type="email" value={location.email} onChange={e => setLocation({ ...location, email: e.target.value })} placeholder="branch@restaurant.com" />
+                  <label className='text-sm font-medium'>Location Email</label>
+                  <Input
+                    type='email'
+                    value={location.email}
+                    onChange={e => setLocation({ ...location, email: e.target.value })}
+                    placeholder='branch@restaurant.com'
+                  />
                 </div>
               </div>
             </TabsContent>
 
             {/* Operating Hours Tab */}
-            <TabsContent value="hours" className="space-y-2">
+            <TabsContent value='hours' className='space-y-2'>
               {DAYS_OF_WEEK.map(day => (
-                <div key={day} className="flex items-center gap-4 p-2 border rounded">
-                  <div className="w-24 font-medium capitalize">{day}</div>
+                <div key={day} className='flex items-center gap-4 rounded border p-2'>
+                  <div className='w-24 font-medium capitalize'>{day}</div>
                   <input
-                    type="checkbox"
+                    type='checkbox'
                     checked={operatingHours[day].isClosed}
-                    onChange={(e) => updateOperatingHours(day, 'isClosed', e.target.checked)}
-                    className="h-4 w-4"
+                    onChange={e => updateOperatingHours(day, 'isClosed', e.target.checked)}
+                    className='h-4 w-4'
                   />
-                  <label className="text-sm">Closed</label>
-                  <div className="flex items-center gap-2">
+                  <label className='text-sm'>Closed</label>
+                  <div className='flex items-center gap-2'>
                     <Input
-                      type="time"
+                      type='time'
                       value={operatingHours[day].open}
-                      onChange={(e) => updateOperatingHours(day, 'open', e.target.value)}
+                      onChange={e => updateOperatingHours(day, 'open', e.target.value)}
                       disabled={operatingHours[day].isClosed}
-                      className="w-32"
+                      className='w-32'
                     />
                     <span>to</span>
                     <Input
-                      type="time"
+                      type='time'
                       value={operatingHours[day].close}
-                      onChange={(e) => updateOperatingHours(day, 'close', e.target.value)}
+                      onChange={e => updateOperatingHours(day, 'close', e.target.value)}
                       disabled={operatingHours[day].isClosed}
-                      className="w-32"
+                      className='w-32'
                     />
                   </div>
                 </div>
@@ -1431,60 +1667,89 @@ export function Restaurants() {
             </TabsContent>
 
             {/* Cuisines Tab */}
-            <TabsContent value="cuisines" className="space-y-4">
-              <div className="flex items-end gap-2">
-                <div className="flex-1">
+            <TabsContent value='cuisines' className='space-y-4'>
+              <div className='flex items-end gap-2'>
+                <div className='flex-1'>
                   <MultiSelect
-                    label="Cuisines *"
+                    label='Cuisines *'
                     options={cuisines}
                     selected={selectedCuisineIds}
                     onChange={setSelectedCuisineIds}
-                    placeholder="Select cuisines..."
+                    placeholder='Select cuisines...'
                     onCreate={handleCreateCuisine}
                   />
                 </div>
                 <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => { setNewCuisineName(""); setNewCuisineImageUrl(""); setOpenAddCuisine(true); }}
+                  type='button'
+                  variant='outline'
+                  onClick={() => {
+                    setNewCuisineName('');
+                    setNewCuisineImageUrl('');
+                    setOpenAddCuisine(true);
+                  }}
                 >
-                  <Plus className="mr-2 h-4 w-4" /> Add Cuisine
+                  <Plus className='mr-2 h-4 w-4' /> Add Cuisine
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className='text-muted-foreground text-xs'>
                 Search and select multiple cuisines. At least one is required.
               </p>
             </TabsContent>
 
             {/* Bank Details Tab */}
-            <TabsContent value="bank" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <TabsContent value='bank' className='space-y-4'>
+              <div className='grid grid-cols-2 gap-4'>
                 <div>
-                  <label className="text-sm font-medium">Account Holder Name</label>
-                  <Input value={bankDetails.accountHolderName} onChange={e => setBankDetails({ ...bankDetails, accountHolderName: e.target.value })} placeholder="John Doe" />
+                  <label className='text-sm font-medium'>Account Holder Name</label>
+                  <Input
+                    value={bankDetails.accountHolderName}
+                    onChange={e =>
+                      setBankDetails({ ...bankDetails, accountHolderName: e.target.value })
+                    }
+                    placeholder='John Doe'
+                  />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Bank Name</label>
-                  <Input value={bankDetails.bankName} onChange={e => setBankDetails({ ...bankDetails, bankName: e.target.value })} placeholder="HDFC Bank" />
+                  <label className='text-sm font-medium'>Bank Name</label>
+                  <Input
+                    value={bankDetails.bankName}
+                    onChange={e => setBankDetails({ ...bankDetails, bankName: e.target.value })}
+                    placeholder='HDFC Bank'
+                  />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Account Number</label>
-                  <Input value={bankDetails.accountNumber} onChange={e => setBankDetails({ ...bankDetails, accountNumber: e.target.value })} placeholder="1234567890" />
+                  <label className='text-sm font-medium'>Account Number</label>
+                  <Input
+                    value={bankDetails.accountNumber}
+                    onChange={e =>
+                      setBankDetails({ ...bankDetails, accountNumber: e.target.value })
+                    }
+                    placeholder='1234567890'
+                  />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">IFSC Code</label>
-                  <Input value={bankDetails.ifscCode} onChange={e => setBankDetails({ ...bankDetails, ifscCode: e.target.value })} placeholder="HDFC0001234" />
+                  <label className='text-sm font-medium'>IFSC Code</label>
+                  <Input
+                    value={bankDetails.ifscCode}
+                    onChange={e => setBankDetails({ ...bankDetails, ifscCode: e.target.value })}
+                    placeholder='HDFC0001234'
+                  />
                 </div>
               </div>
             </TabsContent>
           </Tabs>
 
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => { setOpenEdit(false); resetForm(); }}>Cancel</Button>
+          <div className='mt-4 flex justify-end gap-2'>
             <Button
-              disabled={editing || !formR.restaurantName}
-              onClick={handleUpdate}
+              variant='outline'
+              onClick={() => {
+                setOpenEdit(false);
+                resetForm();
+              }}
             >
+              Cancel
+            </Button>
+            <Button disabled={editing || !formR.restaurantName} onClick={handleUpdate}>
               {editing ? 'Updating...' : 'Update Restaurant'}
             </Button>
           </div>
@@ -1493,57 +1758,64 @@ export function Restaurants() {
 
       {/* Add Cuisine Dialog */}
       <Dialog open={openAddCuisine} onOpenChange={setOpenAddCuisine}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className='sm:max-w-md'>
           <DialogHeader>
             <DialogTitle>Add New Cuisine</DialogTitle>
             <DialogDescription>
               Create a new cuisine to associate with restaurants.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className='space-y-4'>
             <div>
-              <label className="text-sm font-medium">Cuisine Name *</label>
+              <label className='text-sm font-medium'>Cuisine Name *</label>
               <Input
                 value={newCuisineName}
                 onChange={e => setNewCuisineName(e.target.value)}
-                placeholder="e.g. Italian, Fast Food"
+                placeholder='e.g. Italian, Fast Food'
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Cuisine Image URL (Optional)</label>
+              <label className='text-sm font-medium'>Cuisine Image URL (Optional)</label>
               <Input
                 value={newCuisineImageUrl}
                 onChange={e => setNewCuisineImageUrl(e.target.value)}
-                placeholder="https://example.com/image.jpg"
+                placeholder='https://example.com/image.jpg'
               />
-              <div className="mt-2 text-center text-sm font-semibold">OR</div>
-              <div className="mt-2">
-                <label className="text-sm font-medium">Upload Image</label>
-                <div className="mt-1 flex flex-col gap-2">
+              <div className='mt-2 text-center text-sm font-semibold'>OR</div>
+              <div className='mt-2'>
+                <label className='text-sm font-medium'>Upload Image</label>
+                <div className='mt-1 flex flex-col gap-2'>
                   <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
+                    type='file'
+                    accept='image/*'
+                    onChange={e => {
                       if (e.target.files && e.target.files[0]) {
                         handleCuisineImageUpload(e.target.files[0]);
                       }
                     }}
                     disabled={uploadingCuisineImage}
-                    className="cursor-pointer"
+                    className='cursor-pointer'
                   />
                   {uploadingCuisineImage && (
-                    <p className="text-xs text-muted-foreground">Uploading image...</p>
+                    <p className='text-muted-foreground text-xs'>Uploading image...</p>
                   )}
                   {newCuisineImageUrl && !newCuisineImageUrl.startsWith('http') && (
-                    <p className="text-xs text-green-600">Image uploaded to storage successfully.</p>
+                    <p className='text-xs text-green-600'>
+                      Image uploaded to storage successfully.
+                    </p>
                   )}
                 </div>
               </div>
             </div>
           </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setOpenAddCuisine(false)}>Cancel</Button>
-            <Button disabled={uploadingCuisineImage || !newCuisineName.trim()} onClick={submitNewCuisine}>
+          <div className='mt-4 flex justify-end gap-2'>
+            <Button variant='outline' onClick={() => setOpenAddCuisine(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={uploadingCuisineImage || !newCuisineName.trim()}
+              onClick={submitNewCuisine}
+            >
               Add Cuisine
             </Button>
           </div>
@@ -1552,27 +1824,25 @@ export function Restaurants() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteConfirm} onOpenChange={setDeleteConfirm}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className='sm:max-w-md'>
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete <strong>{selectedRestaurant?.restaurantName}</strong>?
             </DialogDescription>
           </DialogHeader>
-          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-            <p className="text-sm text-destructive font-medium">⚠️ Warning</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              This action cannot be undone. This will permanently delete the restaurant,
-              all its data, and the associated user account.
+          <div className='bg-destructive/10 border-destructive/20 rounded-lg border p-4'>
+            <p className='text-destructive text-sm font-medium'>⚠️ Warning</p>
+            <p className='text-muted-foreground mt-1 text-sm'>
+              This action cannot be undone. This will permanently delete the restaurant, all its
+              data, and the associated user account.
             </p>
           </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setDeleteConfirm(false)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              disabled={deleting}
-              onClick={handleDelete}
-            >
+          <div className='mt-4 flex justify-end gap-2'>
+            <Button variant='outline' onClick={() => setDeleteConfirm(false)}>
+              Cancel
+            </Button>
+            <Button variant='destructive' disabled={deleting} onClick={handleDelete}>
               {deleting ? 'Deleting...' : 'Delete Restaurant'}
             </Button>
           </div>

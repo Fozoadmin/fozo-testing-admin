@@ -17,7 +17,7 @@ export const ORDER_STATUS = {
 /**
  * Type for order status values
  */
-export type OrderStatus = typeof ORDER_STATUS[keyof typeof ORDER_STATUS];
+export type OrderStatus = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS];
 
 /**
  * Array of all order status values
@@ -60,4 +60,3 @@ export function getStatusLabel(status: OrderStatus): string {
       return 'Refunded';
   }
 }
-

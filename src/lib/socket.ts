@@ -12,7 +12,7 @@ export const SOCKET_EVENTS = {
   GROCERY_ORDER_UPDATED: 'grocery_order_updated',
 } as const;
 
-type SocketEventType = typeof SOCKET_EVENTS[keyof typeof SOCKET_EVENTS];
+type SocketEventType = (typeof SOCKET_EVENTS)[keyof typeof SOCKET_EVENTS];
 
 /**
  * Get the socket server URL from environment variables
@@ -42,7 +42,7 @@ let isConnecting = false;
  */
 export function getSocket(): Socket | null {
   const token = getAuthToken();
-  
+
   if (!token) {
     return null;
   }
@@ -60,7 +60,7 @@ export function getSocket(): Socket | null {
   // Create new connection
   isConnecting = true;
   const socketUrl = getSocketUrl();
-  
+
   socketInstance = io(socketUrl, {
     auth: {
       token,
@@ -79,7 +79,7 @@ export function getSocket(): Socket | null {
     isConnecting = false;
   });
 
-  socketInstance.on('connect_error', (error) => {
+  socketInstance.on('connect_error', error => {
     console.error('Socket: Connection error', error.message);
     isConnecting = false;
   });
@@ -109,13 +109,13 @@ export function subscribeToEvent<T = unknown>(
   callback: (data: T) => void
 ): (() => void) | null {
   const socket = getSocket();
-  
+
   if (!socket) {
     return null;
   }
 
   socket.on(eventType, callback);
-  
+
   // Return unsubscribe function
   return () => {
     if (socket) {
@@ -141,4 +141,3 @@ export function unsubscribeFromEvent(
     }
   }
 }
-
