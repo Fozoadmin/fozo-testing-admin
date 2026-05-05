@@ -19,6 +19,7 @@ interface SettingsData extends Record<string, string> {
   referralAmount: string;
   groceryReferralAmount: string;
   freeDeliveryAovThreshold: string;
+  groceryFreeDeliveryAovThreshold: string;
 
   // Operational & Logistics
   customerSearchRadiusKm: string;
@@ -297,7 +298,7 @@ export function Settings() {
                 </div>
                 <div className='space-y-2'>
                   <Label htmlFor='freeDeliveryAovThreshold'>
-                    Average Order Value (AOV) for Free Delivery (INR)
+                    Food AOV for Free Delivery (INR)
                   </Label>
                   <Input
                     id='freeDeliveryAovThreshold'
@@ -307,8 +308,26 @@ export function Settings() {
                     onChange={e => updateSetting('freeDeliveryAovThreshold', e.target.value)}
                   />
                   <p className='text-muted-foreground text-xs'>
-                    Orders with item total exceeding this amount (excluding all charges) get free
-                    delivery.
+                    Food orders with item total exceeding this amount (excluding all charges) get
+                    free delivery.
+                  </p>
+                </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='groceryFreeDeliveryAovThreshold'>
+                    Grocery AOV for Free Delivery (INR)
+                  </Label>
+                  <Input
+                    id='groceryFreeDeliveryAovThreshold'
+                    type='number'
+                    min='0'
+                    value={settings.groceryFreeDeliveryAovThreshold || '0'}
+                    onChange={e =>
+                      updateSetting('groceryFreeDeliveryAovThreshold', e.target.value)
+                    }
+                  />
+                  <p className='text-muted-foreground text-xs'>
+                    Grocery orders with item total exceeding this amount (excluding all charges) get
+                    free delivery.
                   </p>
                 </div>
               </div>
