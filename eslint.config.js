@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
+import tailwind from 'eslint-plugin-tailwindcss';
 import tseslint from 'typescript-eslint';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
@@ -108,6 +109,35 @@ export default defineConfig([
       'prefer-template': 'error',
       'yoda': 'error',
       'no-console': ['error', { allow: ['warn', 'error'] }],
+    },
+  },
+  {
+    name: 'fozo-admin/tailwind-classnames',
+    files: ['**/*.{tsx,jsx}'],
+    plugins: {
+      tailwindcss: tailwind,
+    },
+    languageOptions: {
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+    },
+    settings: {
+      tailwindcss: {
+        callees: ['classnames', 'clsx', 'ctl', 'cva', 'cn', 'twMerge'],
+        classRegex: '^(class(Name)?|.*ClassName)$',
+        config: {},
+      },
+    },
+    rules: {
+      'tailwindcss/classnames-order': 'off',
+      'tailwindcss/enforces-negative-arbitrary-values': 'error',
+      'tailwindcss/enforces-shorthand': 'error',
+      'tailwindcss/no-contradicting-classname': 'error',
+      'tailwindcss/no-custom-classname': 'off',
+      'tailwindcss/no-unnecessary-arbitrary-value': 'off',
     },
   },
 ]);

@@ -297,9 +297,7 @@ export function Settings() {
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label htmlFor='freeDeliveryAovThreshold'>
-                    Food AOV for Free Delivery (INR)
-                  </Label>
+                  <Label htmlFor='freeDeliveryAovThreshold'>Food AOV for Free Delivery (INR)</Label>
                   <Input
                     id='freeDeliveryAovThreshold'
                     type='number'
@@ -321,9 +319,7 @@ export function Settings() {
                     type='number'
                     min='0'
                     value={settings.groceryFreeDeliveryAovThreshold || '0'}
-                    onChange={e =>
-                      updateSetting('groceryFreeDeliveryAovThreshold', e.target.value)
-                    }
+                    onChange={e => updateSetting('groceryFreeDeliveryAovThreshold', e.target.value)}
                   />
                   <p className='text-muted-foreground text-xs'>
                     Grocery orders with item total exceeding this amount (excluding all charges) get
