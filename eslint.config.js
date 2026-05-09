@@ -1,22 +1,67 @@
-import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import tseslint from 'typescript-eslint'
-import { defineConfig, globalIgnores } from 'eslint/config'
+import js from '@eslint/js';
+import globals from 'globals';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
+import tseslint from 'typescript-eslint';
+import { defineConfig, globalIgnores } from 'eslint/config';
+
+const restrictedGlobals = [
+  'event',
+  'fdescribe',
+  'fit',
+  'name',
+  'xdescribe',
+  'xit',
+];
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores([
+    '**/node_modules/**',
+    '**/dist/**',
+    '**/coverage/**',
+    '**/.vite/**',
+    '**/.turbo/**',
+  ]),
   {
+    name: 'fozo-admin/linter-safety',
+    linterOptions: {
+      reportUnusedDisableDirectives: 'error',
+      reportUnusedInlineConfigs: 'error',
+    },
+  },
+  {
+    name: 'fozo-admin/config-files',
+    files: ['*.config.{js,mjs,cjs,ts,mts,cts}', 'eslint.config.js'],
+    extends: [js.configs.recommended],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: globals.node,
+    },
+    rules: {
+      'eqeqeq': ['error', 'always'],
+      'no-console': 'off',
+      'no-duplicate-imports': 'error',
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      'no-var': 'error',
+      'object-shorthand': 'error',
+      'prefer-const': 'error',
+      'prefer-template': 'error',
+    },
+  },
+  {
+    name: 'fozo-admin/react-typescript',
     files: ['**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
-      tseslint.configs.recommended,
+      ...tseslint.configs.strict,
       reactHooks.configs['recommended-latest'],
       reactRefresh.configs.vite,
     ],
     languageOptions: {
-      ecmaVersion: 2020,
+      ecmaVersion: 'latest',
+      sourceType: 'module',
       globals: globals.browser,
     },
     rules: {
@@ -34,19 +79,35 @@ export default defineConfig([
         'error',
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
       ],
-      '@typescript-eslint/no-non-null-assertion': 'warn',
+      '@typescript-eslint/no-non-null-assertion': 'error',
       '@typescript-eslint/no-empty-object-type': 'error',
       '@typescript-eslint/no-require-imports': 'error',
       '@typescript-eslint/no-import-type-side-effects': 'error',
+      '@typescript-eslint/no-useless-empty-export': 'error',
 
       // General code quality
       'eqeqeq': ['error', 'always'],
+      'no-caller': 'error',
+      'no-eval': 'error',
+      'no-extend-native': 'error',
+      'no-iterator': 'error',
+      'no-labels': 'error',
+      'no-lone-blocks': 'error',
+      'no-new-func': 'error',
+      'no-new-wrappers': 'error',
+      'no-octal-escape': 'error',
+      'no-proto': 'error',
+      'no-restricted-globals': ['error', ...restrictedGlobals],
+      'no-return-assign': ['error', 'always'],
+      'no-script-url': 'error',
+      'no-sequences': 'error',
       'no-var': 'error',
       'prefer-const': 'error',
       'no-duplicate-imports': 'error',
       'object-shorthand': 'error',
       'prefer-template': 'error',
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'yoda': 'error',
+      'no-console': ['error', { allow: ['warn', 'error'] }],
     },
   },
-])
+]);
