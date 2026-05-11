@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth, type User } from '@/contexts/AuthContext';
 import { apiRequest } from '@/lib/api';
-import type { ApiError } from '@/types';
+import { getErrorMessage } from '@/lib/utils';
 
 interface LoginResponse {
   user: {
@@ -48,8 +48,7 @@ export default function Login() {
       login(data.user as User, data.accessToken);
       nav('/dashboard');
     } catch (err) {
-      const error = err as ApiError;
-      setError(error.message || 'Invalid username or password. Please try again.');
+      setError(getErrorMessage(err, 'Invalid username or password. Please try again.'));
     } finally {
       setLoading(false);
     }

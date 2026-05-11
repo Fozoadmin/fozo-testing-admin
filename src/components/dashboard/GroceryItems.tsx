@@ -1,6 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { adminApi } from '@/lib/api';
+import { getErrorMessage } from '@/lib/utils';
+import type { GroceryItem, GroceryStore, GroceryUnit } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -54,7 +55,7 @@ function ItemForm({
   setF: (v: ItemFormValues) => void;
   imgUploading: boolean;
   setImgUploading: (v: boolean) => void;
-  stores: any[];
+  stores: GroceryStore[];
   onImageUpload: (
     file: File,
     setter: (url: string) => void,
@@ -181,7 +182,7 @@ const emptyForm: ItemFormValues = {
   imageUrl: '',
   price: '',
   mrp: '',
-  unit: 'piece' as (typeof UNITS)[number],
+  unit: 'piece' as GroceryUnit,
   quantityAvailable: '0',
   totalQuantityListed: '0',
   isActive: true,
@@ -189,8 +190,8 @@ const emptyForm: ItemFormValues = {
 };
 
 export function GroceryItems() {
-  const [items, setItems] = useState<any[]>([]);
-  const [stores, setStores] = useState<any[]>([]);
+  const [items, setItems] = useState<GroceryItem[]>([]);
+  const [stores, setStores] = useState<GroceryStore[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchFilter, setSearchFilter] = useState('');
   const [storeFilter, setStoreFilter] = useState('');
@@ -202,13 +203,13 @@ export function GroceryItems() {
 
   // Edit dialog
   const [openEdit, setOpenEdit] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  const [selectedItem, setSelectedItem] = useState<GroceryItem | null>(null);
   const [editForm, setEditForm] = useState({ ...emptyForm });
   const [editing, setEditing] = useState(false);
 
   // Delete dialog
   const [openDelete, setOpenDelete] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<any | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<GroceryItem | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   // Image upload
@@ -228,8 +229,8 @@ export function GroceryItems() {
       ]);
       setItems(itemsData);
       setStores(storesData);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to fetch grocery items');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to fetch grocery items'));
     } finally {
       setLoading(false);
     }
@@ -251,8 +252,8 @@ export function GroceryItems() {
       const { imageUrl } = await adminApi.uploadGroceryImage(file);
       setter(imageUrl);
       toast.success('Image uploaded');
-    } catch (error: any) {
-      toast.error(error.message || 'Image upload failed');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Image upload failed'));
     } finally {
       loadingSetter(false);
     }
@@ -285,14 +286,14 @@ export function GroceryItems() {
       setOpenAdd(false);
       setForm({ ...emptyForm });
       await fetchData();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to create item');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to create item'));
     } finally {
       setCreating(false);
     }
   };
 
-  const openEditDialog = (item: any) => {
+  const openEditDialog = (item: GroceryItem) => {
     setSelectedItem(item);
     setEditForm({
       storeId: item.store_id || '',
@@ -332,8 +333,8 @@ export function GroceryItems() {
       setOpenEdit(false);
       setSelectedItem(null);
       await fetchData();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update item');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to update item'));
     } finally {
       setEditing(false);
     }
@@ -348,8 +349,8 @@ export function GroceryItems() {
       setOpenDelete(false);
       setItemToDelete(null);
       await fetchData();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to delete item');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to delete item'));
     } finally {
       setDeleting(false);
     }

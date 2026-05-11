@@ -1,6 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useState } from 'react';
 import { adminApi } from '@/lib/api';
+import { getErrorMessage } from '@/lib/utils';
+import type { GroceryStore } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,6 +70,9 @@ type GroceryStoreLite = {
   status?: string;
 };
 
+type ApplicableTo = Coupon['applicableTo'];
+type DiscountType = Coupon['discountType'];
+
 const formatDate = (iso: string | null) => {
   if (!iso) return '—';
   try {
@@ -124,8 +128,8 @@ export function Coupons() {
       if (!silent) setLoading(true);
       const data = await adminApi.getAllCoupons();
       setCoupons((data.coupons || []) as Coupon[]);
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to load coupons');
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, 'Failed to load coupons'));
     } finally {
       if (!silent) setLoading(false);
     }
@@ -142,9 +146,18 @@ export function Coupons() {
             const restaurants = await adminApi.getAllRestaurants();
             if (!mounted) return;
             const approved = Array.isArray(restaurants)
-              ? restaurants.filter((r: any) => !r.status || r.status === 'approved')
+              ? restaurants.filter(r => !r.status || r.status === 'approved')
               : [];
-            setAllRestaurants(approved);
+            setAllRestaurants(
+              approved.map(r => ({
+                id: r.id,
+                restaurantId: r.restaurantId,
+                restaurantName: r.restaurantName,
+                status: r.status,
+                ...(r.userEmail ? { userEmail: r.userEmail } : {}),
+                ...(r.phoneNumber ? { phoneNumber: r.phoneNumber } : {}),
+              }))
+            );
           } catch (e) {
             console.warn('Failed to load restaurants for coupons:', e);
           }
@@ -155,11 +168,11 @@ export function Coupons() {
             if (!mounted) return;
             const storeList = Array.isArray(stores) ? stores : [];
             setAllGroceryStores(
-              storeList.map((s: any) => ({
+              storeList.map((s: GroceryStore) => ({
                 id: s.id,
                 storeName: s.storeName || s.store_name,
                 status: s.status,
-              }))
+              })) as GroceryStoreLite[]
             );
           } catch (e) {
             console.warn('Failed to load grocery stores for coupons:', e);
@@ -295,8 +308,8 @@ export function Coupons() {
       setRestaurantDropdownOpen(false);
       setGroceryDropdownOpen(false);
       await loadCoupons(true);
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to create coupon');
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, 'Failed to create coupon'));
     } finally {
       setCreating(false);
     }
@@ -393,8 +406,8 @@ export function Coupons() {
       setSelectedRestaurant(null);
       setSelectedGroceryStore(null);
       await loadCoupons(true);
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to update coupon');
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, 'Failed to update coupon'));
     } finally {
       setEditing(false);
     }
@@ -414,8 +427,8 @@ export function Coupons() {
       setOpenDelete(false);
       setSelectedCoupon(null);
       await loadCoupons(true);
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to delete coupon');
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, 'Failed to delete coupon'));
     } finally {
       setDeleting(false);
     }
@@ -427,8 +440,8 @@ export function Coupons() {
     try {
       await adminApi.setCouponActive(coupon.id, next);
       toast.success(`Coupon ${next ? 'enabled' : 'disabled'}`);
-    } catch (e: any) {
-      toast.error(e?.message || 'Failed to update coupon');
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e, 'Failed to update coupon'));
       // rollback
       setCoupons(coupons);
     }
@@ -489,7 +502,7 @@ export function Coupons() {
                       onValueChange={v => {
                         setForm(s => ({
                           ...s,
-                          applicableTo: v as any,
+                          applicableTo: v as ApplicableTo,
                           restaurantId: '',
                           groceryStoreId: '',
                         }));
@@ -511,7 +524,7 @@ export function Coupons() {
                     <Label>Discount Type</Label>
                     <Select
                       value={form.discountType}
-                      onValueChange={v => setForm(s => ({ ...s, discountType: v as any }))}
+                      onValueChange={v => setForm(s => ({ ...s, discountType: v as DiscountType }))}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder='Select type' />
@@ -946,7 +959,7 @@ export function Coupons() {
                 onValueChange={v => {
                   setForm(s => ({
                     ...s,
-                    applicableTo: v as any,
+                    applicableTo: v as ApplicableTo,
                     restaurantId: '',
                     groceryStoreId: '',
                   }));
@@ -969,7 +982,7 @@ export function Coupons() {
               <Label>Discount Type</Label>
               <Select
                 value={form.discountType}
-                onValueChange={v => setForm(s => ({ ...s, discountType: v as any }))}
+                onValueChange={v => setForm(s => ({ ...s, discountType: v as DiscountType }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder='Select type' />

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { adminApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,7 +24,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, Loader2, Search } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { isTenDigitPhone, normalizePhoneDigits, apiRequestWithStatus } from '@/lib/utils';
+import {
+  isTenDigitPhone,
+  normalizePhoneDigits,
+  apiRequestWithStatus,
+  getErrorMessage,
+} from '@/lib/utils';
+import type { GroceryStore, GroceryStoreStatus } from '@/types';
 
 const STATUS_COLORS: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   approved: 'default',
@@ -67,8 +72,8 @@ const emptyEditForm = {
 };
 
 export function GroceryStores() {
-  const [stores, setStores] = useState<any[]>([]);
-  const [allStores, setAllStores] = useState<any[]>([]);
+  const [stores, setStores] = useState<GroceryStore[]>([]);
+  const [allStores, setAllStores] = useState<GroceryStore[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchFilter, setSearchFilter] = useState('');
 
@@ -82,7 +87,7 @@ export function GroceryStores() {
 
   // Edit dialog
   const [openEdit, setOpenEdit] = useState(false);
-  const [selectedStore, setSelectedStore] = useState<any | null>(null);
+  const [selectedStore, setSelectedStore] = useState<GroceryStore | null>(null);
   const [editForm, setEditForm] = useState({ ...emptyEditForm });
   const [editBank, setEditBank] = useState({ ...emptyBank });
   const [editUploadingImage, setEditUploadingImage] = useState(false);
@@ -90,7 +95,7 @@ export function GroceryStores() {
 
   // Delete dialog
   const [openDelete, setOpenDelete] = useState(false);
-  const [storeToDelete, setStoreToDelete] = useState<any | null>(null);
+  const [storeToDelete, setStoreToDelete] = useState<GroceryStore | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -119,8 +124,8 @@ export function GroceryStores() {
       const data = await adminApi.getAllGroceryStores();
       setAllStores(data);
       setStores(data);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to fetch grocery stores');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to fetch grocery stores'));
     } finally {
       setLoading(false);
     }
@@ -136,8 +141,8 @@ export function GroceryStores() {
       const { imageUrl: url } = await adminApi.uploadGroceryImage(file);
       setter(url);
       toast.success('Image uploaded successfully!', { position: 'top-right', autoClose: 2000 });
-    } catch (error: any) {
-      toast.error(error.message || 'Image upload failed');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Image upload failed'));
     } finally {
       loadingSetter(false);
     }
@@ -208,8 +213,8 @@ export function GroceryStores() {
           autoClose: 3000,
         });
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to create grocery store', {
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to create grocery store'), {
         position: 'top-right',
         autoClose: 3000,
       });
@@ -218,7 +223,7 @@ export function GroceryStores() {
     }
   };
 
-  const openEditDialog = (store: any) => {
+  const openEditDialog = (store: GroceryStore) => {
     setSelectedStore(store);
     setEditForm({
       storeName: store.store_name || '',
@@ -274,8 +279,8 @@ export function GroceryStores() {
       setOpenEdit(false);
       setSelectedStore(null);
       await fetchStores();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update store', {
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to update store'), {
         position: 'top-right',
         autoClose: 3000,
       });
@@ -296,8 +301,8 @@ export function GroceryStores() {
       setOpenDelete(false);
       setStoreToDelete(null);
       await fetchStores();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to delete store', {
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to delete store'), {
         position: 'top-right',
         autoClose: 3000,
       });
@@ -519,7 +524,7 @@ export function GroceryStores() {
                       </TableCell>
                       <TableCell>{store.contact_person_name || '—'}</TableCell>
                       <TableCell>
-                        <Badge variant={STATUS_COLORS[store.status] || 'secondary'}>
+                        <Badge variant={STATUS_COLORS[store.status ?? 'pending'] || 'secondary'}>
                           {store.status}
                         </Badge>
                       </TableCell>
@@ -605,7 +610,9 @@ export function GroceryStores() {
                 <select
                   className='bg-background w-full rounded-md border px-3 py-2 text-sm'
                   value={editForm.status}
-                  onChange={e => setEditForm({ ...editForm, status: e.target.value as any })}
+                  onChange={e =>
+                    setEditForm({ ...editForm, status: e.target.value as GroceryStoreStatus })
+                  }
                 >
                   {['pending', 'approved', 'rejected', 'suspended', 'closed'].map(s => (
                     <option key={s} value={s}>

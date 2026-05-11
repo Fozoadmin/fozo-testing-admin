@@ -23,8 +23,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Plus, X, ChevronDown, ChevronRight, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { apiRequestWithStatus } from '@/lib/utils';
-import type { SurpriseBag, GroupedRestaurant, Restaurant, ApiError } from '@/types';
+import { apiRequestWithStatus, getErrorMessage } from '@/lib/utils';
+import type { SurpriseBag, GroupedRestaurant, Restaurant } from '@/types';
 
 interface BagWithRestaurant extends SurpriseBag {
   restaurant: GroupedRestaurant;
@@ -188,9 +188,8 @@ export function SurpriseBags() {
         autoClose: 2000,
       });
     } catch (err) {
-      const error = err as ApiError;
-      console.error('Image upload failed:', error);
-      toast.error(error.message || 'Failed to upload image', {
+      console.error('Image upload failed:', err);
+      toast.error(getErrorMessage(err, 'We could not upload the image. Please try again.'), {
         position: 'top-right',
         autoClose: 3000,
       });
@@ -264,11 +263,9 @@ export function SurpriseBags() {
         });
       }
     } catch (err) {
-      const error = err as ApiError;
-      console.error('Create surprise bag failed', error);
+      console.error('Create surprise bag failed', err);
       // Show error toast for unexpected errors
-      const errorMessage = error?.message || 'Failed to create surprise bag';
-      toast.error(errorMessage, {
+      toast.error(getErrorMessage(err, 'We could not create this surprise bag. Please try again.'), {
         position: 'top-right',
         autoClose: 3000,
       });
@@ -295,7 +292,7 @@ export function SurpriseBags() {
       quantityAvailable: bag.quantityAvailable?.toString() || '',
       pickupStartTime: bag.pickupStartTime ? bag.pickupStartTime.substring(0, 5) : '',
       pickupEndTime: bag.pickupEndTime ? bag.pickupEndTime.substring(0, 5) : '',
-      availableDate: bag.availableDate ? bag.availableDate.split('T')[0] : '',
+      availableDate: bag.availableDate ? (bag.availableDate.split('T')[0] ?? '') : '',
       isActive: bag.isActive !== undefined ? bag.isActive : true,
       isVegetarian: bag.isVegetarian !== undefined ? bag.isVegetarian : true,
     });
@@ -359,10 +356,8 @@ export function SurpriseBags() {
         });
       }
     } catch (err) {
-      const error = err as ApiError;
-      console.error('Update surprise bag failed', error);
-      const errorMessage = error?.message || 'Failed to update surprise bag';
-      toast.error(errorMessage, {
+      console.error('Update surprise bag failed', err);
+      toast.error(getErrorMessage(err, 'We could not update this surprise bag. Please try again.'), {
         position: 'top-right',
         autoClose: 3000,
       });
@@ -393,9 +388,8 @@ export function SurpriseBags() {
         autoClose: 3000,
       });
     } catch (err) {
-      const error = err as ApiError;
-      console.error('Delete failed', error);
-      toast.error(error?.message || 'Failed to delete surprise bag', {
+      console.error('Delete failed', err);
+      toast.error(getErrorMessage(err, 'We could not delete this surprise bag. Please try again.'), {
         position: 'top-right',
         autoClose: 3000,
       });

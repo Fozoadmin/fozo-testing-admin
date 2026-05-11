@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { adminApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,18 +44,25 @@ import {
   IndianRupee,
   Eye,
 } from 'lucide-react';
-import { cn, isTenDigitPhone, normalizePhoneDigits, apiRequestWithStatus } from '@/lib/utils';
+import {
+  cn,
+  isTenDigitPhone,
+  normalizePhoneDigits,
+  apiRequestWithStatus,
+  getErrorMessage,
+} from '@/lib/utils';
 import { ORDER_STATUS } from '@/constants/orderStatus';
 import { toast } from 'react-toastify';
+import type { AdminOrder, DeliveryPartner, VehicleType } from '@/types';
 
 export function DeliveryPartners() {
-  const [deliveryPartners, setDeliveryPartners] = useState<any[]>([]);
+  const [deliveryPartners, setDeliveryPartners] = useState<DeliveryPartner[]>([]);
   const [loading, setLoading] = useState(true);
   const [openAdd, setOpenAdd] = useState(false);
   const [creating, setCreating] = useState(false);
 
   // Detail popup
-  const [selectedDP, setSelectedDP] = useState<any | null>(null);
+  const [selectedDP, setSelectedDP] = useState<DeliveryPartner | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
 
   // Delete confirmation
@@ -68,8 +74,8 @@ export function DeliveryPartners() {
   const [editing, setEditing] = useState(false);
 
   // Orders sheet
-  const [selectedDPForOrders, setSelectedDPForOrders] = useState<any | null>(null);
-  const [dpOrders, setDpOrders] = useState<any[]>([]);
+  const [selectedDPForOrders, setSelectedDPForOrders] = useState<DeliveryPartner | null>(null);
+  const [dpOrders, setDpOrders] = useState<AdminOrder[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [togglingOnline, setTogglingOnline] = useState<string | null>(null);
 
@@ -201,10 +207,10 @@ export function DeliveryPartners() {
           autoClose: 3000,
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Create delivery partner failed', err);
       // Show error toast for unexpected errors
-      const errorMessage = err?.message || 'Failed to create delivery partner';
+      const errorMessage = getErrorMessage(err, 'Failed to create delivery partner');
       toast.error(errorMessage, {
         position: 'top-right',
         autoClose: 3000,
@@ -214,7 +220,7 @@ export function DeliveryPartners() {
     }
   };
 
-  const openEditDialog = (dp: any) => {
+  const openEditDialog = (dp: DeliveryPartner) => {
     setSelectedDP(dp);
 
     // Pre-fill form with existing data
@@ -285,13 +291,13 @@ export function DeliveryPartners() {
       alert('Delivery Partner updated successfully!');
     } catch (error) {
       console.error('Update failed', error);
-      alert(`Failed to update delivery partner: ${error}`);
+      toast.error(getErrorMessage(error, 'We could not update this delivery partner. Please try again.'));
     } finally {
       setEditing(false);
     }
   };
 
-  const openDeleteDialog = (dp: any) => {
+  const openDeleteDialog = (dp: DeliveryPartner) => {
     setSelectedDP(dp);
     setDeleteConfirm(true);
   };
@@ -312,14 +318,9 @@ export function DeliveryPartners() {
         position: 'top-right',
         autoClose: 3000,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Delete failed', error);
-      const rawMessage = error?.message || String(error);
-      const friendlyMessage = rawMessage.includes('foreign key constraint')
-        ? 'Cannot delete this delivery partner because there are related records (e.g., orders) linked to this user.'
-        : rawMessage || 'Failed to delete delivery partner';
-
-      toast.error(friendlyMessage, {
+      toast.error(getErrorMessage(error, 'We could not delete this delivery partner. Please try again.'), {
         position: 'top-right',
         autoClose: 4000,
       });
@@ -352,10 +353,10 @@ export function DeliveryPartners() {
           autoClose: 3000,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Status update failed', error);
       // Show error toast for unexpected errors
-      const errorMessage = error?.message || 'Failed to update status';
+      const errorMessage = getErrorMessage(error, 'Failed to update status');
       toast.error(errorMessage, {
         position: 'top-right',
         autoClose: 3000,
@@ -363,7 +364,7 @@ export function DeliveryPartners() {
     }
   };
 
-  const handleOnlineStatusToggle = async (dp: any, newStatus: boolean) => {
+  const handleOnlineStatusToggle = async (dp: DeliveryPartner, newStatus: boolean) => {
     if (!dp.id) {
       alert('Delivery partner ID not found');
       return;
@@ -379,17 +380,17 @@ export function DeliveryPartners() {
 
       // Update selected DP if it's the same one
       if (selectedDPForOrders?.id === dp.id) {
-        setSelectedDPForOrders(updatedDPs.find((d: any) => d.id === dp.id));
+        setSelectedDPForOrders(updatedDPs.find(d => d.id === dp.id) ?? null);
       }
     } catch (error) {
       console.error('Online status update failed', error);
-      alert(`Failed to update online status: ${error}`);
+      toast.error(getErrorMessage(error, 'We could not update the online status. Please try again.'));
     } finally {
       setTogglingOnline(null);
     }
   };
 
-  const openOrdersSheet = async (dp: any) => {
+  const openOrdersSheet = async (dp: DeliveryPartner) => {
     setSelectedDPForOrders(dp);
     setOrdersLoading(true);
     try {
@@ -542,7 +543,7 @@ export function DeliveryPartners() {
                       <label className='text-sm font-medium'>Vehicle Type *</label>
                       <Select
                         value={formD.vehicleType}
-                        onValueChange={v => setFormD({ ...formD, vehicleType: v as any })}
+                        onValueChange={v => setFormD({ ...formD, vehicleType: v as VehicleType })}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -912,7 +913,9 @@ export function DeliveryPartners() {
                   <label className='text-sm font-medium'>Vehicle Type *</label>
                   <Select
                     value={formD.vehicleType}
-                    onValueChange={(value: any) => setFormD({ ...formD, vehicleType: value })}
+                    onValueChange={value =>
+                      setFormD({ ...formD, vehicleType: value as VehicleType })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder='Select vehicle' />

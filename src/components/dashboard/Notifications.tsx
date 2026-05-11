@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { adminApi } from '@/lib/api';
+import { getErrorMessage } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Plus, Bell, Trash2, Calendar, Clock, ChevronDown, Check, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +32,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'react-toastify';
+import type {
+  AdminNotification,
+  AdminNotificationTarget,
+  AdminUser,
+  NotificationTargetType,
+} from '@/types';
 
 type OrderNotificationSettingKey =
   | 'orderConfirmedNotificationTitle'
@@ -50,7 +56,7 @@ type OrderNotificationSettingKey =
 type OrderNotificationSettings = Record<OrderNotificationSettingKey, string>;
 
 export function Notifications() {
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -58,17 +64,15 @@ export function Notifications() {
     description: '',
     scheduledAt: '',
   });
-  const [targetType, setTargetType] = useState<
-    'all' | 'specific' | 'all_customers' | 'all_restaurants' | 'all_delivery_partners'
-  >('all_customers');
-  const [users, setUsers] = useState<any[]>([]);
+  const [targetType, setTargetType] = useState<NotificationTargetType>('all_customers');
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [userSearch, setUserSearch] = useState('');
   const [filterType, setFilterType] = useState<
     'all' | 'customer' | 'restaurant' | 'delivery_partner'
   >('all');
-  const [selectedNotification, setSelectedNotification] = useState<any>(null);
+  const [selectedNotification, setSelectedNotification] = useState<AdminNotification | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editFormData, setEditFormData] = useState({
@@ -76,9 +80,7 @@ export function Notifications() {
     description: '',
     scheduledAt: '',
   });
-  const [editTargetType, setEditTargetType] = useState<
-    'all' | 'specific' | 'all_customers' | 'all_restaurants' | 'all_delivery_partners'
-  >('all');
+  const [editTargetType, setEditTargetType] = useState<NotificationTargetType>('all');
   const [editSelectedUserIds, setEditSelectedUserIds] = useState<string[]>([]);
 
   // Order notification template settings (from settings model)
@@ -212,9 +214,9 @@ export function Notifications() {
       await adminApi.updateSettings(changedSettings);
       toast.success('Order notification templates saved');
       setOriginalOrderNotificationSettings({ ...orderNotificationSettings });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving order notification settings:', error);
-      toast.error(error.message || 'Failed to save order notification templates');
+      toast.error(getErrorMessage(error, 'Failed to save order notification templates'));
     }
   };
 
@@ -271,8 +273,8 @@ export function Notifications() {
       setTargetType('all');
       setSelectedUserIds([]);
       fetchNotifications();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to create notification');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to create notification'));
     } finally {
       setIsCreating(false);
     }
@@ -285,12 +287,12 @@ export function Notifications() {
       await adminApi.deleteNotification(id);
       toast.success('Notification deleted successfully');
       fetchNotifications();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to delete notification');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to delete notification'));
     }
   };
 
-  const handleViewDetails = async (notification: any) => {
+  const handleViewDetails = async (notification: AdminNotification) => {
     try {
       setIsEditMode(false);
       setIsUserDropdownOpen(false);
@@ -323,7 +325,7 @@ export function Notifications() {
     setEditTargetType(selectedNotification.target_type);
 
     if (selectedNotification.target_type === 'specific') {
-      setEditSelectedUserIds(selectedNotification.targets?.map((t: any) => t.id) || []);
+      setEditSelectedUserIds(selectedNotification.targets?.map(t => t.id) || []);
     } else {
       setEditSelectedUserIds([]);
     }
@@ -351,8 +353,8 @@ export function Notifications() {
 
       const updated = await adminApi.getNotificationById(selectedNotification.id);
       setSelectedNotification(updated);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update notification');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Failed to update notification'));
     }
   };
 
@@ -419,7 +421,10 @@ export function Notifications() {
               </div>
               <div className='grid gap-2'>
                 <label className='text-sm font-medium'>Target Audience *</label>
-                <Select value={targetType} onValueChange={(val: any) => setTargetType(val)}>
+                <Select
+                  value={targetType}
+                  onValueChange={val => setTargetType(val as NotificationTargetType)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder='Select audience' />
                   </SelectTrigger>
@@ -632,7 +637,7 @@ export function Notifications() {
                         <label className='mb-1 block text-sm font-medium'>Target Audience *</label>
                         <Select
                           value={editTargetType}
-                          onValueChange={(val: any) => setEditTargetType(val)}
+                          onValueChange={val => setEditTargetType(val as NotificationTargetType)}
                         >
                           <SelectTrigger>
                             <SelectValue />
@@ -701,7 +706,11 @@ export function Notifications() {
                                         key={type}
                                         variant={filterType === type ? 'default' : 'outline'}
                                         className='cursor-pointer text-[10px] whitespace-nowrap capitalize'
-                                        onClick={() => setFilterType(type as any)}
+                                        onClick={() =>
+                                          setFilterType(
+                                            type as 'all' | 'customer' | 'restaurant' | 'delivery_partner'
+                                          )
+                                        }
                                       >
                                         {type.replace('_', ' ')}
                                       </Badge>
@@ -713,7 +722,9 @@ export function Notifications() {
                                 {users
                                   .filter(u => {
                                     const matchesSearch =
-                                      u.fullName.toLowerCase().includes(userSearch.toLowerCase()) ||
+                                      (u.fullName ?? '')
+                                        .toLowerCase()
+                                        .includes(userSearch.toLowerCase()) ||
                                       u.email?.toLowerCase().includes(userSearch.toLowerCase()) ||
                                       u.phoneNumber?.includes(userSearch);
                                     const matchesFilter =
@@ -761,7 +772,9 @@ export function Notifications() {
                         <div className='flex items-center gap-1.5'>
                           <Calendar className='h-3.5 w-3.5 opacity-70' />
                           <span className='font-medium'>
-                            {new Date(selectedNotification.scheduled_at).toLocaleString()}
+                            {selectedNotification.scheduled_at
+                              ? new Date(selectedNotification.scheduled_at).toLocaleString()
+                              : '-'}
                           </span>
                         </div>
                       </div>
@@ -782,8 +795,8 @@ export function Notifications() {
                     </h4>
                   </div>
                   <div className='divide-y rounded-lg border'>
-                    {selectedNotification.targets?.length > 0 ? (
-                      selectedNotification.targets.map((user: any) => (
+                    {(selectedNotification.targets?.length ?? 0) > 0 ? (
+                      selectedNotification.targets?.map((user: AdminNotificationTarget) => (
                         <div key={user.id} className='hover:bg-muted/50 p-3 transition-colors'>
                           <div className='flex items-start justify-between gap-3'>
                             <div className='min-w-0 flex-1'>
@@ -914,14 +927,18 @@ export function Notifications() {
                   <div className='text-muted-foreground mt-2 flex items-center gap-4 text-xs'>
                     <span className='flex items-center gap-1'>
                       <Calendar className='h-3 w-3' />
-                      {new Date(notification.scheduled_at).toLocaleDateString()}
+                      {notification.scheduled_at
+                        ? new Date(notification.scheduled_at).toLocaleDateString()
+                        : '-'}
                     </span>
                     <span className='flex items-center gap-1'>
                       <Clock className='h-3 w-3' />
-                      {new Date(notification.scheduled_at).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
+                      {notification.scheduled_at
+                        ? new Date(notification.scheduled_at).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })
+                        : '-'}
                     </span>
                     {notification.created_by_name && (
                       <span>Created by: {notification.created_by_name}</span>

@@ -41,13 +41,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { isTenDigitPhone, normalizePhoneDigits, apiRequestWithStatus } from '@/lib/utils';
+import {
+  isTenDigitPhone,
+  normalizePhoneDigits,
+  apiRequestWithStatus,
+  getErrorMessage,
+} from '@/lib/utils';
 import { toast } from 'react-toastify';
-import type { Restaurant, ApiError, Cuisine } from '@/types';
+import type { Restaurant, Cuisine } from '@/types';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
-const DAYS_OF_WEEK = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+const DAYS_OF_WEEK = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+type DayOfWeek = (typeof DAYS_OF_WEEK)[number];
+type OperatingHoursRecord = Record<DayOfWeek, { open: string; close: string; isClosed: boolean }>;
+
+const DEFAULT_OPERATING_HOURS: OperatingHoursRecord = {
+  monday: { open: '09:00', close: '22:00', isClosed: false },
+  tuesday: { open: '09:00', close: '22:00', isClosed: false },
+  wednesday: { open: '09:00', close: '22:00', isClosed: false },
+  thursday: { open: '09:00', close: '22:00', isClosed: false },
+  friday: { open: '09:00', close: '22:00', isClosed: false },
+  saturday: { open: '09:00', close: '22:00', isClosed: false },
+  sunday: { open: '09:00', close: '22:00', isClosed: false },
+};
 
 export function Restaurants() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -101,17 +118,8 @@ export function Restaurants() {
   });
 
   // Operating Hours
-  const [operatingHours, setOperatingHours] = useState<
-    Record<string, { open: string; close: string; isClosed: boolean }>
-  >({
-    monday: { open: '09:00', close: '22:00', isClosed: false },
-    tuesday: { open: '09:00', close: '22:00', isClosed: false },
-    wednesday: { open: '09:00', close: '22:00', isClosed: false },
-    thursday: { open: '09:00', close: '22:00', isClosed: false },
-    friday: { open: '09:00', close: '22:00', isClosed: false },
-    saturday: { open: '09:00', close: '22:00', isClosed: false },
-    sunday: { open: '09:00', close: '22:00', isClosed: false },
-  });
+  const [operatingHours, setOperatingHours] =
+    useState<OperatingHoursRecord>(DEFAULT_OPERATING_HOURS);
 
   // Bank Details
   const [bankDetails, setBankDetails] = useState({
@@ -197,9 +205,8 @@ export function Restaurants() {
       setNewCuisineImageUrl(result.imageUrl);
       toast.success('Image uploaded successfully!', { position: 'top-right', autoClose: 2000 });
     } catch (err) {
-      const error = err as ApiError;
-      console.error('Image upload failed:', error);
-      toast.error(error.message || 'Failed to upload image');
+      console.error('Image upload failed:', err);
+      toast.error(getErrorMessage(err, 'We could not upload the image. Please try again.'));
     } finally {
       setUploadingCuisineImage(false);
     }
@@ -211,9 +218,10 @@ export function Restaurants() {
       return;
     }
     try {
+      const imageUrl = newCuisineImageUrl.trim();
       const newCuisine = await adminApi.createCuisine({
         name: newCuisineName.trim(),
-        imageUrl: newCuisineImageUrl.trim() || undefined,
+        ...(imageUrl ? { imageUrl } : {}),
       });
       setCuisines(prev => [...prev, newCuisine].sort((a, b) => a.name.localeCompare(b.name)));
       setSelectedCuisineIds(prev => [...prev, newCuisine.id]);
@@ -222,9 +230,8 @@ export function Restaurants() {
       setNewCuisineImageUrl('');
       toast.success(`Cuisine "${newCuisine.name}" added successfully`);
     } catch (err) {
-      const error = err as ApiError;
-      console.error('Error creating cuisine:', error);
-      toast.error(error?.message || `Failed to create cuisine "${newCuisineName}"`);
+      console.error('Error creating cuisine:', err);
+      toast.error(getErrorMessage(err, `We could not create cuisine "${newCuisineName}".`));
     }
   };
 
@@ -243,9 +250,8 @@ export function Restaurants() {
         autoClose: 2000,
       });
     } catch (err) {
-      const error = err as ApiError;
-      console.error('Image upload failed:', error);
-      toast.error(error.message || 'Failed to upload image', {
+      console.error('Image upload failed:', err);
+      toast.error(getErrorMessage(err, 'We could not upload the image. Please try again.'), {
         position: 'top-right',
         autoClose: 3000,
       });
@@ -280,15 +286,7 @@ export function Restaurants() {
       contactNumber: '',
       email: '',
     });
-    setOperatingHours({
-      monday: { open: '09:00', close: '22:00', isClosed: false },
-      tuesday: { open: '09:00', close: '22:00', isClosed: false },
-      wednesday: { open: '09:00', close: '22:00', isClosed: false },
-      thursday: { open: '09:00', close: '22:00', isClosed: false },
-      friday: { open: '09:00', close: '22:00', isClosed: false },
-      saturday: { open: '09:00', close: '22:00', isClosed: false },
-      sunday: { open: '09:00', close: '22:00', isClosed: false },
-    });
+    setOperatingHours(DEFAULT_OPERATING_HOURS);
     setBankDetails({
       accountNumber: '',
       ifscCode: '',
@@ -328,7 +326,7 @@ export function Restaurants() {
 
         alert('Location coordinates found successfully!');
       } else {
-        alert(`Geocoding failed: ${data.status}. Please check the address and try again.`);
+        alert('We could not find coordinates for this address. Please check it and try again.');
       }
     } catch (error) {
       console.error('Geocoding error:', error);
@@ -465,11 +463,9 @@ export function Restaurants() {
         });
       }
     } catch (err) {
-      const error = err as ApiError;
-      console.error('Create restaurant failed', error);
+      console.error('Create restaurant failed', err);
       // Show error toast for unexpected errors
-      const errorMessage = error?.message || 'Failed to add restaurant';
-      toast.error(errorMessage, {
+      toast.error(getErrorMessage(err, 'We could not add this restaurant. Please try again.'), {
         position: 'top-right',
         autoClose: 3000,
       });
@@ -479,7 +475,7 @@ export function Restaurants() {
   };
 
   const updateOperatingHours = (
-    day: string,
+    day: DayOfWeek,
     field: 'open' | 'close' | 'isClosed',
     value: string | boolean
   ) => {
@@ -525,10 +521,11 @@ export function Restaurants() {
       }
 
       // Pre-fill operating hours
-      if (fullDetails.operatingHours) {
-        const hours: Record<string, { open: string; close: string; isClosed: boolean }> = {};
+      const operatingHours = fullDetails.operatingHours;
+      if (operatingHours) {
+        const hours: OperatingHoursRecord = { ...DEFAULT_OPERATING_HOURS };
         DAYS_OF_WEEK.forEach(day => {
-          const dayData = fullDetails.operatingHours[day];
+          const dayData = operatingHours[day];
           if (dayData) {
             hours[day] = {
               open: dayData.openTime?.substring(0, 5) || '09:00',
@@ -650,7 +647,7 @@ export function Restaurants() {
       toast.success('Restaurant updated successfully!');
     } catch (error) {
       console.error('Update failed', error);
-      toast.error(`Failed to update restaurant: ${error}`);
+      toast.error(getErrorMessage(error, 'We could not update this restaurant. Please try again.'));
     } finally {
       setEditing(false);
     }
@@ -679,7 +676,7 @@ export function Restaurants() {
       });
     } catch (error) {
       console.error('Delete failed', error);
-      alert(`Failed to delete restaurant: ${error}`);
+      toast.error(getErrorMessage(error, 'We could not delete this restaurant. Please try again.'));
     } finally {
       setDeleting(false);
     }
@@ -710,11 +707,9 @@ export function Restaurants() {
         });
       }
     } catch (err) {
-      const error = err as ApiError;
-      console.error('Status update failed', error);
+      console.error('Status update failed', err);
       // Show error toast for unexpected errors
-      const errorMessage = error?.message || 'Failed to update status';
-      toast.error(errorMessage, {
+      toast.error(getErrorMessage(err, 'We could not update the restaurant status.'), {
         position: 'top-right',
         autoClose: 3000,
       });

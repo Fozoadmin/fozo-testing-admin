@@ -21,8 +21,8 @@ import {
 } from '@/components/ui/table';
 import { Search, User, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { apiRequestWithStatus } from '@/lib/utils';
-import type { Customer as CustomerType, ApiError } from '@/types';
+import { apiRequestWithStatus, getErrorMessage } from '@/lib/utils';
+import type { Customer as CustomerType } from '@/types';
 
 export function Customers() {
   const [customers, setCustomers] = useState<CustomerType[]>([]);
@@ -118,11 +118,9 @@ export function Customers() {
         });
       }
     } catch (err) {
-      const error = err as ApiError;
-      console.error('Delete failed', error);
+      console.error('Delete failed', err);
       // Show error toast for unexpected errors
-      const errorMessage = error?.message || 'Failed to delete customer';
-      toast.error(errorMessage, {
+      toast.error(getErrorMessage(err, 'We could not delete this customer. Please try again.'), {
         position: 'top-right',
         autoClose: 3000,
       });

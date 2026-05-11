@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { adminApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { getErrorMessage } from '@/lib/utils';
 
 interface SettingsData extends Record<string, string> {
   // Financial & Pricing
@@ -80,8 +80,8 @@ export function Settings() {
       setSettings(settingsData);
       // Store original settings for comparison
       setOriginalSettings({ ...settingsData });
-    } catch (err: any) {
-      setError(err.message || 'Failed to load settings');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to load settings'));
     } finally {
       setLoading(false);
     }
@@ -105,7 +105,7 @@ export function Settings() {
           const currentValue = settings[key];
           const originalValue = originalSettings[key];
           // Only include if value has changed
-          if (currentValue !== originalValue) {
+          if (typeof currentValue === 'string' && currentValue !== originalValue) {
             changedSettings[key] = currentValue;
           }
         }
@@ -124,8 +124,8 @@ export function Settings() {
 
       // Update original settings to reflect the saved state
       const updatedOriginal: SettingsData = { ...originalSettings };
-      for (const key in changedSettings) {
-        updatedOriginal[key as keyof SettingsData] = changedSettings[key];
+      for (const [key, value] of Object.entries(changedSettings)) {
+        updatedOriginal[key as keyof SettingsData] = value;
       }
       setOriginalSettings(updatedOriginal);
 
@@ -135,8 +135,8 @@ export function Settings() {
 
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to update settings');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to update settings'));
     } finally {
       setSaving(false);
     }

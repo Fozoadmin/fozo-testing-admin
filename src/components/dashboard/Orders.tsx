@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useMemo, useState } from 'react';
 import { adminApi } from '@/lib/api';
 import { subscribeToEvent, SOCKET_EVENTS } from '@/lib/socket';
@@ -47,7 +46,7 @@ import {
   Clock,
   ShoppingCart,
 } from 'lucide-react';
-import { cn, apiRequestWithStatus } from '@/lib/utils';
+import { cn, apiRequestWithStatus, getErrorMessage } from '@/lib/utils';
 import { ORDER_STATUS, getStatusLabel, type OrderStatus } from '@/constants/orderStatus';
 import { toast } from 'react-toastify';
 
@@ -106,8 +105,8 @@ export type Order = {
 
 export type DeliveryPartner = {
   id: string;
-  fullName: string;
-  phoneNumber?: string;
+  fullName: string | null;
+  phoneNumber?: string | null;
 };
 
 export type GroceryOrder = {
@@ -126,6 +125,7 @@ export type GroceryOrder = {
   totalPaymentAmount: string;
   deliveryAddressSnapshot: string | null;
   orderStatus: string;
+  order_status?: string;
   paymentMethod: string | null;
   paymentStatus: string;
   customerNameSnapshot: string | null;
@@ -296,7 +296,7 @@ export function Orders() {
           (a: Order, b: Order) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         setOrders(sorted as Order[]);
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (!isMounted) return;
         console.error('Error fetching orders:', e);
         setError('Failed to load orders. Please try again.');
@@ -379,7 +379,7 @@ export function Orders() {
         setGroceryOrders(prev =>
           prev.map(o =>
             o.id === updated.id
-              ? { ...o, orderStatus: (updated as any).order_status ?? o.orderStatus }
+              ? { ...o, orderStatus: updated.order_status ?? o.orderStatus }
               : o
           )
         );
@@ -403,7 +403,7 @@ export function Orders() {
         const rawData = await adminApi.getAllDeliveryPartners(undefined, 'true');
         if (!alive) return;
 
-        const normalized: DeliveryPartner[] = (rawData ?? []).map((d: any) => ({
+        const normalized: DeliveryPartner[] = (rawData ?? []).map(d => ({
           id: d.id,
           fullName: d.fullName ?? null,
           phoneNumber: d.phoneNumber ?? null,
@@ -510,12 +510,12 @@ export function Orders() {
           autoClose: 3000,
         });
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       // revert on failure
       setOrders(os => os.map(o => (o.id === order.id ? { ...o, orderStatus: prev } : o)));
       setSelected(sel => (sel && sel.id === order.id ? { ...sel, orderStatus: prev } : sel));
       // Show error toast for unexpected errors
-      const errorMessage = e?.message || 'Failed to update order status';
+      const errorMessage = getErrorMessage(e, 'Failed to update order status');
       toast.error(errorMessage, {
         position: 'top-right',
         autoClose: 3000,
@@ -601,7 +601,7 @@ export function Orders() {
           autoClose: 3000,
         });
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       // On failure, revert optimistic change
       setOrders(os =>
         os.map(o =>
@@ -617,7 +617,7 @@ export function Orders() {
         )
       );
       // Show error toast for unexpected errors
-      const errorMessage = e?.message || 'Failed to update order status';
+      const errorMessage = getErrorMessage(e, 'Failed to update order status');
       toast.error(errorMessage, {
         position: 'top-right',
         autoClose: 3000,
@@ -658,10 +658,10 @@ export function Orders() {
         position: 'top-right',
         autoClose: 3000,
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       setGroceryOrders(os => os.map(o => (o.id === order.id ? { ...o, orderStatus: prev } : o)));
       setSelectedGrocery(sel => (sel && sel.id === order.id ? { ...sel, orderStatus: prev } : sel));
-      toast.error(e?.message || 'Failed to update status', {
+      toast.error(getErrorMessage(e, 'Failed to update status'), {
         position: 'top-right',
         autoClose: 3000,
       });
@@ -1067,7 +1067,7 @@ export function Orders() {
                   placeholder='Search by ID, customer, restaurant, phone'
                   aria-label='Search orders'
                 />
-                <Select value={status} onValueChange={v => setStatus(v as any)}>
+                <Select value={status} onValueChange={v => setStatus(v as (typeof STATUS_OPTIONS)[number])}>
                   <SelectTrigger className='w-[220px]'>
                     <SelectValue placeholder='Status' />
                   </SelectTrigger>

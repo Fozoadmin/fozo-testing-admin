@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { adminApi } from '@/lib/api';
 import { StatCard } from './StatCard';
 import { ShoppingBag, IndianRupee, UtensilsCrossed, Users, Truck } from 'lucide-react';
+import type { AdminOrder } from '@/types';
 
 type OverviewProps = {
   onNavigate?: (key: string) => void;
@@ -36,7 +36,7 @@ export function Overview({ onNavigate }: OverviewProps) {
         if (!isMounted) return;
 
         // Use the same revenue field shown in Orders tab; fall back for safety
-        const totalRevenue = orders.orders.reduce((sum, order: any) => {
+        const totalRevenue = orders.orders.reduce((sum: number, order: AdminOrder) => {
           const amount = Number(order.totalPaymentAmount ?? order.total_amount ?? 0);
           return sum + (Number.isNaN(amount) ? 0 : amount);
         }, 0);

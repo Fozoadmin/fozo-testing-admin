@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import { adminApi } from '@/lib/api';
+import { getErrorMessage } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -33,12 +33,21 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { StatCard } from './StatCard';
-import { getStatusLabel } from '@/constants/orderStatus';
+import { getStatusLabel, type OrderStatus } from '@/constants/orderStatus';
+import type {
+  DeliveryPartner,
+  DeliveryPartnerFinancialSummary,
+  FinancialOrder,
+  Restaurant,
+  RestaurantFinancialSummary,
+} from '@/types';
+
+const toISODate = (date: Date) => date.toISOString().split('T')[0] ?? '';
 
 export function Finance() {
   const [activeTab, setActiveTab] = useState('restaurants');
-  const [restaurantData, setRestaurantData] = useState<any[]>([]);
-  const [deliveryPartnerData, setDeliveryPartnerData] = useState<any[]>([]);
+  const [restaurantData, setRestaurantData] = useState<RestaurantFinancialSummary[]>([]);
+  const [deliveryPartnerData, setDeliveryPartnerData] = useState<DeliveryPartnerFinancialSummary[]>([]);
   const [expandedRestaurants, setExpandedRestaurants] = useState<Set<string>>(new Set());
   const [expandedDeliveryPartners, setExpandedDeliveryPartners] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -48,12 +57,12 @@ export function Finance() {
   const [selectedDeliveryPartnerIds, setSelectedDeliveryPartnerIds] = useState<string[]>([]);
 
   // Restaurant filter states
-  const [allRestaurants, setAllRestaurants] = useState<any[]>([]);
+  const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
   const [restaurantDropdownOpen, setRestaurantDropdownOpen] = useState(false);
   const [restaurantSearchFilter, setRestaurantSearchFilter] = useState('');
 
   // Delivery Partner filter states
-  const [allDeliveryPartners, setAllDeliveryPartners] = useState<any[]>([]);
+  const [allDeliveryPartners, setAllDeliveryPartners] = useState<DeliveryPartner[]>([]);
   const [deliveryPartnerDropdownOpen, setDeliveryPartnerDropdownOpen] = useState(false);
   const [deliveryPartnerSearchFilter, setDeliveryPartnerSearchFilter] = useState('');
 
@@ -77,23 +86,23 @@ export function Finance() {
   const calculateDateRange = (period: string) => {
     const today = new Date();
     today.setHours(23, 59, 59, 999);
-    const endDate = today.toISOString().split('T')[0];
+    const endDate = toISODate(today);
     let startDate = '';
 
     switch (period) {
       case 'day':
-        startDate = today.toISOString().split('T')[0];
+        startDate = toISODate(today);
         break;
       case 'week': {
         const weekAgo = new Date(today);
         weekAgo.setDate(today.getDate() - 7);
-        startDate = weekAgo.toISOString().split('T')[0];
+        startDate = toISODate(weekAgo);
         break;
       }
       case 'month': {
         const monthAgo = new Date(today);
         monthAgo.setMonth(today.getMonth() - 1);
-        startDate = monthAgo.toISOString().split('T')[0];
+        startDate = toISODate(monthAgo);
         break;
       }
       case 'total':
@@ -173,9 +182,9 @@ export function Finance() {
 
       const data = await adminApi.getRestaurantFinancialSummary(ids, startDate, endDate);
       setRestaurantData(data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching restaurant financial data:', error);
-      toast.error(error.message || 'Failed to fetch restaurant financial data');
+      toast.error(getErrorMessage(error, 'Failed to fetch restaurant financial data'));
     } finally {
       setLoading(false);
     }
@@ -202,9 +211,9 @@ export function Finance() {
 
       const data = await adminApi.getDeliveryPartnerFinancialSummary(ids, startDate, endDate);
       setDeliveryPartnerData(data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching delivery partner financial data:', error);
-      toast.error(error.message || 'Failed to fetch delivery partner financial data');
+      toast.error(getErrorMessage(error, 'Failed to fetch delivery partner financial data'));
     } finally {
       setLoading(false);
     }
@@ -243,7 +252,7 @@ export function Finance() {
   };
 
   const selectAllRestaurants = () => {
-    const allIds = allRestaurants.map(r => r.restaurantId || r.id);
+    const allIds = allRestaurants.map(r => r.restaurantId || r.id).filter(Boolean);
     setSelectedRestaurantIds(allIds);
   };
 
@@ -262,7 +271,9 @@ export function Finance() {
   };
 
   const selectAllDeliveryPartners = () => {
-    const allIds = allDeliveryPartners.map(dp => dp.id || dp.deliveryPartnerId);
+    const allIds = allDeliveryPartners
+      .map(dp => dp.id || dp.deliveryPartnerId)
+      .filter((id): id is string => Boolean(id));
     setSelectedDeliveryPartnerIds(allIds);
   };
 
@@ -698,7 +709,7 @@ export function Finance() {
                             </TableHeader>
                             <TableBody>
                               {restaurant.orders && restaurant.orders.length > 0 ? (
-                                restaurant.orders.map((order: any) => (
+                                restaurant.orders.map((order: FinancialOrder) => (
                                   <TableRow key={order.orderId} className='hover:bg-muted/30'>
                                     <TableCell>
                                       <div>{order.customerName || 'N/A'}</div>
@@ -715,7 +726,7 @@ export function Finance() {
                                         }
                                         className='capitalize'
                                       >
-                                        {getStatusLabel(order.orderStatus as any)}
+                                        {getStatusLabel(order.orderStatus as OrderStatus)}
                                       </Badge>
                                     </TableCell>
                                     <TableCell>
@@ -828,7 +839,9 @@ export function Finance() {
                             <>
                               {allDeliveryPartners
                                 .filter(dp =>
-                                  selectedDeliveryPartnerIds.includes(dp.id || dp.deliveryPartnerId)
+                                  selectedDeliveryPartnerIds.includes(
+                                    (dp.id || dp.deliveryPartnerId) ?? ''
+                                  )
                                 )
                                 .slice(0, 2)
                                 .map(dp => (
@@ -898,7 +911,7 @@ export function Finance() {
                                     .includes(deliveryPartnerSearchFilter.toLowerCase())
                               )
                               .map(dp => {
-                                const dpId = dp.id || dp.deliveryPartnerId;
+                                const dpId = (dp.id || dp.deliveryPartnerId) ?? '';
                                 const isSelected = selectedDeliveryPartnerIds.includes(dpId);
                                 return (
                                   <div
@@ -1129,7 +1142,7 @@ export function Finance() {
                             </TableHeader>
                             <TableBody>
                               {dp.orders && dp.orders.length > 0 ? (
-                                dp.orders.map((order: any) => (
+                                dp.orders.map((order: FinancialOrder) => (
                                   <TableRow key={order.orderId} className='hover:bg-muted/30'>
                                     <TableCell>
                                       <div>{order.customerName || 'N/A'}</div>
@@ -1147,7 +1160,7 @@ export function Finance() {
                                         }
                                         className='capitalize'
                                       >
-                                        {getStatusLabel(order.orderStatus as any)}
+                                        {getStatusLabel(order.orderStatus as OrderStatus)}
                                       </Badge>
                                     </TableCell>
                                     <TableCell>
