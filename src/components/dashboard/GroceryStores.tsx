@@ -31,45 +31,12 @@ import {
   getErrorMessage,
 } from '@/lib/utils';
 import type { GroceryStore, GroceryStoreStatus } from '@/types';
-
-const STATUS_COLORS: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  approved: 'default',
-  pending: 'secondary',
-  rejected: 'destructive',
-  suspended: 'destructive',
-  closed: 'outline',
-};
-
-const emptyForm = {
-  fullName: '',
-  email: '',
-  phoneNumber: '',
-  password: '',
-  storeName: '',
-  contactPersonName: '',
-  fssaiLicenseNumber: '',
-  gstinNumber: '',
-  description: '',
-};
-
-const emptyBank = {
-  accountNumber: '',
-  ifscCode: '',
-  accountHolderName: '',
-  bankName: '',
-};
-
-const emptyEditForm = {
-  storeName: '',
-  contactPersonName: '',
-  fssaiLicenseNumber: '',
-  gstinNumber: '',
-  description: '',
-  imageUrl: '',
-  status: 'pending' as 'pending' | 'approved' | 'rejected' | 'suspended' | 'closed',
-  documentsVerified: false,
-  isApproved: false,
-};
+import {
+  GROCERY_STORE_STATUS_COLORS,
+  emptyBankDetailsForm,
+  emptyGroceryStoreEditForm,
+  emptyGroceryStoreForm,
+} from './groceryStoresModel';
 
 export function GroceryStores() {
   const [stores, setStores] = useState<GroceryStore[]>([]);
@@ -79,8 +46,8 @@ export function GroceryStores() {
 
   // Add dialog
   const [openAdd, setOpenAdd] = useState(false);
-  const [form, setForm] = useState({ ...emptyForm });
-  const [bank, setBank] = useState({ ...emptyBank });
+  const [form, setForm] = useState({ ...emptyGroceryStoreForm });
+  const [bank, setBank] = useState({ ...emptyBankDetailsForm });
   const [imageUrl, setImageUrl] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -88,8 +55,8 @@ export function GroceryStores() {
   // Edit dialog
   const [openEdit, setOpenEdit] = useState(false);
   const [selectedStore, setSelectedStore] = useState<GroceryStore | null>(null);
-  const [editForm, setEditForm] = useState({ ...emptyEditForm });
-  const [editBank, setEditBank] = useState({ ...emptyBank });
+  const [editForm, setEditForm] = useState({ ...emptyGroceryStoreEditForm });
+  const [editBank, setEditBank] = useState({ ...emptyBankDetailsForm });
   const [editUploadingImage, setEditUploadingImage] = useState(false);
   const [editing, setEditing] = useState(false);
 
@@ -149,8 +116,8 @@ export function GroceryStores() {
   };
 
   const resetAddForm = () => {
-    setForm({ ...emptyForm });
-    setBank({ ...emptyBank });
+    setForm({ ...emptyGroceryStoreForm });
+    setBank({ ...emptyBankDetailsForm });
     setImageUrl('');
   };
 
@@ -524,7 +491,9 @@ export function GroceryStores() {
                       </TableCell>
                       <TableCell>{store.contact_person_name || '—'}</TableCell>
                       <TableCell>
-                        <Badge variant={STATUS_COLORS[store.status ?? 'pending'] || 'secondary'}>
+                        <Badge
+                          variant={GROCERY_STORE_STATUS_COLORS[store.status ?? 'pending'] || 'secondary'}
+                        >
                           {store.status}
                         </Badge>
                       </TableCell>

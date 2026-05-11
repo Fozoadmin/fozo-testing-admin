@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { adminApi } from '@/lib/api';
 import { getErrorMessage } from '@/lib/utils';
-import type { GroceryStore } from '@/types';
+import type { Coupon, GroceryStore } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,54 +34,13 @@ import {
 } from '@/components/ui/table';
 import { Plus, RefreshCw, X, ChevronDown, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
-
-type Coupon = {
-  id: string;
-  code: string;
-  discountType: 'flat' | 'percentage';
-  discountValue: number;
-  restaurantId: string | null;
-  restaurantName?: string | null;
-  groceryStoreId: string | null;
-  groceryStoreName?: string | null;
-  applicableTo: 'restaurant' | 'grocery' | 'both';
-  minOrderValue: number;
-  maxDiscountAmount: number | null;
-  usageLimit: number;
-  usageCount: number;
-  expiresAt: string | null;
-  isActive: boolean;
-  visibility: boolean;
-  createdAt: string;
-};
-
-type RestaurantLite = {
-  id?: string;
-  restaurantId?: string;
-  restaurantName?: string;
-  status?: string;
-  userEmail?: string;
-  phoneNumber?: string;
-};
-
-type GroceryStoreLite = {
-  id: string;
-  storeName: string;
-  status?: string;
-};
-
-type ApplicableTo = Coupon['applicableTo'];
-type DiscountType = Coupon['discountType'];
-
-const formatDate = (iso: string | null) => {
-  if (!iso) return '—';
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString();
-  } catch {
-    return iso;
-  }
-};
+import {
+  formatCouponDate,
+  type ApplicableTo,
+  type DiscountType,
+  type GroceryStoreLite,
+  type RestaurantLite,
+} from './couponsModel';
 
 export function Coupons() {
   const [loading, setLoading] = useState(true);
@@ -867,7 +826,7 @@ export function Coupons() {
                         <TableCell>
                           {c.usageCount}/{c.usageLimit}
                         </TableCell>
-                        <TableCell>{formatDate(c.expiresAt)}</TableCell>
+                        <TableCell>{formatCouponDate(c.expiresAt)}</TableCell>
                         <TableCell>
                           {expired ? (
                             <Badge variant='destructive'>Expired</Badge>

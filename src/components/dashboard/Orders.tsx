@@ -46,220 +46,31 @@ import {
   Clock,
   ShoppingCart,
 } from 'lucide-react';
+import { formatDateTime, formatINR, timeAgo } from '@/lib/formatters';
 import { cn, apiRequestWithStatus, getErrorMessage } from '@/lib/utils';
 import { ORDER_STATUS, getStatusLabel, type OrderStatus } from '@/constants/orderStatus';
+import { useDebounced } from '@/hooks/useDebounced';
 import { toast } from 'react-toastify';
-
-// ------------------ Types ------------------
-export type Order = {
-  id: string;
-  customerId: string;
-  restaurantId: string;
-  deliveryPartnerId: string | null;
-  totalBagAmount: string; // "49.00"
-  deliveryFee: string; // "0.00"
-  platformCommission: string; // "10.00"
-  totalPaymentAmount: string; // "59.00"
-  discountAmount: string; // "0.00"
-  couponCode: string | null;
-  walletAmountUsed: string; // "0.00"
-  finalAmountPaid: string | null; // actual amount collected after discounts
-  deliveryAddressSnapshot: string;
-  deliveryLatitude: string; // "12.929507"
-  deliveryLongitude: string; // "77.677976"
-  customerNameSnapshot: string | null;
-  customerPhoneSnapshot: string;
-  customerEmailSnapshot: string | null;
-  notesToRestaurant: string | null;
-  orderStatus: OrderStatus;
-  paymentStatus: 'paid' | 'pending' | 'failed';
-  paymentTransactionId: string | null;
-  paymentMethod: string | null;
-  orderDate: string; // ISO date
-  restaurantConfirmedAt: string | null;
-  deliveryPartnerAssignedAt: string | null;
-  pickupTimeSlotStart: string | null; // "18:00:00"
-  pickupTimeSlotEnd: string | null; // "23:00:00"
-  expectedDeliveryTime: string | null;
-  actualDeliveryTime: string | null;
-  cancellationReason: string | null;
-  cancelledByUserType: string | null;
-  createdAt: string; // ISO date
-  updatedAt: string; // ISO date
-  customerName: string | null;
-  customerPhone: string | null;
-  restaurantName: string | null;
-  restaurantContactPerson: string | null;
-  deliveryPartnerName: string | null;
-  deliveryPartnerPhone: string | null;
-  items: Array<{
-    bagId: string;
-    bagName: string;
-    bagIsVegetarian: boolean;
-    quantity: number;
-    pricePaid: number;
-    actualWorth: number;
-    co2SavedKg: number;
-  }>;
-};
-
-export type DeliveryPartner = {
-  id: string;
-  fullName: string | null;
-  phoneNumber?: string | null;
-};
-
-export type GroceryOrder = {
-  id: string;
-  customerId: string;
-  storeId: string;
-  deliveryPartnerId: string | null;
-  storeNameSnapshot: string;
-  storeImage: string | null;
-  totalItemsAmount: string;
-  deliveryCharge: string;
-  handlingCharge: string;
-  platformCommission: string;
-  gstAmount: string;
-  discountAmount: string;
-  totalPaymentAmount: string;
-  deliveryAddressSnapshot: string | null;
-  orderStatus: string;
-  order_status?: string;
-  paymentMethod: string | null;
-  paymentStatus: string;
-  customerNameSnapshot: string | null;
-  customerName: string | null;
-  customerPhone: string | null;
-  createdAt: string;
-  updatedAt: string;
-  items: Array<{
-    id: string;
-    groceryItemId: string;
-    itemName: string;
-    quantity: number;
-    unitPrice: number;
-    totalPrice: number;
-  }>;
-};
-
-const GROCERY_STATUS_OPTIONS = [
-  'all',
-  'placed',
-  'confirmed',
-  'ready_for_pickup',
-  'out_for_delivery',
-  'delivered',
-  'cancelled_user',
-  'cancelled_store',
-] as const;
-
-type GroceryOrderStatus = (typeof GROCERY_STATUS_OPTIONS)[number];
-
-const groceryStatusLabel = (s: string) => {
-  const map: Record<string, string> = {
-    placed: 'Placed',
-    confirmed: 'Confirmed',
-    ready_for_pickup: 'Ready for Pickup',
-    out_for_delivery: 'Out for Delivery',
-    delivered: 'Delivered',
-    cancelled_user: 'Cancelled by User',
-    cancelled_store: 'Cancelled by Store',
-    all: 'All Statuses',
-  };
-  return map[s] ?? s;
-};
-
-const groceryStatusVariant = (s: string) => {
-  if (!s) return 'outline' as const;
-  if (s === 'delivered') return 'default' as const;
-  if (s.startsWith('cancelled')) return 'destructive' as const;
-  if (['out_for_delivery', 'ready_for_pickup', 'confirmed', 'placed'].includes(s))
-    return 'secondary' as const;
-  return 'outline' as const;
-};
-
-// ------------------ Utils ------------------
-const formatINR = (n: number | string) =>
-  new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 2,
-  }).format(typeof n === 'string' ? Number(n) : n);
-
-const timeAgo = (iso?: string | null) => {
-  if (!iso) return '-';
-  const d = new Date(iso);
-  const diff = Date.now() - d.getTime();
-  const minutes = Math.floor(diff / (1000 * 60));
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-};
-
-const formatDateTime = (iso?: string | null) => {
-  if (!iso) return '-';
-  const d = new Date(iso);
-  return d.toLocaleString('en-IN', {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  });
-};
-
-const statusVariant = (s: Order['orderStatus']) => {
-  switch (s) {
-    case ORDER_STATUS.DELIVERED:
-      return 'default' as const;
-    case ORDER_STATUS.CANCELLED_BY_USER:
-    case ORDER_STATUS.CANCELLED_BY_RESTAURANT:
-    case ORDER_STATUS.CANCELLED_BY_ADMIN:
-    case ORDER_STATUS.REFUNDED:
-      return 'destructive' as const;
-    case ORDER_STATUS.OUT_FOR_DELIVERY:
-    case ORDER_STATUS.READY_FOR_PICKUP:
-    case ORDER_STATUS.CONFIRMED:
-    case ORDER_STATUS.PLACED:
-      return 'secondary' as const;
-    default:
-      return 'outline' as const;
-  }
-};
-
-const STATUS_OPTIONS: Array<OrderStatus | 'all'> = [
-  'all',
-  ORDER_STATUS.PLACED,
-  ORDER_STATUS.CONFIRMED,
-  ORDER_STATUS.READY_FOR_PICKUP,
-  ORDER_STATUS.OUT_FOR_DELIVERY,
-  ORDER_STATUS.DELIVERED,
-  ORDER_STATUS.CANCELLED_BY_USER,
-  ORDER_STATUS.CANCELLED_BY_RESTAURANT,
-  ORDER_STATUS.CANCELLED_BY_ADMIN,
-  ORDER_STATUS.REFUNDED,
-];
-
-function useDebounced<T>(value: T, delay = 300) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(t);
-  }, [value, delay]);
-  return debounced;
-}
+import type {
+  AdminOrder as Order,
+  DeliveryPartnerOption as DeliveryPartner,
+  GroceryOrder,
+} from '@/types';
+import {
+  GROCERY_STATUS_OPTIONS,
+  ORDER_STATUS_OPTIONS,
+  groceryStatusLabel,
+  groceryStatusVariant,
+  orderStatusVariant,
+  type GroceryOrderStatus,
+} from './ordersModel';
 
 // ------------------ Main Component ------------------
 export function Orders() {
   const [activeTab, setActiveTab] = useState<'restaurant' | 'grocery'>('restaurant');
 
   // ── Restaurant orders state ──
-  const [status, setStatus] = useState<(typeof STATUS_OPTIONS)[number]>('all');
+  const [status, setStatus] = useState<(typeof ORDER_STATUS_OPTIONS)[number]>('all');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1067,12 +878,15 @@ export function Orders() {
                   placeholder='Search by ID, customer, restaurant, phone'
                   aria-label='Search orders'
                 />
-                <Select value={status} onValueChange={v => setStatus(v as (typeof STATUS_OPTIONS)[number])}>
+                <Select
+                  value={status}
+                  onValueChange={v => setStatus(v as (typeof ORDER_STATUS_OPTIONS)[number])}
+                >
                   <SelectTrigger className='w-[220px]'>
                     <SelectValue placeholder='Status' />
                   </SelectTrigger>
                   <SelectContent>
-                    {STATUS_OPTIONS.map(s => (
+                    {ORDER_STATUS_OPTIONS.map(s => (
                       <SelectItem key={s} value={s}>
                         {s === 'all' ? 'All Statuses' : getStatusLabel(s)}
                       </SelectItem>
@@ -1199,7 +1013,7 @@ export function Orders() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={statusVariant(o.orderStatus)} className='capitalize'>
+                            <Badge variant={orderStatusVariant(o.orderStatus)} className='capitalize'>
                               {getStatusLabel(o.orderStatus)}
                             </Badge>
                           </TableCell>
@@ -1243,7 +1057,7 @@ export function Orders() {
                         <SelectValue placeholder='Update status' />
                       </SelectTrigger>
                       <SelectContent>
-                        {STATUS_OPTIONS.filter(s => s !== 'all').map(s => (
+                        {ORDER_STATUS_OPTIONS.filter(s => s !== 'all').map(s => (
                           <SelectItem key={s} value={s} className='capitalize'>
                             {getStatusLabel(s)}
                           </SelectItem>

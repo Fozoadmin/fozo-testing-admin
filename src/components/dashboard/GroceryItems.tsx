@@ -25,23 +25,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, Loader2, Search } from 'lucide-react';
 import { toast } from 'react-toastify';
-
-const UNITS = ['piece', 'kg', 'g', 'l', 'ml', 'dozen', 'pack'] as const;
-
-type ItemFormValues = {
-  storeId: string;
-  itemName: string;
-  category: string;
-  description: string;
-  imageUrl: string;
-  price: string;
-  mrp: string;
-  unit: (typeof UNITS)[number];
-  quantityAvailable: string;
-  totalQuantityListed: string;
-  isActive: boolean;
-  isInStock: boolean;
-};
+import { GROCERY_UNITS, emptyItemForm, type ItemFormValues } from './groceryItemsModel';
 
 function ItemForm({
   f,
@@ -113,9 +97,9 @@ function ItemForm({
         <select
           className='bg-background w-full rounded-md border px-3 py-2 text-sm'
           value={f.unit}
-          onChange={e => setF({ ...f, unit: e.target.value as (typeof UNITS)[number] })}
+          onChange={e => setF({ ...f, unit: e.target.value as GroceryUnit })}
         >
-          {UNITS.map(u => (
+          {GROCERY_UNITS.map(u => (
             <option key={u} value={u}>
               {u}
             </option>
@@ -174,21 +158,6 @@ function ItemForm({
   );
 }
 
-const emptyForm: ItemFormValues = {
-  storeId: '',
-  itemName: '',
-  category: '',
-  description: '',
-  imageUrl: '',
-  price: '',
-  mrp: '',
-  unit: 'piece' as GroceryUnit,
-  quantityAvailable: '0',
-  totalQuantityListed: '0',
-  isActive: true,
-  isInStock: true,
-};
-
 export function GroceryItems() {
   const [items, setItems] = useState<GroceryItem[]>([]);
   const [stores, setStores] = useState<GroceryStore[]>([]);
@@ -198,13 +167,13 @@ export function GroceryItems() {
 
   // Add dialog
   const [openAdd, setOpenAdd] = useState(false);
-  const [form, setForm] = useState({ ...emptyForm });
+  const [form, setForm] = useState({ ...emptyItemForm });
   const [creating, setCreating] = useState(false);
 
   // Edit dialog
   const [openEdit, setOpenEdit] = useState(false);
   const [selectedItem, setSelectedItem] = useState<GroceryItem | null>(null);
-  const [editForm, setEditForm] = useState({ ...emptyForm });
+  const [editForm, setEditForm] = useState({ ...emptyItemForm });
   const [editing, setEditing] = useState(false);
 
   // Delete dialog
@@ -284,7 +253,7 @@ export function GroceryItems() {
       });
       toast.success('Grocery item created');
       setOpenAdd(false);
-      setForm({ ...emptyForm });
+      setForm({ ...emptyItemForm });
       await fetchData();
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, 'Failed to create item'));

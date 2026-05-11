@@ -51,9 +51,10 @@ import {
   apiRequestWithStatus,
   getErrorMessage,
 } from '@/lib/utils';
-import { ORDER_STATUS } from '@/constants/orderStatus';
+import { formatDateTime, timeAgo } from '@/lib/formatters';
 import { toast } from 'react-toastify';
 import type { AdminOrder, DeliveryPartner, VehicleType } from '@/types';
+import { orderStatusVariant } from './ordersModel';
 
 export function DeliveryPartners() {
   const [deliveryPartners, setDeliveryPartners] = useState<DeliveryPartner[]>([]);
@@ -402,51 +403,6 @@ export function DeliveryPartners() {
       setDpOrders([]);
     } finally {
       setOrdersLoading(false);
-    }
-  };
-
-  const timeAgo = (iso?: string | null) => {
-    if (!iso) return '-';
-    const d = new Date(iso);
-    const diff = Date.now() - d.getTime();
-    const minutes = Math.floor(diff / (1000 * 60));
-    if (minutes < 1) return 'just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
-  };
-
-  const formatDateTime = (iso?: string | null) => {
-    if (!iso) return '-';
-    const d = new Date(iso);
-    return d.toLocaleString('en-IN', {
-      year: 'numeric',
-      month: 'short',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    });
-  };
-
-  const statusVariant = (s: string) => {
-    switch (s) {
-      case ORDER_STATUS.DELIVERED:
-        return 'default' as const;
-      case ORDER_STATUS.CANCELLED_BY_USER:
-      case ORDER_STATUS.CANCELLED_BY_RESTAURANT:
-      case ORDER_STATUS.CANCELLED_BY_ADMIN:
-      case ORDER_STATUS.REFUNDED:
-        return 'destructive' as const;
-      case ORDER_STATUS.OUT_FOR_DELIVERY:
-      case ORDER_STATUS.READY_FOR_PICKUP:
-      case ORDER_STATUS.CONFIRMED:
-      case ORDER_STATUS.PLACED:
-        return 'secondary' as const;
-      default:
-        return 'outline' as const;
     }
   };
 
@@ -1192,7 +1148,7 @@ export function DeliveryPartners() {
                               </TableCell>
                               <TableCell>
                                 <Badge
-                                  variant={statusVariant(order.orderStatus)}
+                                  variant={orderStatusVariant(order.orderStatus)}
                                   className='capitalize'
                                 >
                                   {order.orderStatus.replaceAll('_', ' ')}

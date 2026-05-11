@@ -9,54 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { adminApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { getErrorMessage } from '@/lib/utils';
-
-interface SettingsData extends Record<string, string> {
-  // Financial & Pricing
-  platformCommissionRate: string;
-  handlingFeeFixed: string;
-  deliveryFee: string;
-  gstRate: string;
-  referralAmount: string;
-  groceryReferralAmount: string;
-  freeDeliveryAovThreshold: string;
-  groceryFreeDeliveryAovThreshold: string;
-
-  // Operational & Logistics
-  customerSearchRadiusKm: string;
-  maxDeliveryRadiusKm: string;
-  dpBaseFee: string;
-  dpFeePerKm: string;
-  restaurantConfirmTimeoutSeconds: string;
-
-  // App Control & Kill Switches
-  isOrderingDisabled: string;
-  isPaymentGatewayDown: string;
-  appUnderMaintenance: string;
-  allowNewRegistrations: string;
-  isGroceryEnabled: string;
-  forceUpdateMinVersionIos: string;
-  forceUpdateMinVersionAndroid: string;
-  textForceUpdateMessage: string;
-  urlAppStore: string;
-  urlPlayStore: string;
-  isWalletReferralEnabled: string;
-  textWalletReferralDisabledMessage: string;
-
-  // Content & Text
-  textNoServiceInArea: string;
-  textAppUnderMaintenance: string;
-  textOrderingDisabled: string;
-  supportPhoneNumber: string;
-  supportEmail: string;
-  urlPrivacyPolicy: string;
-  urlTermsAndConditions: string;
-
-  // Social Media
-  socialInstagramUrl: string;
-  socialFacebookUrl: string;
-  socialTwitterUrl: string;
-  socialLinkedinUrl: string;
-}
+import type { SettingsData } from '@/types';
 
 export function Settings() {
   const { user } = useAuth();
