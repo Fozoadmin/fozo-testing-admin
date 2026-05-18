@@ -74,9 +74,9 @@ export function Coupons() {
     applicableTo: 'restaurant' as 'restaurant' | 'grocery' | 'both',
     restaurantId: '',
     groceryStoreId: '',
-    minOrderValue: '0',
+    minOrderValue: '',
     maxDiscountAmount: '',
-    usageLimit: '100000',
+    usageLimit: '',
     expiresAt: '',
     isActive: true,
     visibility: true,
@@ -210,6 +210,32 @@ export function Coupons() {
     return coupons.filter(c => c.code.toLowerCase().includes(q));
   }, [coupons, search]);
 
+  const parseRequiredNumber = (
+    value: string,
+    label: string,
+    options: { allowZero?: boolean; integer?: boolean } = {}
+  ) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      toast.error(`${label} is required`);
+      return null;
+    }
+
+    const parsed = Number(trimmed);
+    const min = options.allowZero ? 0 : Number.MIN_VALUE;
+    if (!Number.isFinite(parsed) || parsed < min) {
+      toast.error(`${label} must be ${options.allowZero ? '0 or greater' : 'greater than 0'}`);
+      return null;
+    }
+
+    if (options.integer && !Number.isInteger(parsed)) {
+      toast.error(`${label} must be a whole number`);
+      return null;
+    }
+
+    return parsed;
+  };
+
   const onCreate = async () => {
     const code = form.code.trim().toUpperCase();
     if (!code) return toast.error('Coupon code is required');
@@ -221,8 +247,14 @@ export function Coupons() {
     if (form.discountType === 'percentage' && discountValue > 100)
       return toast.error('Percentage cannot exceed 100');
 
-    const minOrderValue = Number(form.minOrderValue || '0');
-    const usageLimit = Number(form.usageLimit || '100000');
+    const minOrderValue = parseRequiredNumber(form.minOrderValue, 'Minimum order value', {
+      allowZero: true,
+    });
+    if (minOrderValue === null) return;
+
+    const usageLimit = parseRequiredNumber(form.usageLimit, 'Usage limit', { integer: true });
+    if (usageLimit === null) return;
+
     const maxDiscountAmount = form.maxDiscountAmount ? Number(form.maxDiscountAmount) : null;
 
     const expiresAt = form.expiresAt ? new Date(form.expiresAt).toISOString() : null;
@@ -253,9 +285,9 @@ export function Coupons() {
         applicableTo: 'restaurant',
         restaurantId: '',
         groceryStoreId: '',
-        minOrderValue: '0',
+        minOrderValue: '',
         maxDiscountAmount: '',
-        usageLimit: '100000',
+        usageLimit: '',
         expiresAt: '',
         isActive: true,
         visibility: true,
@@ -283,12 +315,18 @@ export function Coupons() {
       applicableTo: coupon.applicableTo || 'restaurant',
       restaurantId: coupon.restaurantId ?? '',
       groceryStoreId: coupon.groceryStoreId ?? '',
-      minOrderValue: String(coupon.minOrderValue ?? 0),
+      minOrderValue:
+        coupon.minOrderValue === null || coupon.minOrderValue === undefined
+          ? ''
+          : String(coupon.minOrderValue),
       maxDiscountAmount:
         coupon.maxDiscountAmount === null || coupon.maxDiscountAmount === undefined
           ? ''
           : String(coupon.maxDiscountAmount),
-      usageLimit: String(coupon.usageLimit ?? 100000),
+      usageLimit:
+        coupon.usageLimit === null || coupon.usageLimit === undefined
+          ? ''
+          : String(coupon.usageLimit),
       expiresAt: coupon.expiresAt ? new Date(coupon.expiresAt).toISOString().slice(0, 16) : '',
       isActive: coupon.isActive,
       visibility: coupon.visibility ?? true,
@@ -337,8 +375,14 @@ export function Coupons() {
     if (form.discountType === 'percentage' && discountValue > 100)
       return toast.error('Percentage cannot exceed 100');
 
-    const minOrderValue = Number(form.minOrderValue || '0');
-    const usageLimit = Number(form.usageLimit || '100000');
+    const minOrderValue = parseRequiredNumber(form.minOrderValue, 'Minimum order value', {
+      allowZero: true,
+    });
+    if (minOrderValue === null) return;
+
+    const usageLimit = parseRequiredNumber(form.usageLimit, 'Usage limit', { integer: true });
+    if (usageLimit === null) return;
+
     const maxDiscountAmount = form.maxDiscountAmount ? Number(form.maxDiscountAmount) : null;
     const expiresAt = form.expiresAt ? new Date(form.expiresAt).toISOString() : null;
 

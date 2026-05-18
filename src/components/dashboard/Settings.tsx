@@ -11,6 +11,46 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getErrorMessage } from '@/lib/utils';
 import type { SettingsData } from '@/types';
 
+const REQUIRED_NUMERIC_SETTINGS: Array<{
+  key: keyof SettingsData;
+  label: string;
+  min: number;
+  max?: number;
+}> = [
+  { key: 'platformCommissionRate', label: 'Platform Commission Rate', min: 0, max: 1 },
+  { key: 'handlingFeeFixed', label: 'Handling Fee', min: 0 },
+  { key: 'gstRate', label: 'GST Rate', min: 0, max: 1 },
+  { key: 'referralAmount', label: 'Restaurant Referral Amount', min: 0 },
+  { key: 'groceryReferralAmount', label: 'Grocery Referral Amount', min: 0 },
+  { key: 'freeDeliveryAovThreshold', label: 'Food AOV for Free Delivery', min: 0 },
+  { key: 'groceryFreeDeliveryAovThreshold', label: 'Grocery AOV for Free Delivery', min: 0 },
+  { key: 'customerSearchRadiusKm', label: 'Customer Search Radius', min: 0 },
+  { key: 'maxDeliveryRadiusKm', label: 'Max Delivery Radius', min: 0 },
+  { key: 'dpBaseFee', label: 'DP Base Fee', min: 0 },
+  { key: 'dpFeePerKm', label: 'DP Fee Per Km', min: 0 },
+  { key: 'restaurantConfirmTimeoutSeconds', label: 'Restaurant Confirm Timeout', min: 0 },
+];
+
+const validateRequiredBusinessSettings = (settings: SettingsData): string | null => {
+  for (const { key, label, min, max } of REQUIRED_NUMERIC_SETTINGS) {
+    const value = settings[key];
+    if (value === undefined || value.trim() === '') {
+      return `${label} is required.`;
+    }
+
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < min) {
+      return `${label} must be ${min === 0 ? '0 or greater' : `at least ${min}`}.`;
+    }
+
+    if (max !== undefined && parsed > max) {
+      return `${label} must be ${max} or lower.`;
+    }
+  }
+
+  return null;
+};
+
 export function Settings() {
   const { user } = useAuth();
   const [settings, setSettings] = useState<SettingsData | null>(null);
@@ -43,10 +83,16 @@ export function Settings() {
   const handleSave = async () => {
     if (!settings || !originalSettings) return;
 
+    setError(null);
+    setSuccess(null);
+    const validationError = validateRequiredBusinessSettings(settings);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     try {
       setSaving(true);
-      setError(null);
-      setSuccess(null);
 
       // Compare current settings with original to find only changed values
       const changedSettings: Record<string, string> = {};
@@ -200,7 +246,7 @@ export function Settings() {
                     step='0.01'
                     min='0'
                     max='1'
-                    value={settings.platformCommissionRate}
+                    value={settings.platformCommissionRate ?? ''}
                     onChange={e => updateSetting('platformCommissionRate', e.target.value)}
                   />
                 </div>
@@ -210,7 +256,7 @@ export function Settings() {
                     id='handlingFeeFixed'
                     type='number'
                     min='0'
-                    value={settings.handlingFeeFixed}
+                    value={settings.handlingFeeFixed ?? ''}
                     onChange={e => updateSetting('handlingFeeFixed', e.target.value)}
                   />
                 </div>
@@ -225,7 +271,7 @@ export function Settings() {
                     step='0.01'
                     min='0'
                     max='1'
-                    value={settings.gstRate}
+                    value={settings.gstRate ?? ''}
                     onChange={e => updateSetting('gstRate', e.target.value)}
                   />
                 </div>
@@ -235,7 +281,7 @@ export function Settings() {
                     id='referralAmount'
                     type='number'
                     min='0'
-                    value={settings.referralAmount || '0'}
+                    value={settings.referralAmount ?? ''}
                     onChange={e => updateSetting('referralAmount', e.target.value)}
                   />
                 </div>
@@ -245,7 +291,7 @@ export function Settings() {
                     id='groceryReferralAmount'
                     type='number'
                     min='0'
-                    value={settings.groceryReferralAmount || '0'}
+                    value={settings.groceryReferralAmount ?? ''}
                     onChange={e => updateSetting('groceryReferralAmount', e.target.value)}
                   />
                 </div>
@@ -255,7 +301,7 @@ export function Settings() {
                     id='freeDeliveryAovThreshold'
                     type='number'
                     min='0'
-                    value={settings.freeDeliveryAovThreshold || '0'}
+                    value={settings.freeDeliveryAovThreshold ?? ''}
                     onChange={e => updateSetting('freeDeliveryAovThreshold', e.target.value)}
                   />
                   <p className='text-muted-foreground text-xs'>
@@ -271,7 +317,7 @@ export function Settings() {
                     id='groceryFreeDeliveryAovThreshold'
                     type='number'
                     min='0'
-                    value={settings.groceryFreeDeliveryAovThreshold || '0'}
+                    value={settings.groceryFreeDeliveryAovThreshold ?? ''}
                     onChange={e => updateSetting('groceryFreeDeliveryAovThreshold', e.target.value)}
                   />
                   <p className='text-muted-foreground text-xs'>
@@ -294,7 +340,7 @@ export function Settings() {
                     id='customerSearchRadiusKm'
                     type='number'
                     min='0'
-                    value={settings.customerSearchRadiusKm}
+                    value={settings.customerSearchRadiusKm ?? ''}
                     onChange={e => updateSetting('customerSearchRadiusKm', e.target.value)}
                   />
                 </div>
@@ -304,7 +350,7 @@ export function Settings() {
                     id='maxDeliveryRadiusKm'
                     type='number'
                     min='0'
-                    value={settings.maxDeliveryRadiusKm}
+                    value={settings.maxDeliveryRadiusKm ?? ''}
                     onChange={e => updateSetting('maxDeliveryRadiusKm', e.target.value)}
                   />
                 </div>
@@ -314,7 +360,7 @@ export function Settings() {
                     id='dpBaseFee'
                     type='number'
                     min='0'
-                    value={settings.dpBaseFee}
+                    value={settings.dpBaseFee ?? ''}
                     onChange={e => updateSetting('dpBaseFee', e.target.value)}
                   />
                 </div>
@@ -324,7 +370,7 @@ export function Settings() {
                     id='dpFeePerKm'
                     type='number'
                     min='0'
-                    value={settings.dpFeePerKm}
+                    value={settings.dpFeePerKm ?? ''}
                     onChange={e => updateSetting('dpFeePerKm', e.target.value)}
                   />
                 </div>
@@ -336,7 +382,7 @@ export function Settings() {
                     id='restaurantConfirmTimeoutSeconds'
                     type='number'
                     min='0'
-                    value={settings.restaurantConfirmTimeoutSeconds}
+                    value={settings.restaurantConfirmTimeoutSeconds ?? ''}
                     onChange={e => updateSetting('restaurantConfirmTimeoutSeconds', e.target.value)}
                   />
                 </div>
@@ -436,7 +482,7 @@ export function Settings() {
                   id='forceUpdateMinVersionIos'
                   type='text'
                   placeholder='1.0.0'
-                  value={settings.forceUpdateMinVersionIos}
+                  value={settings.forceUpdateMinVersionIos ?? ''}
                   onChange={e => updateSetting('forceUpdateMinVersionIos', e.target.value)}
                 />
               </div>
@@ -448,7 +494,7 @@ export function Settings() {
                   id='forceUpdateMinVersionAndroid'
                   type='text'
                   placeholder='1.0.0'
-                  value={settings.forceUpdateMinVersionAndroid}
+                  value={settings.forceUpdateMinVersionAndroid ?? ''}
                   onChange={e => updateSetting('forceUpdateMinVersionAndroid', e.target.value)}
                 />
               </div>
@@ -466,7 +512,7 @@ export function Settings() {
                 <Input
                   id='textNoServiceInArea'
                   type='text'
-                  value={settings.textNoServiceInArea}
+                  value={settings.textNoServiceInArea ?? ''}
                   onChange={e => updateSetting('textNoServiceInArea', e.target.value)}
                 />
               </div>
@@ -475,7 +521,7 @@ export function Settings() {
                 <Input
                   id='textAppUnderMaintenance'
                   type='text'
-                  value={settings.textAppUnderMaintenance}
+                  value={settings.textAppUnderMaintenance ?? ''}
                   onChange={e => updateSetting('textAppUnderMaintenance', e.target.value)}
                 />
               </div>
@@ -485,7 +531,7 @@ export function Settings() {
                   id='textOrderingDisabled'
                   type='text'
                   placeholder='Message shown when ordering is disabled'
-                  value={settings.textOrderingDisabled}
+                  value={settings.textOrderingDisabled ?? ''}
                   onChange={e => updateSetting('textOrderingDisabled', e.target.value)}
                 />
               </div>
@@ -497,7 +543,7 @@ export function Settings() {
                   id='textWalletReferralDisabledMessage'
                   type='text'
                   placeholder='Currently this service is disabled'
-                  value={settings.textWalletReferralDisabledMessage || ''}
+                  value={settings.textWalletReferralDisabledMessage ?? ''}
                   onChange={e => updateSetting('textWalletReferralDisabledMessage', e.target.value)}
                 />
                 <p className='text-muted-foreground text-xs'>
@@ -511,7 +557,7 @@ export function Settings() {
                     id='textForceUpdateMessage'
                     type='text'
                     placeholder='A new version of the app is available. Please update to continue using the app.'
-                    value={settings.textForceUpdateMessage}
+                    value={settings.textForceUpdateMessage ?? ''}
                     onChange={e => updateSetting('textForceUpdateMessage', e.target.value)}
                   />
                   <p className='text-muted-foreground text-xs'>
@@ -525,7 +571,7 @@ export function Settings() {
                       id='urlAppStore'
                       type='url'
                       placeholder='https://apps.apple.com/app/id...'
-                      value={settings.urlAppStore}
+                      value={settings.urlAppStore ?? ''}
                       onChange={e => updateSetting('urlAppStore', e.target.value)}
                     />
                     <p className='text-muted-foreground text-xs'>
@@ -538,7 +584,7 @@ export function Settings() {
                       id='urlPlayStore'
                       type='url'
                       placeholder='https://play.google.com/store/apps/details?id=...'
-                      value={settings.urlPlayStore}
+                      value={settings.urlPlayStore ?? ''}
                       onChange={e => updateSetting('urlPlayStore', e.target.value)}
                     />
                     <p className='text-muted-foreground text-xs'>
@@ -553,7 +599,7 @@ export function Settings() {
                   <Input
                     id='supportPhoneNumber'
                     type='tel'
-                    value={settings.supportPhoneNumber}
+                    value={settings.supportPhoneNumber ?? ''}
                     onChange={e => updateSetting('supportPhoneNumber', e.target.value)}
                   />
                 </div>
@@ -562,7 +608,7 @@ export function Settings() {
                   <Input
                     id='supportEmail'
                     type='email'
-                    value={settings.supportEmail}
+                    value={settings.supportEmail ?? ''}
                     onChange={e => updateSetting('supportEmail', e.target.value)}
                   />
                 </div>
@@ -573,7 +619,7 @@ export function Settings() {
                   <Input
                     id='urlPrivacyPolicy'
                     type='url'
-                    value={settings.urlPrivacyPolicy}
+                    value={settings.urlPrivacyPolicy ?? ''}
                     onChange={e => updateSetting('urlPrivacyPolicy', e.target.value)}
                   />
                 </div>
@@ -582,7 +628,7 @@ export function Settings() {
                   <Input
                     id='urlTermsAndConditions'
                     type='url'
-                    value={settings.urlTermsAndConditions}
+                    value={settings.urlTermsAndConditions ?? ''}
                     onChange={e => updateSetting('urlTermsAndConditions', e.target.value)}
                   />
                 </div>
@@ -605,7 +651,7 @@ export function Settings() {
                   id='socialInstagramUrl'
                   type='url'
                   placeholder='https://www.instagram.com/getfozo/'
-                  value={settings.socialInstagramUrl}
+                  value={settings.socialInstagramUrl ?? ''}
                   onChange={e => updateSetting('socialInstagramUrl', e.target.value)}
                 />
               </div>
@@ -615,7 +661,7 @@ export function Settings() {
                   id='socialFacebookUrl'
                   type='url'
                   placeholder='https://www.facebook.com/getfozo/'
-                  value={settings.socialFacebookUrl}
+                  value={settings.socialFacebookUrl ?? ''}
                   onChange={e => updateSetting('socialFacebookUrl', e.target.value)}
                 />
               </div>
@@ -625,7 +671,7 @@ export function Settings() {
                   id='socialTwitterUrl'
                   type='url'
                   placeholder='https://x.com/getfozo'
-                  value={settings.socialTwitterUrl}
+                  value={settings.socialTwitterUrl ?? ''}
                   onChange={e => updateSetting('socialTwitterUrl', e.target.value)}
                 />
               </div>
@@ -635,7 +681,7 @@ export function Settings() {
                   id='socialLinkedinUrl'
                   type='url'
                   placeholder='https://www.linkedin.com/company/getfozo/'
-                  value={settings.socialLinkedinUrl}
+                  value={settings.socialLinkedinUrl ?? ''}
                   onChange={e => updateSetting('socialLinkedinUrl', e.target.value)}
                 />
               </div>
