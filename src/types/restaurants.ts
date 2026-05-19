@@ -14,6 +14,10 @@ export interface Restaurant {
   documentsVerified: boolean;
   averageRating: number | string;
   imageUrl: string | null;
+  isTopProduct?: boolean | null;
+  topProductRanking?: number | null;
+  showOnTop?: boolean | null;
+  productRanking?: number | null;
   description: string | null;
   whatYouGet: string | null;
   contactPersonName: string | null;

@@ -55,6 +55,7 @@ const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 const DAYS_OF_WEEK = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 type DayOfWeek = (typeof DAYS_OF_WEEK)[number];
 type OperatingHoursRecord = Record<DayOfWeek, { open: string; close: string; isClosed: boolean }>;
+type OptionalBooleanSelect = 'unset' | 'yes' | 'no';
 
 const DEFAULT_OPERATING_HOURS: OperatingHoursRecord = {
   monday: { open: '09:00', close: '22:00', isClosed: false },
@@ -64,6 +65,26 @@ const DEFAULT_OPERATING_HOURS: OperatingHoursRecord = {
   friday: { open: '09:00', close: '22:00', isClosed: false },
   saturday: { open: '09:00', close: '22:00', isClosed: false },
   sunday: { open: '09:00', close: '22:00', isClosed: false },
+};
+
+const DEFAULT_PRIORITY_SETTINGS = {
+  isTopProduct: 'unset' as OptionalBooleanSelect,
+  topProductRanking: '',
+  showOnTop: 'unset' as OptionalBooleanSelect,
+  productRanking: '',
+};
+
+const optionalBooleanFromSelect = (value: OptionalBooleanSelect) => {
+  if (value === 'yes') return true;
+  if (value === 'no') return false;
+  return undefined;
+};
+
+const optionalNumberFromInput = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : undefined;
 };
 
 export function Restaurants() {
@@ -128,6 +149,9 @@ export function Restaurants() {
     accountHolderName: '',
     bankName: '',
   });
+
+  // Homepage priority settings
+  const [prioritySettings, setPrioritySettings] = useState(DEFAULT_PRIORITY_SETTINGS);
 
   // Image upload states
   const [restaurantImageUrl, setRestaurantImageUrl] = useState<string>('');
@@ -293,6 +317,7 @@ export function Restaurants() {
       accountHolderName: '',
       bankName: '',
     });
+    setPrioritySettings({ ...DEFAULT_PRIORITY_SETTINGS });
     setSelectedCuisineIds([]);
     setRestaurantImageUrl('');
   };
@@ -427,6 +452,10 @@ export function Restaurants() {
           fssaiLicenseNumber: formR.fssaiLicenseNumber || undefined,
           gstinNumber: formR.gstinNumber || undefined,
           imageUrl: restaurantImageUrl || undefined,
+          isTopProduct: optionalBooleanFromSelect(prioritySettings.isTopProduct),
+          topProductRanking: optionalNumberFromInput(prioritySettings.topProductRanking),
+          showOnTop: optionalBooleanFromSelect(prioritySettings.showOnTop),
+          productRanking: optionalNumberFromInput(prioritySettings.productRanking),
           bankAccountDetails,
           primaryLocation: {
             locationName: location.locationName || formR.restaurantName,
@@ -561,6 +590,20 @@ export function Restaurants() {
       // Pre-fill image URL
       setRestaurantImageUrl(fullDetails.imageUrl || '');
 
+      // Pre-fill homepage priority settings
+      setPrioritySettings({
+        isTopProduct:
+          fullDetails.isTopProduct === true
+            ? 'yes'
+            : fullDetails.isTopProduct === false
+              ? 'no'
+              : 'unset',
+        topProductRanking: fullDetails.topProductRanking?.toString() || '',
+        showOnTop:
+          fullDetails.showOnTop === true ? 'yes' : fullDetails.showOnTop === false ? 'no' : 'unset',
+        productRanking: fullDetails.productRanking?.toString() || '',
+      });
+
       setOpenEdit(true);
     } catch (error) {
       console.error('Error loading restaurant details:', error);
@@ -621,6 +664,10 @@ export function Restaurants() {
         fssaiLicenseNumber: formR.fssaiLicenseNumber || undefined,
         gstinNumber: formR.gstinNumber || undefined,
         imageUrl: restaurantImageUrl || undefined,
+        isTopProduct: optionalBooleanFromSelect(prioritySettings.isTopProduct),
+        topProductRanking: optionalNumberFromInput(prioritySettings.topProductRanking),
+        showOnTop: optionalBooleanFromSelect(prioritySettings.showOnTop),
+        productRanking: optionalNumberFromInput(prioritySettings.productRanking),
         fullName: formR.fullName || undefined,
         email: formR.email || undefined,
         phoneNumber: ownerPhoneDigits ? `+91${ownerPhoneDigits}` : undefined,
@@ -716,6 +763,75 @@ export function Restaurants() {
     }
   };
 
+  const renderPrioritySettings = () => (
+    <div className='grid grid-cols-2 gap-4'>
+      <div>
+        <label className='text-sm font-medium'>Show in Trending Dishes</label>
+        <Select
+          value={prioritySettings.isTopProduct}
+          onValueChange={(value: OptionalBooleanSelect) =>
+            setPrioritySettings(prev => ({ ...prev, isTopProduct: value }))
+          }
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='unset'>Not set</SelectItem>
+            <SelectItem value='yes'>Yes</SelectItem>
+            <SelectItem value='no'>No</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <label className='text-sm font-medium'>Trending Ranking</label>
+        <Input
+          type='number'
+          min={1}
+          step={1}
+          value={prioritySettings.topProductRanking}
+          onChange={e =>
+            setPrioritySettings(prev => ({ ...prev, topProductRanking: e.target.value }))
+          }
+          placeholder='1'
+        />
+      </div>
+      <div>
+        <label className='text-sm font-medium'>Pin in Available Outlets</label>
+        <Select
+          value={prioritySettings.showOnTop}
+          onValueChange={(value: OptionalBooleanSelect) =>
+            setPrioritySettings(prev => ({ ...prev, showOnTop: value }))
+          }
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='unset'>Not set</SelectItem>
+            <SelectItem value='yes'>Yes</SelectItem>
+            <SelectItem value='no'>No</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <label className='text-sm font-medium'>Outlet Ranking</label>
+        <Input
+          type='number'
+          min={1}
+          step={1}
+          value={prioritySettings.productRanking}
+          onChange={e => setPrioritySettings(prev => ({ ...prev, productRanking: e.target.value }))}
+          placeholder='1'
+        />
+      </div>
+      <p className='text-muted-foreground col-span-2 text-xs'>
+        Rankings are optional. Lower numbers appear first when the restaurant is enabled for that
+        section.
+      </p>
+    </div>
+  );
+
   return (
     <div className='grid gap-4'>
       <Card className='rounded-2xl'>
@@ -744,10 +860,11 @@ export function Restaurants() {
                 </DialogHeader>
 
                 <Tabs defaultValue='basic' className='w-full'>
-                  <TabsList className='grid w-full grid-cols-4'>
+                  <TabsList className='grid w-full grid-cols-5'>
                     <TabsTrigger value='basic'>Basic Info</TabsTrigger>
                     <TabsTrigger value='location'>Location</TabsTrigger>
                     <TabsTrigger value='hours'>Operating Hours</TabsTrigger>
+                    <TabsTrigger value='priority'>Priority</TabsTrigger>
                     <TabsTrigger value='bank'>Bank Details</TabsTrigger>
                   </TabsList>
 
@@ -1057,6 +1174,10 @@ export function Restaurants() {
                     ))}
                   </TabsContent>
 
+                  <TabsContent value='priority' className='space-y-4'>
+                    {renderPrioritySettings()}
+                  </TabsContent>
+
                   {/* Bank Details Tab */}
                   <TabsContent value='bank' className='space-y-4'>
                     <div className='grid grid-cols-2 gap-4'>
@@ -1358,6 +1479,30 @@ export function Restaurants() {
                     </div>
                   </div>
                   <div>
+                    <label className='text-muted-foreground text-sm font-medium'>
+                      Trending Dishes
+                    </label>
+                    <div className='mt-1 text-sm'>
+                      {selectedRestaurant.isTopProduct === true
+                        ? `Yes${selectedRestaurant.topProductRanking ? ` (#${selectedRestaurant.topProductRanking})` : ''}`
+                        : selectedRestaurant.isTopProduct === false
+                          ? 'No'
+                          : '—'}
+                    </div>
+                  </div>
+                  <div>
+                    <label className='text-muted-foreground text-sm font-medium'>
+                      Available Outlet Top
+                    </label>
+                    <div className='mt-1 text-sm'>
+                      {selectedRestaurant.showOnTop === true
+                        ? `Yes${selectedRestaurant.productRanking ? ` (#${selectedRestaurant.productRanking})` : ''}`
+                        : selectedRestaurant.showOnTop === false
+                          ? 'No'
+                          : '—'}
+                    </div>
+                  </div>
+                  <div>
                     <label className='text-muted-foreground text-sm font-medium'>Created At</label>
                     <div className='mt-1 text-sm'>
                       {selectedRestaurant.createdAt
@@ -1420,11 +1565,12 @@ export function Restaurants() {
           </DialogHeader>
 
           <Tabs defaultValue='basic' className='w-full'>
-            <TabsList className='grid w-full grid-cols-5'>
+            <TabsList className='grid w-full grid-cols-6'>
               <TabsTrigger value='basic'>Basic Info</TabsTrigger>
               <TabsTrigger value='location'>Location</TabsTrigger>
               <TabsTrigger value='hours'>Hours</TabsTrigger>
               <TabsTrigger value='cuisines'>Cuisines</TabsTrigger>
+              <TabsTrigger value='priority'>Priority</TabsTrigger>
               <TabsTrigger value='bank'>Bank</TabsTrigger>
             </TabsList>
 
@@ -1689,6 +1835,10 @@ export function Restaurants() {
               <p className='text-muted-foreground text-xs'>
                 Search and select multiple cuisines. At least one is required.
               </p>
+            </TabsContent>
+
+            <TabsContent value='priority' className='space-y-4'>
+              {renderPrioritySettings()}
             </TabsContent>
 
             {/* Bank Details Tab */}
