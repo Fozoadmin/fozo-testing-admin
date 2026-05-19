@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { adminApi } from '@/lib/api';
 import { StatCard } from './StatCard';
 import { ShoppingBag, IndianRupee, UtensilsCrossed, Users, Truck } from 'lucide-react';
-import type { AdminOrder } from '@/types';
+import { ORDER_STATUS } from '@/constants/orderStatus';
+import type { AdminOrder, GroceryOrder } from '@/types';
 
 type OverviewProps = {
   onNavigate?: (key: string) => void;
@@ -25,8 +26,9 @@ export function Overview({ onNavigate }: OverviewProps) {
 
     const fetchStats = async () => {
       try {
-        const [orders, restaurants, users, bags, deliveryPartners] = await Promise.all([
-          adminApi.getAllOrders(),
+        const [orders, groceryOrders, restaurants, users, bags, deliveryPartners] = await Promise.all([
+          adminApi.getAllOrders(ORDER_STATUS.DELIVERED),
+          adminApi.getAllGroceryOrders(ORDER_STATUS.DELIVERED),
           adminApi.getAllRestaurants(),
           adminApi.getAllUsers('customer'),
           adminApi.getAllSurpriseBags(),
@@ -35,15 +37,31 @@ export function Overview({ onNavigate }: OverviewProps) {
 
         if (!isMounted) return;
 
-        // Use the same revenue field shown in Orders tab; fall back for safety
-        const totalRevenue = orders.orders.reduce((sum: number, order: AdminOrder) => {
+        const restaurantRevenue = orders.orders.reduce((sum: number, order: AdminOrder) => {
           const amount = Number(order.totalPaymentAmount ?? order.total_amount ?? 0);
           return sum + (Number.isNaN(amount) ? 0 : amount);
         }, 0);
 
+        const groceryRevenue = groceryOrders.orders.reduce((sum: number, order: GroceryOrder) => {
+          const amount = Number(order.totalPaymentAmount ?? 0);
+          return sum + (Number.isNaN(amount) ? 0 : amount);
+        }, 0);
+
+        if (import.meta.env.DEV) {
+          console.info(
+            '[Overview] delivered order response',
+            JSON.stringify({
+              restaurantOrders: orders.orders.length,
+              groceryOrders: groceryOrders.orders.length,
+              restaurantRevenue,
+              groceryRevenue,
+            })
+          );
+        }
+
         setStats({
-          totalOrders: orders.orders.length,
-          totalRevenue,
+          totalOrders: orders.orders.length + groceryOrders.orders.length,
+          totalRevenue: restaurantRevenue + groceryRevenue,
           totalRestaurants: restaurants.length,
           totalCustomers: users.length,
           totalBags: bags.length,
