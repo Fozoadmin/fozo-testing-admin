@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { adminApi } from '@/lib/api';
 import { getErrorMessage } from '@/lib/utils';
 import type { Coupon, GroceryStore } from '@/types';
@@ -41,12 +41,17 @@ import {
   type GroceryStoreLite,
   type RestaurantLite,
 } from './couponsModel';
+import { PaginationControls } from './PaginationControls';
+
+const PAGE_SIZE = 50;
 
 export function Coupons() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
 
   // Restaurant dropdown states
   const [allRestaurants, setAllRestaurants] = useState<RestaurantLite[]>([]);
@@ -82,17 +87,19 @@ export function Coupons() {
     visibility: true,
   });
 
-  const loadCoupons = async (silent = false) => {
+  const loadCoupons = useCallback(async (silent = false) => {
     try {
       if (!silent) setLoading(true);
-      const data = await adminApi.getAllCoupons();
-      setCoupons((data.coupons || []) as Coupon[]);
+      const data = await adminApi.getAllCoupons(undefined, { page, limit: PAGE_SIZE + 1 });
+      const couponRows = (data.coupons || []) as Coupon[];
+      setHasNextPage(couponRows.length > PAGE_SIZE);
+      setCoupons(couponRows.slice(0, PAGE_SIZE));
     } catch (e: unknown) {
       toast.error(getErrorMessage(e, 'Failed to load coupons'));
     } finally {
       if (!silent) setLoading(false);
     }
-  };
+  }, [page]);
 
   useEffect(() => {
     let mounted = true;
@@ -142,7 +149,7 @@ export function Coupons() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [loadCoupons]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -794,7 +801,10 @@ export function Coupons() {
             <Input
               placeholder='Search by code...'
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               className='max-w-sm'
             />
           </div>
@@ -919,6 +929,14 @@ export function Coupons() {
               </TableBody>
             </Table>
           )}
+          <PaginationControls
+            page={page}
+            pageSize={PAGE_SIZE}
+            itemCount={coupons.length}
+            hasNextPage={hasNextPage}
+            onPageChange={setPage}
+            disabled={loading}
+          />
         </CardContent>
       </Card>
 

@@ -55,10 +55,15 @@ import { formatDateTime, timeAgo } from '@/lib/formatters';
 import { toast } from 'react-toastify';
 import type { AdminOrder, DeliveryPartner, VehicleType } from '@/types';
 import { orderStatusVariant } from './ordersModel';
+import { PaginationControls } from './PaginationControls';
+
+const PAGE_SIZE = 50;
 
 export function DeliveryPartners() {
   const [deliveryPartners, setDeliveryPartners] = useState<DeliveryPartner[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
   const [openAdd, setOpenAdd] = useState(false);
   const [creating, setCreating] = useState(false);
 
@@ -101,9 +106,14 @@ export function DeliveryPartners() {
 
     const fetchDeliveryPartners = async () => {
       try {
-        const data = await adminApi.getAllDeliveryPartners();
+        setLoading(true);
+        const data = await adminApi.getAllDeliveryPartners(undefined, undefined, {
+          page,
+          limit: PAGE_SIZE + 1,
+        });
         if (!isMounted) return;
-        setDeliveryPartners(data);
+        setHasNextPage(data.length > PAGE_SIZE);
+        setDeliveryPartners(data.slice(0, PAGE_SIZE));
       } catch (error) {
         if (!isMounted) return;
         console.error('Error fetching delivery partners:', error);
@@ -119,7 +129,7 @@ export function DeliveryPartners() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [page]);
 
   const resetForm = () => {
     setFormD({
@@ -197,8 +207,13 @@ export function DeliveryPartners() {
           position: 'top-right',
           autoClose: 3000,
         });
-        // Refresh the list
-        setDeliveryPartners(await adminApi.getAllDeliveryPartners());
+        setPage(1);
+        const updatedDPs = await adminApi.getAllDeliveryPartners(undefined, undefined, {
+          page: 1,
+          limit: PAGE_SIZE + 1,
+        });
+        setHasNextPage(updatedDPs.length > PAGE_SIZE);
+        setDeliveryPartners(updatedDPs.slice(0, PAGE_SIZE));
         setOpenAdd(false);
         resetForm();
       } else {
@@ -284,9 +299,12 @@ export function DeliveryPartners() {
         bankAccountDetails,
       });
 
-      // Refresh list
-      const updatedDPs = await adminApi.getAllDeliveryPartners();
-      setDeliveryPartners(updatedDPs);
+      const updatedDPs = await adminApi.getAllDeliveryPartners(undefined, undefined, {
+        page,
+        limit: PAGE_SIZE + 1,
+      });
+      setHasNextPage(updatedDPs.length > PAGE_SIZE);
+      setDeliveryPartners(updatedDPs.slice(0, PAGE_SIZE));
       setOpenEdit(false);
       resetForm();
       alert('Delivery Partner updated successfully!');
@@ -310,9 +328,12 @@ export function DeliveryPartners() {
       setDeleting(true);
       await adminApi.deleteUser(selectedDP.userId);
 
-      // Refresh list
-      const updatedDPs = await adminApi.getAllDeliveryPartners();
-      setDeliveryPartners(updatedDPs);
+      const updatedDPs = await adminApi.getAllDeliveryPartners(undefined, undefined, {
+        page,
+        limit: PAGE_SIZE + 1,
+      });
+      setHasNextPage(updatedDPs.length > PAGE_SIZE);
+      setDeliveryPartners(updatedDPs.slice(0, PAGE_SIZE));
       setDeleteConfirm(false);
       setSelectedDP(null);
       toast.success('Delivery Partner deleted successfully!', {
@@ -344,9 +365,12 @@ export function DeliveryPartners() {
           position: 'top-right',
           autoClose: 3000,
         });
-        // Refresh list
-        const updatedDPs = await adminApi.getAllDeliveryPartners();
-        setDeliveryPartners(updatedDPs);
+        const updatedDPs = await adminApi.getAllDeliveryPartners(undefined, undefined, {
+          page,
+          limit: PAGE_SIZE + 1,
+        });
+        setHasNextPage(updatedDPs.length > PAGE_SIZE);
+        setDeliveryPartners(updatedDPs.slice(0, PAGE_SIZE));
       } else {
         // Show red toast for any error status (status >= 400)
         toast.error(result.message, {
@@ -375,9 +399,12 @@ export function DeliveryPartners() {
     try {
       await adminApi.updateDeliveryPartnerOnlineStatus(dp.id, newStatus);
 
-      // Refresh list
-      const updatedDPs = await adminApi.getAllDeliveryPartners();
-      setDeliveryPartners(updatedDPs);
+      const updatedDPs = await adminApi.getAllDeliveryPartners(undefined, undefined, {
+        page,
+        limit: PAGE_SIZE + 1,
+      });
+      setHasNextPage(updatedDPs.length > PAGE_SIZE);
+      setDeliveryPartners(updatedDPs.slice(0, PAGE_SIZE));
 
       // Update selected DP if it's the same one
       if (selectedDPForOrders?.id === dp.id) {
@@ -735,6 +762,14 @@ export function DeliveryPartners() {
               </TableBody>
             </Table>
           )}
+          <PaginationControls
+            page={page}
+            pageSize={PAGE_SIZE}
+            itemCount={deliveryPartners.length}
+            hasNextPage={hasNextPage}
+            onPageChange={setPage}
+            disabled={loading}
+          />
         </CardContent>
       </Card>
 

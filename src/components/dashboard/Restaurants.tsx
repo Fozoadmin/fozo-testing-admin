@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { adminApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -49,8 +49,10 @@ import {
 } from '@/lib/utils';
 import { toast } from 'react-toastify';
 import type { Restaurant, Cuisine } from '@/types';
+import { PaginationControls } from './PaginationControls';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+const PAGE_SIZE = 50;
 
 const DAYS_OF_WEEK = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 type DayOfWeek = (typeof DAYS_OF_WEEK)[number];
@@ -90,12 +92,13 @@ const optionalNumberFromInput = (value: string) => {
 export function Restaurants() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
   const [openAdd, setOpenAdd] = useState(false);
   const [creating, setCreating] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
 
   // Search states
-  const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
   const [restaurantSearchFilter, setRestaurantSearchFilter] = useState('');
 
   // Detail popup
@@ -163,42 +166,30 @@ export function Restaurants() {
   const [newCuisineImageUrl, setNewCuisineImageUrl] = useState('');
   const [uploadingCuisineImage, setUploadingCuisineImage] = useState(false);
 
-  useEffect(() => {
-    fetchAllRestaurants();
-    fetchCuisines();
-  }, []);
-
   // Fetch all restaurants for dropdown
-  const fetchAllRestaurants = async () => {
+  const fetchAllRestaurants = useCallback(async () => {
     try {
-      const data = await adminApi.getAllRestaurants();
-      setAllRestaurants(data);
-      setRestaurants(data);
+      setLoading(true);
+      const data = await adminApi.getAllRestaurants(restaurantSearchFilter.trim() || undefined, {
+        page,
+        limit: PAGE_SIZE + 1,
+      });
+      setHasNextPage(data.length > PAGE_SIZE);
+      setRestaurants(data.slice(0, PAGE_SIZE));
       setLoading(false);
     } catch (error) {
       console.error('Error fetching restaurants:', error);
       setLoading(false);
     }
-  };
+  }, [page, restaurantSearchFilter]);
 
-  // Real-time local search filtering
   useEffect(() => {
-    if (restaurantSearchFilter.trim()) {
-      const searchTerm = restaurantSearchFilter.toLowerCase().trim();
-      const filtered = allRestaurants.filter(restaurant => {
-        const name = restaurant.restaurantName?.toLowerCase() || '';
-        const email = restaurant.userEmail?.toLowerCase() || '';
-        const phone = restaurant.phoneNumber?.toLowerCase() || '';
-        return (
-          name.includes(searchTerm) || email.includes(searchTerm) || phone.includes(searchTerm)
-        );
-      });
-      setRestaurants(filtered);
-    } else {
-      // If search is empty, show all restaurants
-      setRestaurants(allRestaurants);
-    }
-  }, [restaurantSearchFilter, allRestaurants]);
+    fetchAllRestaurants();
+  }, [fetchAllRestaurants]);
+
+  useEffect(() => {
+    fetchCuisines();
+  }, []);
 
   const fetchCuisines = async () => {
     try {
@@ -261,7 +252,7 @@ export function Restaurants() {
 
   const handleClearSearch = () => {
     setRestaurantSearchFilter('');
-    setRestaurants(allRestaurants);
+    setPage(1);
   };
 
   const handleImageUpload = async (file: File) => {
@@ -480,8 +471,7 @@ export function Restaurants() {
           position: 'top-right',
           autoClose: 3000,
         });
-        // Refresh the list
-        setRestaurants(await adminApi.getAllRestaurants());
+        await fetchAllRestaurants();
         setOpenAdd(false);
         resetForm();
       } else {
@@ -686,9 +676,7 @@ export function Restaurants() {
       // Update cuisines
       await adminApi.updateRestaurantCuisines(selectedRestaurant.restaurantId, selectedCuisineIds);
 
-      // Refresh list
-      const updatedRestaurants = await adminApi.getAllRestaurants();
-      setRestaurants(updatedRestaurants);
+      await fetchAllRestaurants();
       setOpenEdit(false);
       resetForm();
       toast.success('Restaurant updated successfully!');
@@ -712,9 +700,7 @@ export function Restaurants() {
       setDeleting(true);
       await adminApi.deleteRestaurant(selectedRestaurant.restaurantId);
 
-      // Refresh list
-      const updatedRestaurants = await adminApi.getAllRestaurants();
-      setRestaurants(updatedRestaurants);
+      await fetchAllRestaurants();
       setDeleteConfirm(false);
       setSelectedRestaurant(null);
       toast.success('Restaurant deleted successfully!', {
@@ -743,9 +729,7 @@ export function Restaurants() {
           position: 'top-right',
           autoClose: 3000,
         });
-        // Refresh list
-        const updatedRestaurants = await adminApi.getAllRestaurants();
-        setRestaurants(updatedRestaurants);
+        await fetchAllRestaurants();
       } else {
         // Show red toast for any error status (status >= 400)
         toast.error(result.message, {
@@ -1256,7 +1240,10 @@ export function Restaurants() {
                 <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform' />
                 <Input
                   value={restaurantSearchFilter}
-                  onChange={e => setRestaurantSearchFilter(e.target.value)}
+                  onChange={e => {
+                    setRestaurantSearchFilter(e.target.value);
+                    setPage(1);
+                  }}
                   placeholder='Search by name, email, or phone...'
                   className='pl-9'
                 />
@@ -1367,6 +1354,14 @@ export function Restaurants() {
               </TableBody>
             </Table>
           )}
+          <PaginationControls
+            page={page}
+            pageSize={PAGE_SIZE}
+            itemCount={restaurants.length}
+            hasNextPage={hasNextPage}
+            onPageChange={setPage}
+            disabled={loading}
+          />
         </CardContent>
       </Card>
 

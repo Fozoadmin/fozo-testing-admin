@@ -25,6 +25,9 @@ import { Plus, X, ChevronDown, ChevronRight, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { apiRequestWithStatus, getErrorMessage } from '@/lib/utils';
 import type { SurpriseBag, GroupedRestaurant, Restaurant } from '@/types';
+import { PaginationControls } from './PaginationControls';
+
+const PAGE_SIZE = 50;
 
 interface BagWithRestaurant extends SurpriseBag {
   restaurant: GroupedRestaurant;
@@ -34,6 +37,8 @@ export function SurpriseBags() {
   const [groupedRestaurants, setGroupedRestaurants] = useState<GroupedRestaurant[]>([]);
   const [expandedRestaurants, setExpandedRestaurants] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
   const [openAdd, setOpenAdd] = useState(false);
   const [creating, setCreating] = useState(false);
 
@@ -83,11 +88,12 @@ export function SurpriseBags() {
     const fetchData = async () => {
       try {
         const [groupedData, restaurants] = await Promise.all([
-          adminApi.getGroupedSurpriseBags(),
+          adminApi.getGroupedSurpriseBags({ page, limit: PAGE_SIZE + 1 }),
           adminApi.getAllRestaurants(),
         ]);
         if (!isMounted) return;
-        setGroupedRestaurants(groupedData);
+        setHasNextPage(groupedData.length > PAGE_SIZE);
+        setGroupedRestaurants(groupedData.slice(0, PAGE_SIZE));
         // Filter only approved restaurants
         setAllRestaurants(restaurants.filter(r => r.status === 'approved'));
       } catch (error) {
@@ -105,7 +111,7 @@ export function SurpriseBags() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [page]);
 
   // Click outside handler to close dropdown
   useEffect(() => {
@@ -252,7 +258,9 @@ export function SurpriseBags() {
           position: 'top-right',
           autoClose: 3000,
         });
-        setGroupedRestaurants(await adminApi.getGroupedSurpriseBags());
+        const groupedData = await adminApi.getGroupedSurpriseBags({ page, limit: PAGE_SIZE + 1 });
+        setHasNextPage(groupedData.length > PAGE_SIZE);
+        setGroupedRestaurants(groupedData.slice(0, PAGE_SIZE));
         setOpenAdd(false);
         resetForm();
       } else {
@@ -345,7 +353,9 @@ export function SurpriseBags() {
           position: 'top-right',
           autoClose: 3000,
         });
-        setGroupedRestaurants(await adminApi.getGroupedSurpriseBags());
+        const groupedData = await adminApi.getGroupedSurpriseBags({ page, limit: PAGE_SIZE + 1 });
+        setHasNextPage(groupedData.length > PAGE_SIZE);
+        setGroupedRestaurants(groupedData.slice(0, PAGE_SIZE));
         setOpenEdit(false);
         resetForm();
         setSelectedBag(null);
@@ -380,7 +390,9 @@ export function SurpriseBags() {
       await adminApi.deleteSurpriseBag(bagToDelete.bag.bagId, restaurantId);
 
       // Refresh list
-      setGroupedRestaurants(await adminApi.getGroupedSurpriseBags());
+      const groupedData = await adminApi.getGroupedSurpriseBags({ page, limit: PAGE_SIZE + 1 });
+      setHasNextPage(groupedData.length > PAGE_SIZE);
+      setGroupedRestaurants(groupedData.slice(0, PAGE_SIZE));
       setDeleteConfirm(false);
       setBagToDelete(null);
       toast.success('Surprise bag deleted successfully!', {
@@ -838,6 +850,14 @@ export function SurpriseBags() {
                   )}
                 </div>
               ))}
+              <PaginationControls
+                page={page}
+                pageSize={PAGE_SIZE}
+                itemCount={groupedRestaurants.length}
+                hasNextPage={hasNextPage}
+                onPageChange={setPage}
+                disabled={loading}
+              />
             </div>
           )}
         </CardContent>

@@ -64,6 +64,9 @@ import {
   orderStatusVariant,
   type GroceryOrderStatus,
 } from './ordersModel';
+import { PaginationControls } from './PaginationControls';
+
+const PAGE_SIZE = 50;
 
 // ------------------ Main Component ------------------
 export function Orders() {
@@ -72,6 +75,8 @@ export function Orders() {
   // ── Restaurant orders state ──
   const [status, setStatus] = useState<(typeof ORDER_STATUS_OPTIONS)[number]>('all');
   const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [ordersHasNextPage, setOrdersHasNextPage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
@@ -81,6 +86,8 @@ export function Orders() {
   // ── Grocery orders state ──
   const [groceryStatus, setGroceryStatus] = useState<GroceryOrderStatus>('all');
   const [groceryOrders, setGroceryOrders] = useState<GroceryOrder[]>([]);
+  const [groceryOrdersPage, setGroceryOrdersPage] = useState(1);
+  const [groceryOrdersHasNextPage, setGroceryOrdersHasNextPage] = useState(false);
   const [groceryLoading, setGroceryLoading] = useState(true);
   const [groceryError, setGroceryError] = useState<string | null>(null);
   const [groceryQuery, setGroceryQuery] = useState('');
@@ -101,12 +108,17 @@ export function Orders() {
     let isMounted = true;
     (async () => {
       try {
-        const data = await adminApi.getAllOrders();
+        const data = await adminApi.getAllOrders(
+          status === 'all' ? undefined : status,
+          undefined,
+          { page: ordersPage, limit: PAGE_SIZE + 1 }
+        );
         if (!isMounted) return;
         const sorted = [...(data?.orders ?? [])].sort(
           (a: Order, b: Order) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
-        setOrders(sorted as Order[]);
+        setOrdersHasNextPage(sorted.length > PAGE_SIZE);
+        setOrders(sorted.slice(0, PAGE_SIZE) as Order[]);
       } catch (e: unknown) {
         if (!isMounted) return;
         console.error('Error fetching orders:', e);
@@ -118,20 +130,24 @@ export function Orders() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [ordersPage, status]);
 
   // Listen for new orders via socket
   useEffect(() => {
     const unsubscribe = subscribeToEvent<Order>(SOCKET_EVENTS.NEW_ORDER, () => {
       // Refetch all orders to ensure we have the latest data
       adminApi
-        .getAllOrders()
+        .getAllOrders(status === 'all' ? undefined : status, undefined, {
+          page: ordersPage,
+          limit: PAGE_SIZE + 1,
+        })
         .then(data => {
           const sorted = [...(data?.orders ?? [])].sort(
             (a: Order, b: Order) =>
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
-          setOrders(sorted as Order[]);
+          setOrdersHasNextPage(sorted.length > PAGE_SIZE);
+          setOrders(sorted.slice(0, PAGE_SIZE) as Order[]);
         })
         .catch(err => {
           console.error('Error refetching orders after socket event:', err);
@@ -143,20 +159,24 @@ export function Orders() {
         unsubscribe();
       }
     };
-  }, []);
+  }, [ordersPage, status]);
 
   // Fetch grocery orders
   useEffect(() => {
     let isMounted = true;
     (async () => {
       try {
-        const data = await adminApi.getAllGroceryOrders();
+        const data = await adminApi.getAllGroceryOrders(
+          groceryStatus === 'all' ? undefined : groceryStatus,
+          { page: groceryOrdersPage, limit: PAGE_SIZE + 1 }
+        );
         if (!isMounted) return;
         const sorted = [...(data?.orders ?? [])].sort(
           (a: GroceryOrder, b: GroceryOrder) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
-        setGroceryOrders(sorted);
+        setGroceryOrdersHasNextPage(sorted.length > PAGE_SIZE);
+        setGroceryOrders(sorted.slice(0, PAGE_SIZE));
       } catch {
         if (!isMounted) return;
         setGroceryError('Failed to load grocery orders.');
@@ -167,19 +187,23 @@ export function Orders() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [groceryOrdersPage, groceryStatus]);
 
   // Listen for new / updated grocery orders via socket
   useEffect(() => {
     const unsubNew = subscribeToEvent<GroceryOrder>(SOCKET_EVENTS.NEW_GROCERY_ORDER, () => {
       adminApi
-        .getAllGroceryOrders()
+        .getAllGroceryOrders(groceryStatus === 'all' ? undefined : groceryStatus, {
+          page: groceryOrdersPage,
+          limit: PAGE_SIZE + 1,
+        })
         .then(data => {
           const sorted = [...(data?.orders ?? [])].sort(
             (a: GroceryOrder, b: GroceryOrder) =>
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
-          setGroceryOrders(sorted);
+          setGroceryOrdersHasNextPage(sorted.length > PAGE_SIZE);
+          setGroceryOrders(sorted.slice(0, PAGE_SIZE));
         })
         .catch(err => console.error('Error refetching grocery orders after socket event:', err));
     });
@@ -201,7 +225,7 @@ export function Orders() {
       unsubNew?.();
       unsubUpdated?.();
     };
-  }, []);
+  }, [groceryOrdersPage, groceryStatus]);
 
   // Fetch delivery partners when assignment dialog opens
   useEffect(() => {
@@ -521,7 +545,10 @@ export function Orders() {
                 />
                 <Select
                   value={groceryStatus}
-                  onValueChange={v => setGroceryStatus(v as GroceryOrderStatus)}
+                  onValueChange={v => {
+                    setGroceryStatus(v as GroceryOrderStatus);
+                    setGroceryOrdersPage(1);
+                  }}
                 >
                   <SelectTrigger className='w-[220px]'>
                     <SelectValue placeholder='Status' />
@@ -686,6 +713,14 @@ export function Orders() {
                   </Table>
                 </div>
               )}
+              <PaginationControls
+                page={groceryOrdersPage}
+                pageSize={PAGE_SIZE}
+                itemCount={groceryOrders.length}
+                hasNextPage={groceryOrdersHasNextPage}
+                onPageChange={setGroceryOrdersPage}
+                disabled={groceryLoading}
+              />
             </CardContent>
           </Card>
 
@@ -880,7 +915,10 @@ export function Orders() {
                 />
                 <Select
                   value={status}
-                  onValueChange={v => setStatus(v as (typeof ORDER_STATUS_OPTIONS)[number])}
+                  onValueChange={v => {
+                    setStatus(v as (typeof ORDER_STATUS_OPTIONS)[number]);
+                    setOrdersPage(1);
+                  }}
                 >
                   <SelectTrigger className='w-[220px]'>
                     <SelectValue placeholder='Status' />
@@ -1030,6 +1068,14 @@ export function Orders() {
                   </Table>
                 </div>
               )}
+              <PaginationControls
+                page={ordersPage}
+                pageSize={PAGE_SIZE}
+                itemCount={orders.length}
+                hasNextPage={ordersHasNextPage}
+                onPageChange={setOrdersPage}
+                disabled={loading}
+              />
             </CardContent>
           </Card>
 

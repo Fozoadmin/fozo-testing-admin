@@ -29,6 +29,26 @@ interface RequestOptions extends RequestInit {
 }
 
 type JsonRequestBody = Record<string, unknown>;
+type AdminOverviewStats = {
+  totalOrders: number;
+  totalRevenue: number;
+  totalRestaurants: number;
+  totalUsers: number;
+  totalBags: number;
+  totalDeliveryPartners: number;
+};
+export type PaginationParams = {
+  page?: number;
+  limit?: number;
+  offset?: number;
+};
+
+function appendPaginationParams(params: URLSearchParams, pagination?: PaginationParams) {
+  if (!pagination) return;
+  if (pagination.page) params.append('page', String(pagination.page));
+  if (pagination.limit) params.append('limit', String(pagination.limit));
+  if (pagination.offset !== undefined) params.append('offset', String(pagination.offset));
+}
 
 // Cache to prevent duplicate requests
 const requestCache = new Map<string, Promise<unknown>>();
@@ -126,21 +146,29 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
 
 // Admin API methods
 export const adminApi = {
+  getOverviewStats: () => apiRequest<AdminOverviewStats>('/admin/overview-stats'),
   getAllUsers: (
-    userType?: 'customer' | 'restaurant' | 'delivery_partner' | 'admin',
-    search?: string
+    userType?: 'customer' | 'restaurant' | 'delivery_partner' | 'admin' | 'grocery',
+    search?: string,
+    pagination?: PaginationParams
   ) => {
     const params = new URLSearchParams();
     if (userType) params.append('userType', userType);
     if (search) params.append('search', search);
+    appendPaginationParams(params, pagination);
     return apiRequest<AdminUser[]>(
       `/admin/users${params.toString() ? `?${params.toString()}` : ''}`
     );
   },
-  getAllRestaurants: (search?: string) =>
-    apiRequest<Restaurant[]>(
-      `/admin/restaurants${search ? `?search=${encodeURIComponent(search)}` : ''}`
-    ),
+  getUserCount: () => apiRequest<{ totalUsers: number }>('/admin/users/count'),
+  getAllRestaurants: (search?: string, pagination?: PaginationParams) => {
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    appendPaginationParams(params, pagination);
+    return apiRequest<Restaurant[]>(
+      `/admin/restaurants${params.toString() ? `?${params.toString()}` : ''}`
+    );
+  },
   getRestaurantById: (id: string) => apiRequest<Restaurant>(`/admin/restaurants/${id}`),
   getAllCuisines: () =>
     apiRequest<Array<{ id: number; name: string; imageUrl?: string }>>('/admin/cuisines'),
@@ -153,20 +181,24 @@ export const adminApi = {
   onboardRestaurant: (body: JsonRequestBody) =>
     apiRequest<Restaurant>('/admin/restaurants', { method: 'POST', body: JSON.stringify(body) }),
 
-  getAllOrders: (status?: string, deliveryPartnerId?: string) => {
+  getAllOrders: (status?: string, deliveryPartnerId?: string, pagination?: PaginationParams) => {
     const params = new URLSearchParams();
     if (status) params.append('status', status);
     if (deliveryPartnerId) params.append('deliveryPartnerId', deliveryPartnerId);
+    appendPaginationParams(params, pagination);
     return apiRequest<{ orders: AdminOrder[] }>(
       `/admin/orders${params.toString() ? `?${params.toString()}` : ''}`
     );
   },
 
-  getAllDeliveryPartners: (status?: string, isOnline?: string) => {
+  getAllDeliveryPartners: (status?: string, isOnline?: string, pagination?: PaginationParams) => {
     const params = new URLSearchParams();
     if (status) params.append('status', status);
     if (isOnline) params.append('isOnline', isOnline);
-    return apiRequest<DeliveryPartner[]>(`/admin/delivery-partners?${params.toString()}`);
+    appendPaginationParams(params, pagination);
+    return apiRequest<DeliveryPartner[]>(
+      `/admin/delivery-partners${params.toString() ? `?${params.toString()}` : ''}`
+    );
   },
 
   onboardDeliveryPartner: (body: JsonRequestBody) =>
@@ -175,8 +207,16 @@ export const adminApi = {
       body: JSON.stringify(body),
     }),
 
-  getAllSurpriseBags: () => apiRequest<SurpriseBag[]>('/admin/bags'),
-  getGroupedSurpriseBags: () => apiRequest<GroupedRestaurant[]>('/admin/bags/grouped'),
+  getAllSurpriseBags: (pagination?: PaginationParams) => {
+    const params = new URLSearchParams();
+    appendPaginationParams(params, pagination);
+    return apiRequest<SurpriseBag[]>(`/admin/bags${params.toString() ? `?${params.toString()}` : ''}`);
+  },
+  getGroupedSurpriseBags: (pagination?: PaginationParams) => {
+    const params = new URLSearchParams();
+    appendPaginationParams(params, pagination);
+    return apiRequest<GroupedRestaurant[]>(`/admin/bags/grouped${params.toString() ? `?${params.toString()}` : ''}`);
+  },
 
   createSurpriseBag: (body: JsonRequestBody) =>
     apiRequest<SurpriseBag>('/bags', { method: 'POST', body: JSON.stringify(body) }),
@@ -264,9 +304,10 @@ export const adminApi = {
     }),
 
   // Coupons Management
-  getAllCoupons: (restaurantId?: string) => {
+  getAllCoupons: (restaurantId?: string, pagination?: PaginationParams) => {
     const params = new URLSearchParams();
     if (restaurantId) params.append('restaurantId', restaurantId);
+    appendPaginationParams(params, pagination);
     return apiRequest<{ coupons: Coupon[] }>(
       `/admin/coupons${params.toString() ? `?${params.toString()}` : ''}`
     );
@@ -317,7 +358,13 @@ export const adminApi = {
   },
 
   // Notification Management
-  getAllNotifications: () => apiRequest<AdminNotification[]>('/admin/notifications'),
+  getAllNotifications: (pagination?: PaginationParams) => {
+    const params = new URLSearchParams();
+    appendPaginationParams(params, pagination);
+    return apiRequest<AdminNotification[]>(
+      `/admin/notifications${params.toString() ? `?${params.toString()}` : ''}`
+    );
+  },
   getNotificationById: (id: string | number) =>
     apiRequest<AdminNotification>(`/admin/notifications/${id}`),
   createNotification: (body: JsonRequestBody) =>
@@ -421,10 +468,14 @@ export const adminApi = {
   },
 
   // Grocery Store Management
-  getAllGroceryStores: (search?: string) =>
-    apiRequest<GroceryStore[]>(
-      `/admin/grocery-stores${search ? `?search=${encodeURIComponent(search)}` : ''}`
-    ),
+  getAllGroceryStores: (search?: string, pagination?: PaginationParams) => {
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    appendPaginationParams(params, pagination);
+    return apiRequest<GroceryStore[]>(
+      `/admin/grocery-stores${params.toString() ? `?${params.toString()}` : ''}`
+    );
+  },
 
   getGroceryStoreById: (id: string) => apiRequest<GroceryStore>(`/admin/grocery-stores/${id}`),
 
@@ -441,10 +492,11 @@ export const adminApi = {
     apiRequest<ApiMutationResponse>(`/admin/grocery-stores/${id}`, { method: 'DELETE' }),
 
   // Grocery Item Management
-  getAllGroceryItems: (storeId?: string, search?: string) => {
+  getAllGroceryItems: (storeId?: string, search?: string, pagination?: PaginationParams) => {
     const params = new URLSearchParams();
     if (storeId) params.append('storeId', storeId);
     if (search) params.append('search', search);
+    appendPaginationParams(params, pagination);
     return apiRequest<GroceryItem[]>(
       `/admin/grocery-items${params.toString() ? `?${params.toString()}` : ''}`
     );
@@ -465,9 +517,10 @@ export const adminApi = {
     apiRequest<ApiMutationResponse>(`/admin/grocery-items/${id}`, { method: 'DELETE' }),
 
   // Grocery Order Management
-  getAllGroceryOrders: (status?: string) => {
+  getAllGroceryOrders: (status?: string, pagination?: PaginationParams) => {
     const params = new URLSearchParams();
     if (status) params.append('status', status);
+    appendPaginationParams(params, pagination);
     return apiRequest<{ orders: GroceryOrder[] }>(
       `/admin/grocery-orders${params.toString() ? `?${params.toString()}` : ''}`
     );

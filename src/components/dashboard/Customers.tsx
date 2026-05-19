@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { adminApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,12 +23,16 @@ import { Search, User, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { apiRequestWithStatus, getErrorMessage } from '@/lib/utils';
 import type { Customer as CustomerType } from '@/types';
+import { PaginationControls } from './PaginationControls';
+
+const PAGE_SIZE = 50;
 
 export function Customers() {
   const [customers, setCustomers] = useState<CustomerType[]>([]);
-  const [allCustomers, setAllCustomers] = useState<CustomerType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
 
   // Detail popup
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerType | null>(null);
@@ -38,42 +42,25 @@ export function Customers() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
-
-  // Real-time local search filtering
-  useEffect(() => {
-    if (searchTerm.trim()) {
-      const searchTermLower = searchTerm.toLowerCase().trim();
-      const filtered = allCustomers.filter(customer => {
-        const name = customer.fullName?.toLowerCase() || '';
-        const email = customer.email?.toLowerCase() || '';
-        const phone = customer.phoneNumber?.toLowerCase() || '';
-        return (
-          name.includes(searchTermLower) ||
-          email.includes(searchTermLower) ||
-          phone.includes(searchTermLower)
-        );
-      });
-      setCustomers(filtered);
-    } else {
-      // If search is empty, show all customers
-      setCustomers(allCustomers);
-    }
-  }, [searchTerm, allCustomers]);
-
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     try {
-      const data = await adminApi.getAllUsers('customer');
-      setAllCustomers(data);
-      setCustomers(data);
+      setLoading(true);
+      const data = await adminApi.getAllUsers('customer', searchTerm.trim() || undefined, {
+        page,
+        limit: PAGE_SIZE + 1,
+      });
+      setHasNextPage(data.length > PAGE_SIZE);
+      setCustomers(data.slice(0, PAGE_SIZE));
     } catch (error) {
       console.error('Error fetching customers:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, searchTerm]);
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
 
   // const handleClearSearch = () => {
   //   setSearchTerm("");
@@ -142,7 +129,10 @@ export function Customers() {
                   <Search className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform' />
                   <Input
                     value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
+                    onChange={e => {
+                      setSearchTerm(e.target.value);
+                      setPage(1);
+                    }}
                     placeholder='Search by name, email, or phone...'
                     className='h-9 w-[300px] pl-9'
                   />
@@ -211,6 +201,14 @@ export function Customers() {
               </TableBody>
             </Table>
           )}
+          <PaginationControls
+            page={page}
+            pageSize={PAGE_SIZE}
+            itemCount={customers.length}
+            hasNextPage={hasNextPage}
+            onPageChange={setPage}
+            disabled={loading}
+          />
         </CardContent>
       </Card>
 

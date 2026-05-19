@@ -3,8 +3,6 @@ import { motion } from 'framer-motion';
 import { adminApi } from '@/lib/api';
 import { StatCard } from './StatCard';
 import { ShoppingBag, IndianRupee, UtensilsCrossed, Users, Truck } from 'lucide-react';
-import { ORDER_STATUS } from '@/constants/orderStatus';
-import type { AdminOrder, GroceryOrder } from '@/types';
 
 type OverviewProps = {
   onNavigate?: (key: string) => void;
@@ -15,7 +13,7 @@ export function Overview({ onNavigate }: OverviewProps) {
     totalOrders: 0,
     totalRevenue: 0,
     totalRestaurants: 0,
-    totalCustomers: 0,
+    totalUsers: 0,
     totalBags: 0,
     totalDeliveryPartners: 0,
     loading: true,
@@ -26,46 +24,12 @@ export function Overview({ onNavigate }: OverviewProps) {
 
     const fetchStats = async () => {
       try {
-        const [orders, groceryOrders, restaurants, users, bags, deliveryPartners] = await Promise.all([
-          adminApi.getAllOrders(ORDER_STATUS.DELIVERED),
-          adminApi.getAllGroceryOrders(ORDER_STATUS.DELIVERED),
-          adminApi.getAllRestaurants(),
-          adminApi.getAllUsers('customer'),
-          adminApi.getAllSurpriseBags(),
-          adminApi.getAllDeliveryPartners(),
-        ]);
+        const overviewStats = await adminApi.getOverviewStats();
 
         if (!isMounted) return;
 
-        const restaurantRevenue = orders.orders.reduce((sum: number, order: AdminOrder) => {
-          const amount = Number(order.totalPaymentAmount ?? order.total_amount ?? 0);
-          return sum + (Number.isNaN(amount) ? 0 : amount);
-        }, 0);
-
-        const groceryRevenue = groceryOrders.orders.reduce((sum: number, order: GroceryOrder) => {
-          const amount = Number(order.totalPaymentAmount ?? 0);
-          return sum + (Number.isNaN(amount) ? 0 : amount);
-        }, 0);
-
-        if (import.meta.env.DEV) {
-          console.info(
-            '[Overview] delivered order response',
-            JSON.stringify({
-              restaurantOrders: orders.orders.length,
-              groceryOrders: groceryOrders.orders.length,
-              restaurantRevenue,
-              groceryRevenue,
-            })
-          );
-        }
-
         setStats({
-          totalOrders: orders.orders.length + groceryOrders.orders.length,
-          totalRevenue: restaurantRevenue + groceryRevenue,
-          totalRestaurants: restaurants.length,
-          totalCustomers: users.length,
-          totalBags: bags.length,
-          totalDeliveryPartners: deliveryPartners.length ?? 0,
+          ...overviewStats,
           loading: false,
         });
       } catch (error) {
@@ -128,9 +92,8 @@ export function Overview({ onNavigate }: OverviewProps) {
         >
           <StatCard
             icon={Users}
-            title='Total Customers'
-            value={stats.loading ? '...' : stats.totalCustomers}
-            onClick={() => onNavigate?.('customers')}
+            title='Total Users'
+            value={stats.loading ? '...' : stats.totalUsers}
           />
         </motion.div>
         <motion.div

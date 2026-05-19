@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { adminApi } from '@/lib/api';
 import { getErrorMessage } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -38,6 +38,9 @@ import type {
   AdminUser,
   NotificationTargetType,
 } from '@/types';
+import { PaginationControls } from './PaginationControls';
+
+const PAGE_SIZE = 50;
 
 type OrderNotificationSettingKey =
   | 'orderConfirmedNotificationTitle'
@@ -58,6 +61,8 @@ type OrderNotificationSettings = Record<OrderNotificationSettingKey, string>;
 export function Notifications() {
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -232,21 +237,25 @@ export function Notifications() {
     );
   };
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await adminApi.getAllNotifications();
-      setNotifications(data);
+      const data = await adminApi.getAllNotifications({ page, limit: PAGE_SIZE + 1 });
+      setHasNextPage(data.length > PAGE_SIZE);
+      setNotifications(data.slice(0, PAGE_SIZE));
     } catch (error) {
       console.error('Error fetching notifications:', error);
       toast.error('Failed to fetch notifications');
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
 
   useEffect(() => {
     fetchNotifications();
+  }, [fetchNotifications]);
+
+  useEffect(() => {
     fetchOrderNotificationSettings();
   }, []);
 
@@ -960,6 +969,16 @@ export function Notifications() {
             ))}
           </div>
         )}
+        <div className='p-4'>
+          <PaginationControls
+            page={page}
+            pageSize={PAGE_SIZE}
+            itemCount={notifications.length}
+            hasNextPage={hasNextPage}
+            onPageChange={setPage}
+            disabled={loading}
+          />
+        </div>
       </div>
     </div>
   );
