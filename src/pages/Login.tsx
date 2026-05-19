@@ -19,6 +19,7 @@ interface LoginResponse {
     createdAt: string;
   };
   accessToken: string;
+  refreshToken: string;
 }
 
 export default function Login() {
@@ -45,7 +46,7 @@ export default function Login() {
       });
 
       // Use context to store auth data
-      login(data.user as User, data.accessToken);
+      login(data.user as User, data.accessToken, data.refreshToken);
       nav('/dashboard');
     } catch (err) {
       setError(getErrorMessage(err, 'Invalid username or password. Please try again.'));

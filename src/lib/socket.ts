@@ -1,4 +1,5 @@
 import { io, type Socket } from 'socket.io-client';
+import { getStoredAccessToken } from './authStorage';
 
 /**
  * Socket Event Types
@@ -29,7 +30,7 @@ function getSocketUrl(): string {
  * Get authentication token from localStorage
  */
 function getAuthToken(): string | null {
-  return localStorage.getItem('auth_token');
+  return getStoredAccessToken();
 }
 
 let socketInstance: Socket | null = null;

@@ -1,4 +1,10 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import {
+  clearStoredAuthSession,
+  getStoredAuthSession,
+  getStoredRefreshToken,
+  persistAuthSession,
+} from '@/lib/authStorage';
 
 export interface User {
   id: string;
@@ -14,8 +20,9 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
-  login: (user: User, token: string) => void;
+  login: (user: User, token: string, refreshToken: string) => void;
   logout: () => void;
 }
 
@@ -24,45 +31,55 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
 
   // Initialize from localStorage on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    const storedToken = localStorage.getItem('auth_token');
+    const storedSession = getStoredAuthSession();
 
-    if (storedUser && storedToken) {
-      try {
-        setUser(JSON.parse(storedUser));
-        setToken(storedToken);
-      } catch (error) {
-        console.error('Error parsing stored user data:', error);
-        // Clear invalid data
-        localStorage.removeItem('user');
-        localStorage.removeItem('auth_token');
-      }
+    if (storedSession) {
+      setUser(storedSession.user);
+      setToken(storedSession.accessToken);
+      setRefreshToken(storedSession.refreshToken);
     }
   }, []);
 
-  const login = (userData: User, authToken: string) => {
+  const login = (userData: User, authToken: string, sessionRefreshToken: string) => {
     setUser(userData);
     setToken(authToken);
-    // Store in localStorage for persistence across browser sessions
-    localStorage.setItem('user', JSON.stringify(userData));
-    localStorage.setItem('auth_token', authToken);
+    setRefreshToken(sessionRefreshToken);
+    persistAuthSession(userData, authToken, sessionRefreshToken);
   };
 
   const logout = () => {
+    const sessionRefreshToken = refreshToken || getStoredRefreshToken();
+
     setUser(null);
     setToken(null);
-    // Clear localStorage
-    localStorage.removeItem('user');
-    localStorage.removeItem('auth_token');
+    setRefreshToken(null);
+    clearStoredAuthSession();
+
+    if (sessionRefreshToken) {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+      const apiKey = import.meta.env.VITE_API_KEY || '';
+
+      void fetch(`${apiBaseUrl}/auth/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+        },
+        body: JSON.stringify({ refreshToken: sessionRefreshToken }),
+      }).catch(error => {
+        console.error('Error revoking admin session:', error);
+      });
+    }
   };
 
-  const isAuthenticated = !!(user && token);
+  const isAuthenticated = !!(user && refreshToken);
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ user, token, refreshToken, isAuthenticated, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

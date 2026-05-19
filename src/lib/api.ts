@@ -18,6 +18,13 @@ import type {
   DeliveryPartnerFinancialSummary,
 } from '@/types';
 import { getFriendlyStatusMessage, toUserFacingMessage } from './utils';
+import {
+  clearStoredAuthSession,
+  getStoredAccessToken,
+  getStoredRefreshToken,
+  persistAccessToken,
+  persistRefreshToken,
+} from './authStorage';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 const API_KEY = import.meta.env.VITE_API_KEY || '';
@@ -52,18 +59,182 @@ function appendPaginationParams(params: URLSearchParams, pagination?: Pagination
 
 // Cache to prevent duplicate requests
 const requestCache = new Map<string, Promise<unknown>>();
+let refreshAccessTokenPromise: Promise<string | null> | null = null;
 
 // Function to get auth token from localStorage
 function getAuthToken(): string | null {
-  return localStorage.getItem('auth_token');
+  return getStoredAccessToken();
 }
 
-// Function to handle logout on token expiration
-function handleTokenExpiration() {
-  localStorage.removeItem('user');
-  localStorage.removeItem('auth_token');
-  // Redirect to login page directly instead of reloading
+function redirectToLogin() {
   window.location.href = '/login';
+}
+
+function handleSessionExpiration() {
+  clearStoredAuthSession();
+  redirectToLogin();
+}
+
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = getStoredRefreshToken();
+  if (!refreshToken) {
+    return null;
+  }
+
+  if (!refreshAccessTokenPromise) {
+    refreshAccessTokenPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+      },
+      body: JSON.stringify({ refreshToken }),
+    })
+      .then(async response => {
+        if (!response.ok) {
+          return null;
+        }
+
+        const json = (await response.json()) as unknown;
+        const data =
+          json &&
+          typeof json === 'object' &&
+          'success' in json &&
+          'data' in json &&
+          (json as { success?: boolean }).success === true
+            ? (json as { data: { accessToken?: string; token?: string; refreshToken?: string } })
+                .data
+            : (json as { accessToken?: string; token?: string; refreshToken?: string });
+
+        const nextAccessToken = data.accessToken || data.token;
+        if (!nextAccessToken) {
+          return null;
+        }
+
+        persistAccessToken(nextAccessToken);
+        if (data.refreshToken) {
+          persistRefreshToken(data.refreshToken);
+        }
+        return nextAccessToken;
+      })
+      .catch(() => null)
+      .finally(() => {
+        refreshAccessTokenPromise = null;
+      });
+  }
+
+  return refreshAccessTokenPromise;
+}
+
+async function buildHeaders(baseHeaders: HeadersInit | undefined, requireAuth: boolean) {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    'x-api-key': API_KEY,
+    ...baseHeaders,
+  };
+
+  if (requireAuth) {
+    let token = getAuthToken();
+    if (!token) {
+      token = await refreshAccessToken();
+    }
+    if (token) {
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    }
+  }
+
+  return headers;
+}
+
+async function fetchWithAuth(
+  endpoint: string,
+  fetchOptions: RequestInit,
+  requireAuth: boolean,
+  hasRetried = false
+): Promise<Response> {
+  const headers = await buildHeaders(fetchOptions.headers, requireAuth);
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...fetchOptions,
+    headers,
+  });
+
+  if (requireAuth && response.status === 401 && !hasRetried) {
+    const refreshedToken = await refreshAccessToken();
+    if (refreshedToken) {
+      return fetchWithAuth(endpoint, fetchOptions, requireAuth, true);
+    }
+  }
+
+  return response;
+}
+
+async function parseApiResponse<T>(response: Response): Promise<T> {
+  if (!response.status || response.status >= 400) {
+    if (response.status === 401) {
+      handleSessionExpiration();
+      throw new Error('Your session has expired. Please sign in again to continue.');
+    }
+
+    const error = (await response.json().catch(() => ({ message: 'Request failed' }))) as {
+      message?: string;
+    };
+    throw new Error(toUserFacingMessage(error.message, getFriendlyStatusMessage(response.status)));
+  }
+
+  return response.json().then((json: unknown) => {
+    // If the response follows the { success, data, message } pattern, return just the data
+    if (
+      json &&
+      typeof json === 'object' &&
+      'success' in json &&
+      'data' in json &&
+      (json as { success?: boolean }).success === true
+    ) {
+      return (json as { data: T }).data;
+    }
+    return json as T;
+  });
+}
+
+async function uploadImage(endpoint: string, file: File, hasRetried = false): Promise<{ imageUrl: string }> {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  let token = getAuthToken();
+  if (!token) {
+    token = await refreshAccessToken();
+  }
+
+  const headers: HeadersInit = { 'x-api-key': API_KEY };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (response.status === 401 && !hasRetried) {
+    const refreshedToken = await refreshAccessToken();
+    if (refreshedToken) {
+      return uploadImage(endpoint, file, true);
+    }
+  }
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      handleSessionExpiration();
+      throw new Error('Your session has expired. Please sign in again to continue.');
+    }
+
+    const error = (await response.json().catch(() => ({ message: 'Upload failed' }))) as {
+      message?: string;
+    };
+    throw new Error(toUserFacingMessage(error.message, getFriendlyStatusMessage(response.status)));
+  }
+
+  const json = await response.json();
+  return json.success ? json.data : json;
 }
 
 export async function apiRequest<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
@@ -77,62 +248,8 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
     return requestCache.get(cacheKey) as Promise<T>;
   }
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'x-api-key': API_KEY,
-    ...fetchOptions.headers,
-  };
-
-  if (requireAuth) {
-    const token = getAuthToken();
-    if (token) {
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
-    }
-  }
-
-  const requestPromise = fetch(`${API_BASE_URL}${endpoint}`, {
-    ...fetchOptions,
-    headers,
-  })
-    .then(async response => {
-      // Handle token expiration - check for 401 or 403 with JWT expired message
-      if (response.status === 401 || response.status === 403) {
-        const errorData = (await response.json().catch(() => ({}))) as { message?: string };
-        const errorMessage = errorData.message?.toLowerCase() || '';
-
-        if (
-          errorMessage.includes('jwt expired') ||
-          errorMessage.includes('expired') ||
-          errorMessage.includes('invalid') ||
-          errorMessage.includes('unauthorized') ||
-          errorMessage.includes('verification failed')
-        ) {
-          handleTokenExpiration();
-          throw new Error('Your session has expired. Please sign in again to continue.');
-        }
-      }
-
-      if (!response.status || response.status >= 400) {
-        const error = (await response
-          .json()
-          .catch(() => ({ message: 'Request failed' }))) as { message?: string };
-        throw new Error(toUserFacingMessage(error.message, getFriendlyStatusMessage(response.status)));
-      }
-
-      return response.json().then((json: unknown) => {
-        // If the response follows the { success, data, message } pattern, return just the data
-        if (
-          json &&
-          typeof json === 'object' &&
-          'success' in json &&
-          'data' in json &&
-          (json as { success?: boolean }).success === true
-        ) {
-          return (json as { data: T }).data;
-        }
-        return json as T;
-      });
-    })
+  const requestPromise = fetchWithAuth(endpoint, fetchOptions, requireAuth)
+    .then(response => parseApiResponse<T>(response))
     .finally(() => {
       // Remove from cache after completion
       requestCache.delete(cacheKey);
@@ -383,89 +500,17 @@ export const adminApi = {
     }),
 
   // Image Upload
-  uploadRestaurantImage: async (file: File): Promise<{ imageUrl: string }> => {
-    const formData = new FormData();
-    formData.append('image', file);
-    const token = getAuthToken();
-    const headers: HeadersInit = { 'x-api-key': API_KEY };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const response = await fetch(`${API_BASE_URL}/upload/restaurant`, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
-    if (!response.ok) {
-      const error = (await response.json().catch(() => ({ message: 'Upload failed' }))) as {
-        message?: string;
-      };
-      throw new Error(toUserFacingMessage(error.message, getFriendlyStatusMessage(response.status)));
-    }
-    const json = await response.json();
-    return json.success ? json.data : json;
-  },
+  uploadRestaurantImage: (file: File): Promise<{ imageUrl: string }> =>
+    uploadImage('/upload/restaurant', file),
 
-  uploadSurpriseBagImage: async (file: File): Promise<{ imageUrl: string }> => {
-    const formData = new FormData();
-    formData.append('image', file);
-    const token = getAuthToken();
-    const headers: HeadersInit = { 'x-api-key': API_KEY };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const response = await fetch(`${API_BASE_URL}/upload/surprise-bag`, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
-    if (!response.ok) {
-      const error = (await response.json().catch(() => ({ message: 'Upload failed' }))) as {
-        message?: string;
-      };
-      throw new Error(toUserFacingMessage(error.message, getFriendlyStatusMessage(response.status)));
-    }
-    const json = await response.json();
-    return json.success ? json.data : json;
-  },
+  uploadSurpriseBagImage: (file: File): Promise<{ imageUrl: string }> =>
+    uploadImage('/upload/surprise-bag', file),
 
-  uploadCuisineImage: async (file: File): Promise<{ imageUrl: string }> => {
-    const formData = new FormData();
-    formData.append('image', file);
-    const token = getAuthToken();
-    const headers: HeadersInit = { 'x-api-key': API_KEY };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const response = await fetch(`${API_BASE_URL}/upload/cuisine`, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
-    if (!response.ok) {
-      const error = (await response.json().catch(() => ({ message: 'Upload failed' }))) as {
-        message?: string;
-      };
-      throw new Error(toUserFacingMessage(error.message, getFriendlyStatusMessage(response.status)));
-    }
-    const json = await response.json();
-    return json.success ? json.data : json;
-  },
+  uploadCuisineImage: (file: File): Promise<{ imageUrl: string }> =>
+    uploadImage('/upload/cuisine', file),
 
-  uploadGroceryImage: async (file: File): Promise<{ imageUrl: string }> => {
-    const formData = new FormData();
-    formData.append('image', file);
-    const token = getAuthToken();
-    const headers: HeadersInit = { 'x-api-key': API_KEY };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const response = await fetch(`${API_BASE_URL}/upload/grocery`, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
-    if (!response.ok) {
-      const error = (await response.json().catch(() => ({ message: 'Upload failed' }))) as {
-        message?: string;
-      };
-      throw new Error(toUserFacingMessage(error.message, getFriendlyStatusMessage(response.status)));
-    }
-    const json = await response.json();
-    return json.success ? json.data : json;
-  },
+  uploadGroceryImage: (file: File): Promise<{ imageUrl: string }> =>
+    uploadImage('/upload/grocery', file),
 
   // Grocery Store Management
   getAllGroceryStores: (search?: string, pagination?: PaginationParams) => {

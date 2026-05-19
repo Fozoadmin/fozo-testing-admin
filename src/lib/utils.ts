@@ -1,5 +1,12 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import {
+  clearStoredAuthSession,
+  getStoredAccessToken,
+  getStoredRefreshToken,
+  persistAccessToken,
+  persistRefreshToken,
+} from './authStorage';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -69,13 +76,49 @@ export const getErrorMessage = (error: unknown, fallback = 'Something went wrong
 
 // Helper function to get auth token
 export function getAuthToken(): string | null {
-  return localStorage.getItem('auth_token');
+  return getStoredAccessToken();
+}
+
+async function refreshAccessToken(apiBaseUrl: string, apiKey: string): Promise<string | null> {
+  const refreshToken = getStoredRefreshToken();
+  if (!refreshToken) return null;
+
+  const response = await fetch(`${apiBaseUrl}/auth/refresh`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+    },
+    body: JSON.stringify({ refreshToken }),
+  }).catch(() => null);
+
+  if (!response?.ok) return null;
+
+  const json = (await response.json()) as unknown;
+  const data =
+    json &&
+    typeof json === 'object' &&
+    'success' in json &&
+    'data' in json &&
+    (json as { success?: boolean }).success === true
+      ? (json as { data: { accessToken?: string; token?: string; refreshToken?: string } }).data
+      : (json as { accessToken?: string; token?: string; refreshToken?: string });
+
+  const nextAccessToken = data.accessToken || data.token;
+  if (!nextAccessToken) return null;
+
+  persistAccessToken(nextAccessToken);
+  if (data.refreshToken) {
+    persistRefreshToken(data.refreshToken);
+  }
+  return nextAccessToken;
 }
 
 // Helper function to make API request with status code
 export async function apiRequestWithStatus(
   endpoint: string,
-  options: { method?: string; body?: string } = {}
+  options: { method?: string; body?: string } = {},
+  hasRetried = false
 ): Promise<{ status: number; message: string; data?: unknown }> {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
   const API_KEY = import.meta.env.VITE_API_KEY || '';
@@ -85,7 +128,10 @@ export async function apiRequestWithStatus(
     'x-api-key': API_KEY,
   };
 
-  const token = getAuthToken();
+  let token = getAuthToken();
+  if (!token) {
+    token = await refreshAccessToken(API_BASE_URL, API_KEY);
+  }
   if (token) {
     (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
   }
@@ -96,6 +142,19 @@ export async function apiRequestWithStatus(
   });
 
   const data = await response.json().catch(() => ({}));
+
+  if (response.status === 401 && !hasRetried) {
+    const refreshedToken = await refreshAccessToken(API_BASE_URL, API_KEY);
+    if (refreshedToken) {
+      return apiRequestWithStatus(endpoint, options, true);
+    }
+  }
+
+  if (response.status === 401) {
+    clearStoredAuthSession();
+    window.location.href = '/login';
+  }
+
   const message = response.ok
     ? toUserFacingMessage(data.message, 'Saved successfully.')
     : toUserFacingMessage(data.message, getFriendlyStatusMessage(response.status));
