@@ -13,6 +13,7 @@ import {
   Ticket,
   Store,
   Apple,
+  Tags,
 } from 'lucide-react';
 // import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -29,6 +30,7 @@ import {
   Settings,
   Notifications,
   GroceryStores,
+  GroceryCategories,
   GroceryItems,
 } from '@/components/dashboard';
 
@@ -166,7 +168,17 @@ export default function Dashboard() {
             className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${active === 'grocery-stores' ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
           >
             <Store className='h-4 w-4' />
-            Grossy Stores
+            Grocery Stores
+          </button>
+          <button
+            onClick={() => {
+              setActive('grocery-categories');
+              setMobileSidebarOpen(false);
+            }}
+            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${active === 'grocery-categories' ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
+          >
+            <Tags className='h-4 w-4' />
+            Grocery Categories
           </button>
           <button
             onClick={() => {
@@ -176,7 +188,7 @@ export default function Dashboard() {
             className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${active === 'grocery-items' ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
           >
             <Apple className='h-4 w-4' />
-            Grossy Items
+            Grocery Items
           </button>
           <button
             onClick={() => {
@@ -244,6 +256,7 @@ export default function Dashboard() {
               <TabsTrigger value='finance' />
               <TabsTrigger value='settings' />
               <TabsTrigger value='grocery-stores' />
+              <TabsTrigger value='grocery-categories' />
               <TabsTrigger value='grocery-items' />
             </TabsList>
           </Tabs>
@@ -261,6 +274,7 @@ export default function Dashboard() {
             {active === 'notifications' && <Notifications />}
             {active === 'settings' && <Settings />}
             {active === 'grocery-stores' && <GroceryStores />}
+            {active === 'grocery-categories' && <GroceryCategories />}
             {active === 'grocery-items' && <GroceryItems />}
           </div>
         </main>

@@ -10,6 +10,7 @@ import {
   Ticket,
   Store,
   Apple,
+  Tags,
 } from 'lucide-react';
 
 type SidebarProps = {
@@ -27,8 +28,9 @@ export function Sidebar({ active, setActive }: SidebarProps) {
     { key: 'coupons', label: 'Coupons', icon: Ticket },
     { key: 'customers', label: 'Customers', icon: Users },
     { key: 'finance', label: 'Finance', icon: IndianRupee },
-    { key: 'grocery-stores', label: 'Grossy Stores', icon: Store },
-    { key: 'grocery-items', label: 'Grossy Items', icon: Apple },
+    { key: 'grocery-stores', label: 'Grocery Stores', icon: Store },
+    { key: 'grocery-categories', label: 'Grocery Categories', icon: Tags },
+    { key: 'grocery-items', label: 'Grocery Items', icon: Apple },
     { key: 'notifications', label: 'Notifications', icon: Bell },
     { key: 'settings', label: 'Settings', icon: Cog },
   ];

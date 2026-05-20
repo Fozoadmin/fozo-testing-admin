@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { adminApi } from '@/lib/api';
 import { getErrorMessage } from '@/lib/utils';
-import type { GroceryItem, GroceryStore, GroceryUnit } from '@/types';
+import type { GroceryCategory, GroceryItem, GroceryStore, GroceryUnit } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,7 @@ function ItemForm({
   imgUploading,
   setImgUploading,
   stores,
+  categories,
   onImageUpload,
 }: {
   f: ItemFormValues;
@@ -40,6 +41,7 @@ function ItemForm({
   imgUploading: boolean;
   setImgUploading: (v: boolean) => void;
   stores: GroceryStore[];
+  categories: GroceryCategory[];
   onImageUpload: (
     file: File,
     setter: (url: string) => void,
@@ -68,11 +70,24 @@ function ItemForm({
         value={f.itemName}
         onChange={e => setF({ ...f, itemName: e.target.value })}
       />
-      <Input
-        placeholder='Category *'
-        value={f.category}
-        onChange={e => setF({ ...f, category: e.target.value })}
-      />
+      <div className='space-y-1'>
+        <label className='text-sm font-medium'>Category *</label>
+        <select
+          className='bg-background w-full rounded-md border px-3 py-2 text-sm'
+          value={f.category}
+          onChange={e => setF({ ...f, category: e.target.value })}
+        >
+          <option value=''>Select a category</option>
+          {f.category && !categories.some(category => category.name === f.category) && (
+            <option value={f.category}>{f.category}</option>
+          )}
+          {categories.map(category => (
+            <option key={category.id} value={category.name}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+      </div>
       <Input
         placeholder='Description'
         value={f.description}
@@ -161,6 +176,7 @@ function ItemForm({
 export function GroceryItems() {
   const [items, setItems] = useState<GroceryItem[]>([]);
   const [stores, setStores] = useState<GroceryStore[]>([]);
+  const [categories, setCategories] = useState<GroceryCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchFilter, setSearchFilter] = useState('');
   const [storeFilter, setStoreFilter] = useState('');
@@ -192,12 +208,14 @@ export function GroceryItems() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [itemsData, storesData] = await Promise.all([
+      const [itemsData, storesData, categoriesData] = await Promise.all([
         adminApi.getAllGroceryItems(),
         adminApi.getAllGroceryStores(),
+        adminApi.getAllGroceryCategories(),
       ]);
       setItems(itemsData);
       setStores(storesData);
+      setCategories(categoriesData);
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, 'Failed to fetch grocery items'));
     } finally {
@@ -347,6 +365,7 @@ export function GroceryItems() {
                 imgUploading={uploadingImage}
                 setImgUploading={setUploadingImage}
                 stores={stores}
+                categories={categories}
                 onImageUpload={handleImageUpload}
               />
               <DialogFooter>
@@ -481,6 +500,7 @@ export function GroceryItems() {
             imgUploading={editUploadingImage}
             setImgUploading={setEditUploadingImage}
             stores={stores}
+            categories={categories}
             onImageUpload={handleImageUpload}
           />
           <DialogFooter>

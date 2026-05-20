@@ -39,3 +39,14 @@ export type GroceryItem = {
   is_active?: boolean;
   is_in_stock?: boolean;
 };
+
+export type GroceryCategory = {
+  id: number;
+  name: string;
+  image_url?: string | null;
+  imageUrl?: string | null;
+  is_active?: boolean;
+  isActive?: boolean;
+  created_at?: string;
+  updated_at?: string;
+};

@@ -12,7 +12,13 @@ export type {
   FinancialOrder,
   RestaurantFinancialSummary,
 } from './finance';
-export type { GroceryItem, GroceryStore, GroceryStoreStatus, GroceryUnit } from './grocery';
+export type {
+  GroceryCategory,
+  GroceryItem,
+  GroceryStore,
+  GroceryStoreStatus,
+  GroceryUnit,
+} from './grocery';
 export type {
   AdminNotification,
   AdminNotificationTarget,

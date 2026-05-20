@@ -8,6 +8,7 @@ import type {
   DeliveryPartner,
   DeliveryPartnerStatus,
   GroceryItem,
+  GroceryCategory,
   GroceryOrder,
   GroceryStore,
   GroupedRestaurant,
@@ -511,6 +512,32 @@ export const adminApi = {
 
   uploadGroceryImage: (file: File): Promise<{ imageUrl: string }> =>
     uploadImage('/upload/grocery', file),
+
+  uploadGroceryCategoryImage: (file: File): Promise<{ imageUrl: string }> =>
+    uploadImage('/upload/grocery-category', file),
+
+  // Grocery Category Management
+  getAllGroceryCategories: (includeInactive = false) =>
+    apiRequest<GroceryCategory[]>(
+      `/admin/grocery-categories${includeInactive ? '?includeInactive=true' : ''}`
+    ),
+
+  createGroceryCategory: (body: JsonRequestBody) =>
+    apiRequest<GroceryCategory>('/admin/grocery-categories', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  updateGroceryCategory: (id: number, body: JsonRequestBody) =>
+    apiRequest<GroceryCategory>(`/admin/grocery-categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+
+  deleteGroceryCategory: (id: number) =>
+    apiRequest<ApiMutationResponse>(`/admin/grocery-categories/${id}`, {
+      method: 'DELETE',
+    }),
 
   // Grocery Store Management
   getAllGroceryStores: (search?: string, pagination?: PaginationParams) => {
