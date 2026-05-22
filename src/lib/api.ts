@@ -51,11 +51,23 @@ export type PaginationParams = {
   offset?: number;
 };
 
+type OrderListParams = PaginationParams & {
+  dateFrom?: string;
+  dateTo?: string;
+};
+
 function appendPaginationParams(params: URLSearchParams, pagination?: PaginationParams) {
   if (!pagination) return;
   if (pagination.page) params.append('page', String(pagination.page));
   if (pagination.limit) params.append('limit', String(pagination.limit));
   if (pagination.offset !== undefined) params.append('offset', String(pagination.offset));
+}
+
+function appendOrderListParams(params: URLSearchParams, orderListParams?: OrderListParams) {
+  if (!orderListParams) return;
+  appendPaginationParams(params, orderListParams);
+  if (orderListParams.dateFrom) params.append('dateFrom', orderListParams.dateFrom);
+  if (orderListParams.dateTo) params.append('dateTo', orderListParams.dateTo);
 }
 
 // Cache to prevent duplicate requests
@@ -299,11 +311,11 @@ export const adminApi = {
   onboardRestaurant: (body: JsonRequestBody) =>
     apiRequest<Restaurant>('/admin/restaurants', { method: 'POST', body: JSON.stringify(body) }),
 
-  getAllOrders: (status?: string, deliveryPartnerId?: string, pagination?: PaginationParams) => {
+  getAllOrders: (status?: string, deliveryPartnerId?: string, orderListParams?: OrderListParams) => {
     const params = new URLSearchParams();
     if (status) params.append('status', status);
     if (deliveryPartnerId) params.append('deliveryPartnerId', deliveryPartnerId);
-    appendPaginationParams(params, pagination);
+    appendOrderListParams(params, orderListParams);
     return apiRequest<{ orders: AdminOrder[] }>(
       `/admin/orders${params.toString() ? `?${params.toString()}` : ''}`
     );
@@ -589,10 +601,10 @@ export const adminApi = {
     apiRequest<ApiMutationResponse>(`/admin/grocery-items/${id}`, { method: 'DELETE' }),
 
   // Grocery Order Management
-  getAllGroceryOrders: (status?: string, pagination?: PaginationParams) => {
+  getAllGroceryOrders: (status?: string, orderListParams?: OrderListParams) => {
     const params = new URLSearchParams();
     if (status) params.append('status', status);
-    appendPaginationParams(params, pagination);
+    appendOrderListParams(params, orderListParams);
     return apiRequest<{ orders: GroceryOrder[] }>(
       `/admin/grocery-orders${params.toString() ? `?${params.toString()}` : ''}`
     );

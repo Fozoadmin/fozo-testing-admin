@@ -45,6 +45,7 @@ import {
   XCircle,
   Clock,
   ShoppingCart,
+  CalendarDays,
 } from 'lucide-react';
 import { formatDateTime, formatINR, timeAgo } from '@/lib/formatters';
 import { cn, apiRequestWithStatus, getErrorMessage } from '@/lib/utils';
@@ -67,6 +68,103 @@ import {
 import { PaginationControls } from './PaginationControls';
 
 const PAGE_SIZE = 50;
+const DATE_RANGE_OPTIONS = [
+  'all',
+  'today',
+  'week',
+  'month',
+  'threeMonths',
+  'sixMonths',
+  'custom',
+] as const;
+
+type OrderDateRange = (typeof DATE_RANGE_OPTIONS)[number];
+
+const DATE_RANGE_LABELS: Record<OrderDateRange, string> = {
+  all: 'All Dates',
+  today: 'Today',
+  week: 'This Week',
+  month: '1 Month',
+  threeMonths: '3 Months',
+  sixMonths: '6 Months',
+  custom: 'Custom Range',
+};
+
+function startOfLocalDay(date: Date) {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  return start;
+}
+
+function parseDateInput(value: string) {
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
+function getDateRangeParams(
+  range: OrderDateRange,
+  customRange: { dateFrom?: string; dateTo?: string } = {}
+) {
+  if (range === 'all') return {};
+
+  const today = startOfLocalDay(new Date());
+  const dateTo = new Date(today);
+
+  if (range === 'custom') {
+    const params: { dateFrom?: string; dateTo?: string } = {};
+    const customDateFrom = customRange.dateFrom ? parseDateInput(customRange.dateFrom) : null;
+    const customDateTo = customRange.dateTo ? parseDateInput(customRange.dateTo) : null;
+
+    if (customDateFrom) {
+      params.dateFrom = startOfLocalDay(customDateFrom).toISOString();
+    }
+
+    if (customDateTo) {
+      const exclusiveDateTo = startOfLocalDay(customDateTo);
+      exclusiveDateTo.setDate(exclusiveDateTo.getDate() + 1);
+      params.dateTo = exclusiveDateTo.toISOString();
+    }
+
+    return params;
+  }
+
+  if (range === 'today') {
+    dateTo.setDate(today.getDate() + 1);
+    return {
+      dateFrom: today.toISOString(),
+      dateTo: dateTo.toISOString(),
+    };
+  }
+
+  if (range === 'week') {
+    const dateFrom = new Date(today);
+    const dayOfWeek = today.getDay();
+    const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    dateFrom.setDate(today.getDate() - daysSinceMonday);
+    dateTo.setTime(dateFrom.getTime());
+    dateTo.setDate(dateFrom.getDate() + 7);
+
+    return {
+      dateFrom: dateFrom.toISOString(),
+      dateTo: dateTo.toISOString(),
+    };
+  }
+
+  const monthsBack: Record<Exclude<OrderDateRange, 'all' | 'today' | 'week' | 'custom'>, number> = {
+    month: 1,
+    threeMonths: 3,
+    sixMonths: 6,
+  };
+  const rollingDateFrom = new Date(today);
+  rollingDateFrom.setMonth(today.getMonth() - monthsBack[range]);
+  dateTo.setDate(today.getDate() + 1);
+
+  return {
+    dateFrom: rollingDateFrom.toISOString(),
+    dateTo: dateTo.toISOString(),
+  };
+}
 
 // ------------------ Main Component ------------------
 export function Orders() {
@@ -80,6 +178,9 @@ export function Orders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const [dateRange, setDateRange] = useState<OrderDateRange>('all');
+  const [customDateFrom, setCustomDateFrom] = useState('');
+  const [customDateTo, setCustomDateTo] = useState('');
   const debouncedQuery = useDebounced(query);
   const [selected, setSelected] = useState<Order | null>(null);
 
@@ -91,6 +192,9 @@ export function Orders() {
   const [groceryLoading, setGroceryLoading] = useState(true);
   const [groceryError, setGroceryError] = useState<string | null>(null);
   const [groceryQuery, setGroceryQuery] = useState('');
+  const [groceryDateRange, setGroceryDateRange] = useState<OrderDateRange>('all');
+  const [groceryCustomDateFrom, setGroceryCustomDateFrom] = useState('');
+  const [groceryCustomDateTo, setGroceryCustomDateTo] = useState('');
   const debouncedGroceryQuery = useDebounced(groceryQuery);
   const [selectedGrocery, setSelectedGrocery] = useState<GroceryOrder | null>(null);
   const [updatingGroceryStatusId, setUpdatingGroceryStatusId] = useState<string | null>(null);
@@ -108,10 +212,19 @@ export function Orders() {
     let isMounted = true;
     (async () => {
       try {
+        setLoading(true);
+        setError(null);
         const data = await adminApi.getAllOrders(
           status === 'all' ? undefined : status,
           undefined,
-          { page: ordersPage, limit: PAGE_SIZE + 1 }
+          {
+            page: ordersPage,
+            limit: PAGE_SIZE + 1,
+            ...getDateRangeParams(dateRange, {
+              dateFrom: customDateFrom,
+              dateTo: customDateTo,
+            }),
+          }
         );
         if (!isMounted) return;
         const sorted = [...(data?.orders ?? [])].sort(
@@ -130,7 +243,7 @@ export function Orders() {
     return () => {
       isMounted = false;
     };
-  }, [ordersPage, status]);
+  }, [customDateFrom, customDateTo, dateRange, ordersPage, status]);
 
   // Listen for new orders via socket
   useEffect(() => {
@@ -140,6 +253,10 @@ export function Orders() {
         .getAllOrders(status === 'all' ? undefined : status, undefined, {
           page: ordersPage,
           limit: PAGE_SIZE + 1,
+          ...getDateRangeParams(dateRange, {
+            dateFrom: customDateFrom,
+            dateTo: customDateTo,
+          }),
         })
         .then(data => {
           const sorted = [...(data?.orders ?? [])].sort(
@@ -159,16 +276,25 @@ export function Orders() {
         unsubscribe();
       }
     };
-  }, [ordersPage, status]);
+  }, [customDateFrom, customDateTo, dateRange, ordersPage, status]);
 
   // Fetch grocery orders
   useEffect(() => {
     let isMounted = true;
     (async () => {
       try {
+        setGroceryLoading(true);
+        setGroceryError(null);
         const data = await adminApi.getAllGroceryOrders(
           groceryStatus === 'all' ? undefined : groceryStatus,
-          { page: groceryOrdersPage, limit: PAGE_SIZE + 1 }
+          {
+            page: groceryOrdersPage,
+            limit: PAGE_SIZE + 1,
+            ...getDateRangeParams(groceryDateRange, {
+              dateFrom: groceryCustomDateFrom,
+              dateTo: groceryCustomDateTo,
+            }),
+          }
         );
         if (!isMounted) return;
         const sorted = [...(data?.orders ?? [])].sort(
@@ -187,7 +313,7 @@ export function Orders() {
     return () => {
       isMounted = false;
     };
-  }, [groceryOrdersPage, groceryStatus]);
+  }, [groceryCustomDateFrom, groceryCustomDateTo, groceryDateRange, groceryOrdersPage, groceryStatus]);
 
   // Listen for new / updated grocery orders via socket
   useEffect(() => {
@@ -196,6 +322,10 @@ export function Orders() {
         .getAllGroceryOrders(groceryStatus === 'all' ? undefined : groceryStatus, {
           page: groceryOrdersPage,
           limit: PAGE_SIZE + 1,
+          ...getDateRangeParams(groceryDateRange, {
+            dateFrom: groceryCustomDateFrom,
+            dateTo: groceryCustomDateTo,
+          }),
         })
         .then(data => {
           const sorted = [...(data?.orders ?? [])].sort(
@@ -225,7 +355,7 @@ export function Orders() {
       unsubNew?.();
       unsubUpdated?.();
     };
-  }, [groceryOrdersPage, groceryStatus]);
+  }, [groceryCustomDateFrom, groceryCustomDateTo, groceryDateRange, groceryOrdersPage, groceryStatus]);
 
   // Fetch delivery partners when assignment dialog opens
   useEffect(() => {
@@ -536,7 +666,7 @@ export function Orders() {
         <div className='grid gap-4'>
           <Card className='rounded-2xl'>
             <CardContent className='grid grid-cols-1 gap-3 pt-6 xl:grid-cols-3'>
-              <div className='col-span-2 flex items-center gap-2'>
+              <div className='col-span-2 grid gap-2 md:grid-cols-[minmax(220px,1fr)_220px_180px]'>
                 <Input
                   value={groceryQuery}
                   onChange={e => setGroceryQuery(e.target.value)}
@@ -556,11 +686,54 @@ export function Orders() {
                   <SelectContent>
                     {GROCERY_STATUS_OPTIONS.map(s => (
                       <SelectItem key={s} value={s}>
-                        {groceryStatusLabel(s)}
+                        {s === 'all' ? 'All Delivery Statuses' : groceryStatusLabel(s)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <Select
+                  value={groceryDateRange}
+                  onValueChange={v => {
+                    setGroceryDateRange(v as OrderDateRange);
+                    setGroceryOrdersPage(1);
+                  }}
+                >
+                  <SelectTrigger className='w-full'>
+                    <CalendarDays className='mr-2 h-4 w-4' />
+                    <SelectValue placeholder='Date range' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DATE_RANGE_OPTIONS.map(range => (
+                      <SelectItem key={range} value={range}>
+                        {DATE_RANGE_LABELS[range]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {groceryDateRange === 'custom' && (
+                  <>
+                    <Input
+                      type='date'
+                      value={groceryCustomDateFrom}
+                      max={groceryCustomDateTo || undefined}
+                      onChange={e => {
+                        setGroceryCustomDateFrom(e.target.value);
+                        setGroceryOrdersPage(1);
+                      }}
+                      aria-label='Grocery orders from date'
+                    />
+                    <Input
+                      type='date'
+                      value={groceryCustomDateTo}
+                      min={groceryCustomDateFrom || undefined}
+                      onChange={e => {
+                        setGroceryCustomDateTo(e.target.value);
+                        setGroceryOrdersPage(1);
+                      }}
+                      aria-label='Grocery orders to date'
+                    />
+                  </>
+                )}
               </div>
               <div className='grid grid-cols-3 gap-2'>
                 <div className='rounded-xl border p-3 text-center'>
@@ -906,7 +1079,7 @@ export function Orders() {
           <Card className='rounded-2xl'>
             <CardContent className='grid grid-cols-1 gap-3 pt-6 xl:grid-cols-3'>
               {/* Search + Filter */}
-              <div className='col-span-2 flex items-center gap-2'>
+              <div className='col-span-2 grid gap-2 md:grid-cols-[minmax(220px,1fr)_220px_180px]'>
                 <Input
                   value={query}
                   onChange={e => setQuery(e.target.value)}
@@ -926,11 +1099,54 @@ export function Orders() {
                   <SelectContent>
                     {ORDER_STATUS_OPTIONS.map(s => (
                       <SelectItem key={s} value={s}>
-                        {s === 'all' ? 'All Statuses' : getStatusLabel(s)}
+                        {s === 'all' ? 'All Delivery Statuses' : getStatusLabel(s)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <Select
+                  value={dateRange}
+                  onValueChange={v => {
+                    setDateRange(v as OrderDateRange);
+                    setOrdersPage(1);
+                  }}
+                >
+                  <SelectTrigger className='w-full'>
+                    <CalendarDays className='mr-2 h-4 w-4' />
+                    <SelectValue placeholder='Date range' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DATE_RANGE_OPTIONS.map(range => (
+                      <SelectItem key={range} value={range}>
+                        {DATE_RANGE_LABELS[range]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {dateRange === 'custom' && (
+                  <>
+                    <Input
+                      type='date'
+                      value={customDateFrom}
+                      max={customDateTo || undefined}
+                      onChange={e => {
+                        setCustomDateFrom(e.target.value);
+                        setOrdersPage(1);
+                      }}
+                      aria-label='Orders from date'
+                    />
+                    <Input
+                      type='date'
+                      value={customDateTo}
+                      min={customDateFrom || undefined}
+                      onChange={e => {
+                        setCustomDateTo(e.target.value);
+                        setOrdersPage(1);
+                      }}
+                      aria-label='Orders to date'
+                    />
+                  </>
+                )}
               </div>
 
               {/* KPI strip */}
