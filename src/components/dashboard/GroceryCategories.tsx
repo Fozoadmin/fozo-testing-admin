@@ -38,27 +38,38 @@ const emptyCategoryForm: CategoryForm = {
   isActive: true,
 };
 
+const RESERVED_ALL_CATEGORY_NAME = 'All';
 const getImageUrl = (category: GroceryCategory) => category.image_url || category.imageUrl || '';
 const getIsActive = (category: GroceryCategory) => category.is_active ?? category.isActive ?? true;
+const isReservedAllCategory = (category: Pick<GroceryCategory, 'name'> | null | undefined) =>
+  category?.name.trim().toLowerCase() === RESERVED_ALL_CATEGORY_NAME.toLowerCase();
 
 function CategoryFormFields({
   form,
   setForm,
   uploading,
   onUpload,
+  imageOnly = false,
 }: {
   form: CategoryForm;
   setForm: Dispatch<SetStateAction<CategoryForm>>;
   uploading: boolean;
   onUpload: (file: File) => void;
+  imageOnly?: boolean;
 }) {
   return (
     <div className='space-y-3'>
       <Input
         placeholder='Category name *'
         value={form.name}
+        disabled={imageOnly}
         onChange={e => setForm({ ...form, name: e.target.value })}
       />
+      {imageOnly && (
+        <p className='text-muted-foreground text-xs'>
+          The All category is required by the app. Only its image can be changed.
+        </p>
+      )}
 
       <div className='space-y-2'>
         <label className='text-sm font-medium'>Category Image</label>
@@ -84,14 +95,16 @@ function CategoryFormFields({
         )}
       </div>
 
-      <label className='flex items-center gap-2 text-sm'>
-        <input
-          type='checkbox'
-          checked={form.isActive}
-          onChange={e => setForm({ ...form, isActive: e.target.checked })}
-        />
-        Active on grocery home
-      </label>
+      {!imageOnly && (
+        <label className='flex items-center gap-2 text-sm'>
+          <input
+            type='checkbox'
+            checked={form.isActive}
+            onChange={e => setForm({ ...form, isActive: e.target.checked })}
+          />
+          Active on grocery home
+        </label>
+      )}
     </div>
   );
 }
@@ -160,6 +173,10 @@ export function GroceryCategories() {
       toast.error('Category name is required');
       return;
     }
+    if (form.name.trim().toLowerCase() === RESERVED_ALL_CATEGORY_NAME.toLowerCase()) {
+      toast.error('All is a system category. Edit its image instead.');
+      return;
+    }
 
     setCreating(true);
     try {
@@ -191,18 +208,26 @@ export function GroceryCategories() {
 
   const handleUpdate = async () => {
     if (!selectedCategory) return;
-    if (!editForm.name.trim()) {
+    const isAllCategory = isReservedAllCategory(selectedCategory);
+    if (!isAllCategory && !editForm.name.trim()) {
       toast.error('Category name is required');
       return;
     }
 
     setEditing(true);
     try {
-      await adminApi.updateGroceryCategory(selectedCategory.id, {
-        name: editForm.name.trim(),
-        imageUrl: editForm.imageUrl.trim() || null,
-        isActive: editForm.isActive,
-      });
+      await adminApi.updateGroceryCategory(
+        selectedCategory.id,
+        isAllCategory
+          ? {
+              imageUrl: editForm.imageUrl.trim() || null,
+            }
+          : {
+              name: editForm.name.trim(),
+              imageUrl: editForm.imageUrl.trim() || null,
+              isActive: editForm.isActive,
+            }
+      );
       toast.success('Grocery category updated');
       setOpenEdit(false);
       setSelectedCategory(null);
@@ -216,6 +241,12 @@ export function GroceryCategories() {
 
   const handleDelete = async () => {
     if (!categoryToDelete) return;
+    if (isReservedAllCategory(categoryToDelete)) {
+      toast.error('All category cannot be hidden or deleted');
+      setOpenDelete(false);
+      setCategoryToDelete(null);
+      return;
+    }
     setDeleting(true);
     try {
       await adminApi.deleteGroceryCategory(categoryToDelete.id);
@@ -320,6 +351,7 @@ export function GroceryCategories() {
                               />
                             )}
                             {category.name}
+                            {isReservedAllCategory(category) && <Badge variant='outline'>System</Badge>}
                           </div>
                         </TableCell>
                         <TableCell className='max-w-[360px] truncate'>{imageUrl || '-'}</TableCell>
@@ -337,16 +369,18 @@ export function GroceryCategories() {
                             >
                               <Edit className='h-4 w-4' />
                             </Button>
-                            <Button
-                              variant='ghost'
-                              size='sm'
-                              onClick={() => {
-                                setCategoryToDelete(category);
-                                setOpenDelete(true);
-                              }}
-                            >
-                              <Trash2 className='text-destructive h-4 w-4' />
-                            </Button>
+                            {!isReservedAllCategory(category) && (
+                              <Button
+                                variant='ghost'
+                                size='sm'
+                                onClick={() => {
+                                  setCategoryToDelete(category);
+                                  setOpenDelete(true);
+                                }}
+                              >
+                                <Trash2 className='text-destructive h-4 w-4' />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -363,12 +397,17 @@ export function GroceryCategories() {
         <DialogContent className='max-w-lg'>
           <DialogHeader>
             <DialogTitle>Edit Grocery Category</DialogTitle>
-            <DialogDescription>Update the image and visibility shown in the customer app.</DialogDescription>
+            <DialogDescription>
+              {isReservedAllCategory(selectedCategory)
+                ? 'Update the image shown for the required All category.'
+                : 'Update the image and visibility shown in the customer app.'}
+            </DialogDescription>
           </DialogHeader>
           <CategoryFormFields
             form={editForm}
             setForm={setEditForm}
             uploading={editUploading}
+            imageOnly={isReservedAllCategory(selectedCategory)}
             onUpload={file =>
               handleImageUpload(
                 file,
