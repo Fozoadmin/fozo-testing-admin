@@ -40,6 +40,41 @@ export type GroceryItem = {
   is_in_stock?: boolean;
 };
 
+export type GroceryBundleBoxItem = {
+  id: string;
+  groceryItemId: string;
+  name: string;
+  quantity: number;
+  unit?: string;
+  imageUrl?: string | null;
+  price?: number | string;
+  mrp?: number | string;
+  category?: string;
+};
+
+export type GroceryBundleBox = {
+  id: string;
+  store_id: string;
+  store_name?: string;
+  name: string;
+  category?: string;
+  subtitle?: string | null;
+  description?: string | null;
+  image_url?: string | null;
+  price?: number | string;
+  mrp?: number | string;
+  quantity_available?: number;
+  total_quantity_listed?: number;
+  delivery_window?: string | null;
+  co2_saved_kg?: number | string;
+  product_type?: string | null;
+  brand?: string | null;
+  expiry_date?: string | null;
+  is_active?: boolean;
+  is_in_stock?: boolean;
+  items?: GroceryBundleBoxItem[];
+};
+
 export type GroceryCategory = {
   id: number;
   name: string;

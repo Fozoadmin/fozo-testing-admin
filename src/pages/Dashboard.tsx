@@ -14,6 +14,7 @@ import {
   Store,
   Apple,
   Tags,
+  Package,
 } from 'lucide-react';
 // import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -32,6 +33,7 @@ import {
   GroceryStores,
   GroceryCategories,
   GroceryItems,
+  GroceryBundleBoxes,
 } from '@/components/dashboard';
 
 // const cities = ["Mumbai", "Bengaluru", "Delhi", "Hyderabad", "Pune", "Chennai"];
@@ -192,6 +194,16 @@ export default function Dashboard() {
           </button>
           <button
             onClick={() => {
+              setActive('grocery-bundle-boxes');
+              setMobileSidebarOpen(false);
+            }}
+            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${active === 'grocery-bundle-boxes' ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
+          >
+            <Package className='h-4 w-4' />
+            Bundle Boxes
+          </button>
+          <button
+            onClick={() => {
               setActive('notifications');
               setMobileSidebarOpen(false);
             }}
@@ -258,6 +270,7 @@ export default function Dashboard() {
               <TabsTrigger value='grocery-stores' />
               <TabsTrigger value='grocery-categories' />
               <TabsTrigger value='grocery-items' />
+              <TabsTrigger value='grocery-bundle-boxes' />
             </TabsList>
           </Tabs>
 
@@ -276,6 +289,7 @@ export default function Dashboard() {
             {active === 'grocery-stores' && <GroceryStores />}
             {active === 'grocery-categories' && <GroceryCategories />}
             {active === 'grocery-items' && <GroceryItems />}
+            {active === 'grocery-bundle-boxes' && <GroceryBundleBoxes />}
           </div>
         </main>
       </div>

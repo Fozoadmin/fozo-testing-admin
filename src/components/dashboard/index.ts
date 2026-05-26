@@ -14,3 +14,4 @@ export { Notifications } from './Notifications';
 export { GroceryStores } from './GroceryStores';
 export { GroceryCategories } from './GroceryCategories';
 export { GroceryItems } from './GroceryItems';
+export { GroceryBundleBoxes } from './GroceryBundleBoxes';

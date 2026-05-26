@@ -14,6 +14,8 @@ export type {
 } from './finance';
 export type {
   GroceryCategory,
+  GroceryBundleBox,
+  GroceryBundleBoxItem,
   GroceryItem,
   GroceryStore,
   GroceryStoreStatus,

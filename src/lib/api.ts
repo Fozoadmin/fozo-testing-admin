@@ -8,6 +8,7 @@ import type {
   DeliveryPartner,
   DeliveryPartnerStatus,
   GroceryItem,
+  GroceryBundleBox,
   GroceryCategory,
   GroceryOrder,
   GroceryStore,
@@ -599,6 +600,41 @@ export const adminApi = {
 
   deleteGroceryItem: (id: string) =>
     apiRequest<ApiMutationResponse>(`/admin/grocery-items/${id}`, { method: 'DELETE' }),
+
+  // Grocery Bundle Box Management
+  getAllGroceryBundleBoxes: (
+    storeId?: string,
+    search?: string,
+    includeInactive = true,
+    pagination?: PaginationParams
+  ) => {
+    const params = new URLSearchParams();
+    if (storeId) params.append('storeId', storeId);
+    if (search) params.append('search', search);
+    if (includeInactive) params.append('includeInactive', 'true');
+    appendPaginationParams(params, pagination);
+    return apiRequest<GroceryBundleBox[]>(
+      `/admin/grocery-bundle-boxes${params.toString() ? `?${params.toString()}` : ''}`
+    );
+  },
+
+  getGroceryBundleBoxById: (id: string) =>
+    apiRequest<GroceryBundleBox>(`/admin/grocery-bundle-boxes/${id}`),
+
+  createGroceryBundleBox: (body: JsonRequestBody) =>
+    apiRequest<GroceryBundleBox>('/admin/grocery-bundle-boxes', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  updateGroceryBundleBox: (id: string, body: JsonRequestBody) =>
+    apiRequest<GroceryBundleBox>(`/admin/grocery-bundle-boxes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+
+  deleteGroceryBundleBox: (id: string) =>
+    apiRequest<ApiMutationResponse>(`/admin/grocery-bundle-boxes/${id}`, { method: 'DELETE' }),
 
   // Grocery Order Management
   getAllGroceryOrders: (status?: string, orderListParams?: OrderListParams) => {

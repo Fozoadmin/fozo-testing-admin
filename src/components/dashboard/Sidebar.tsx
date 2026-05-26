@@ -11,6 +11,7 @@ import {
   Store,
   Apple,
   Tags,
+  Package,
 } from 'lucide-react';
 
 type SidebarProps = {
@@ -31,6 +32,7 @@ export function Sidebar({ active, setActive }: SidebarProps) {
     { key: 'grocery-stores', label: 'Grocery Stores', icon: Store },
     { key: 'grocery-categories', label: 'Grocery Categories', icon: Tags },
     { key: 'grocery-items', label: 'Grocery Items', icon: Apple },
+    { key: 'grocery-bundle-boxes', label: 'Bundle Boxes', icon: Package },
     { key: 'notifications', label: 'Notifications', icon: Bell },
     { key: 'settings', label: 'Settings', icon: Cog },
   ];
